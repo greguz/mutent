@@ -12,17 +12,13 @@ interface Item {
   newValue: any;
 }
 
-function noUndef(value: any): any {
-  return value === undefined ? null : value;
-}
-
 function compareDocs(oldDoc: any, newDoc: any) {
   const keys = uniq(Object.keys(oldDoc).concat(Object.keys(newDoc)));
   const items: Item[] = [];
 
   for (const key of keys) {
-    const oldValue = noUndef(oldDoc[key]);
-    const newValue = noUndef(newDoc[key]);
+    const oldValue = oldDoc[key];
+    const newValue = newDoc[key];
 
     if (isPlainObject(oldValue) && isPlainObject(newValue)) {
       items.push(
@@ -47,7 +43,7 @@ function buildUpdateQuery(oldDoc: any, newDoc: any): any {
   return compareDocs(oldDoc, newDoc).reduce<any>(
     (query, { path, oldValue, newValue }) => {
       if (path[0] !== "_id" && oldValue !== newValue) {
-        if (newValue === null) {
+        if (newValue === undefined) {
           set(query, ["$unset", path.join(".")], "");
         } else {
           set(query, ["$set", path.join(".")], newValue);
@@ -90,7 +86,7 @@ async function commit(
   } else if (target === null) {
     await collection.deleteOne({ _id: source._id }, { session });
   } else {
-    await collection.replaceOne(
+    await collection.updateOne(
       { _id: source._id },
       buildUpdateQuery(source, target),
       { session }
