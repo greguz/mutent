@@ -58,6 +58,9 @@ async function _commit<S, T, O>(
   options?: O
 ) {
   const { source, target } = ctx;
+  if (source === null && target === null) {
+    return _create(source, target);
+  }
   const output = await commit(source, target, options);
   const data = target === null ? null : output || target;
   return _create(data, data);
