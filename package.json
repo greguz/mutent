@@ -1,0 +1,28 @@
+{
+  "name": "mutent",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test:ts": "tsc --noEmit",
+    "test": "npm run test:ts",
+    "build:types": "tsc --emitDeclarationOnly --declaration",
+    "build:js": "tsc",
+    "build": "npm run build:types && npm run build:js",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "author": "Giacomo Gregoletto",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^3.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greguz/mutent.git"
+  }
+}
