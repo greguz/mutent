@@ -1,12 +1,18 @@
 {
   "name": "mutent",
   "version": "0.2.0",
-  "description": "",
+  "description": "Keep business logic and other code separated",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
     "index.js",
     "index.d.ts"
+  ],
+  "keywords": [
+    "business-logic",
+    "crud",
+    "entity",
+    "immutable"
   ],
   "scripts": {
     "test:ts": "tsc --noEmit",
