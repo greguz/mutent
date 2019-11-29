@@ -37,6 +37,9 @@ function _lock<S, T>(ctx: Context<S, T>) {
 }
 
 function _create<S, T>(source: S, target: T): Context<S, T> {
+  if (source === undefined || target === undefined) {
+    throw new Error("An entity cannot be undefined");
+  }
   return {
     locked: false,
     source,
