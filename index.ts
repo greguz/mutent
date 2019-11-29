@@ -69,7 +69,7 @@ function _wrap<S, T, O>(ctx: Context<S, T>, commit: Commit<O>): Entity<T, O> {
     delete: () => _wrap(_delete(_lock(ctx)), commit),
     commit: options =>
       _commit(_lock(ctx), commit, options).then(ctx => _wrap(ctx, commit)),
-    toJSON: () => ctx.target
+    toJSON: () => _lock(ctx).target
   };
 }
 
