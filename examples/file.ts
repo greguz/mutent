@@ -18,11 +18,15 @@ async function commit(
 ) {
   const { encoding, flag, mode, replacer, space } = options;
 
-  await fs.promises.writeFile(file, JSON.stringify(target, replacer, space), {
-    encoding,
-    flag,
-    mode
-  });
+  if (target) {
+    await fs.promises.writeFile(file, JSON.stringify(target, replacer, space), {
+      encoding,
+      flag,
+      mode
+    });
+  } else {
+    await fs.promises.unlink(file);
+  }
 }
 
 function bind(file: string): mutent.Commit<Options> {
