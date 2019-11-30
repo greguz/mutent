@@ -1,4 +1,4 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 
 import { create, read } from './index'
 
@@ -8,7 +8,7 @@ interface CommitMode {
   delete: boolean;
 }
 
-function bind (t: any, mode: Partial<CommitMode> = {}) {
+function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
   return async (source: any, target: any) => {
     if (
       (source === null && target === null) ||
