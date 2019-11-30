@@ -15,71 +15,71 @@ interface Context<S, T> {
   target: T;
 }
 
-function _lock<S, T>(ctx: Context<S, T>) {
+function _lock<S, T> (ctx: Context<S, T>) {
   if (ctx.locked) {
-    throw new Error("This entity is immutable");
+    throw new Error('This entity is immutable')
   }
-  ctx.locked = true;
-  return ctx;
+  ctx.locked = true
+  return ctx
 }
 
-function _create<S, T>(source: S, target: T): Context<S, T> {
+function _create<S, T> (source: S, target: T): Context<S, T> {
   if (source === undefined || target === undefined) {
-    throw new Error("An entity cannot be undefined");
+    throw new Error('An entity cannot be undefined')
   }
   return {
     locked: false,
     source,
     target
-  };
+  }
 }
 
-function _update<S, T, U>(ctx: Context<S, T>, mutator: Mutator<T, U>) {
-  return _create(ctx.source, mutator(ctx.target));
+function _update<S, T, U> (ctx: Context<S, T>, mutator: Mutator<T, U>) {
+  return _create(ctx.source, mutator(ctx.target))
 }
 
-function _delete<S, T>(ctx: Context<S, T>) {
-  return _create(ctx.source, null);
+function _delete<S, T> (ctx: Context<S, T>) {
+  return _create(ctx.source, null)
 }
 
-async function _commit<S, T, O>(
+async function _commit<S, T, O> (
   ctx: Context<S, T>,
   commit: Commit<O>,
   options?: O
 ) {
-  const { source, target } = ctx;
+  const { source, target } = ctx
   if (source === null && target === null) {
-    return _create(source, target);
+    return _create(source, target)
   }
-  const output = await commit(source, target, options);
-  const data = target === null ? null : output || target;
-  return _create(data, data);
+  const output = await commit(source, target, options)
+  const data = target === null ? null : output || target
+  return _create(data, data)
 }
 
-function _wrap<S, T, O>(ctx: Context<S, T>, commit: Commit<O>): Entity<T, O> {
+function _wrap<S, T, O> (ctx: Context<S, T>, commit: Commit<O>): Entity<T, O> {
   return {
     update: mutator => _wrap(_update(_lock(ctx), mutator), commit),
     delete: () => _wrap(_delete(_lock(ctx)), commit),
     commit: options =>
       _commit(_lock(ctx), commit, options).then(ctx => _wrap(ctx, commit)),
     toJSON: () => _lock(ctx).target
-  };
+  }
 }
 
-function _passthrough() {
-  return Promise.resolve();
+function _passthrough () {
+  return Promise.resolve()
 }
 
-export function create<T, O>(
+export function create<T, O> (
   data: T,
   commit: Commit<O> = _passthrough
 ): Entity<T, O> {
-  return _wrap(_create(null, data), commit);
+  return _wrap(_create(null, data), commit)
 }
 
-export function read<T, O>(
+export function read<T, O> (
   data: T,
   commit: Commit<O> = _passthrough
 ): Entity<T, O> {
-  return _wrap(_create(data, data), commit);
+  return _wrap(_create(data, data), commit)
 }

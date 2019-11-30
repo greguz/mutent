@@ -15,9 +15,10 @@
     "immutable"
   ],
   "scripts": {
+    "test:lint": "eslint *.ts",
     "test:ts": "tsc --noEmit",
     "test:unit": "ava",
-    "test": "npm run test:ts && npm run test:unit",
+    "test": "npm run test:ts && npm run test:lint && npm run test:unit",
     "build:types": "tsc --emitDeclarationOnly --declaration",
     "build:js": "tsc",
     "build": "npm run build:types && npm run build:js",
@@ -26,7 +27,15 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.9.0",
+    "@typescript-eslint/parser": "^2.9.0",
     "ava": "^2.4.0",
+    "eslint": "^6.7.1",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.2"
   },
