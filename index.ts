@@ -2,19 +2,6 @@ export type Mutator<T, U> = (entity: T) => U;
 
 export type Commit<O> = (source: any, target: any, options?: O) => Promise<any>;
 
-// source : target : action
-// ------------------------
-// null   : value  : create
-// value  : value  : update
-// value  : null   : delete
-// null   : null   : X
-
-// generics
-// - S : Source
-// - T : Target
-// - O : Options
-// - U : Update
-
 export interface Entity<T, O> {
   update<U>(mutator: Mutator<T, U>): Entity<U, O>;
   delete(): Entity<null, O>;
