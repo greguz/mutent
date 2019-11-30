@@ -9,5 +9,5 @@
     "esModuleInterop": true
   },
   "exclude": ["node_modules"],
-  "include": ["index.ts"]
+  "include": ["index.ts", "index.spec.ts"]
 }

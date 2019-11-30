@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "test:ts": "tsc --noEmit",
-    "test": "npm run test:ts",
+    "test:unit": "ava",
+    "test": "npm run test:ts && npm run test:unit",
     "build:types": "tsc --emitDeclarationOnly --declaration",
     "build:js": "tsc",
     "build": "npm run build:types && npm run build:js",
@@ -25,10 +26,24 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "devDependencies": {
+    "ava": "^2.4.0",
+    "ts-node": "^8.5.4",
     "typescript": "^3.7.2"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/greguz/mutent.git"
+  },
+  "ava": {
+    "compileEnhancements": false,
+    "extensions": [
+      "ts"
+    ],
+    "files": [
+      "**/*.spec.ts"
+    ],
+    "require": [
+      "ts-node/register/transpile-only"
+    ]
   }
 }
