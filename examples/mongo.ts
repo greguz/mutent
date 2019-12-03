@@ -79,8 +79,7 @@ async function commit (
   const { session } = options
 
   if (source === null) {
-    const { ops } = await collection.insertOne(target, { session })
-    return ops[0] // possible _id assignment
+    await collection.insertOne(target, { session })
   } else if (target === null) {
     await collection.deleteOne({ _id: source._id }, { session })
   } else {
