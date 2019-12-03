@@ -1,4 +1,6 @@
-export type Mutator<D, U> = (data: D) => U;
+export type Mutator<D, U, A extends any[]> = (data: D, ...args: A) => U
+
+export type Mapper<D, U> = Mutator<D, U, []>
 
 export type Factory<D, O> = (options?: O) => D | Promise<D>
 
@@ -7,15 +9,16 @@ export type Source<D, O> = D | Factory<D, O>
 export type Commit<O> = (source: any, target: any, options?: O) => any;
 
 export interface Entity<D, O> {
-  update<U>(mutator: Mutator<D, U>): Entity<U, O>;
+  update<U, A extends any[]>(mutator: Mutator<D, U, A>, ...args: A): Entity<U, O>;
   delete(): Entity<null, O>;
+  assign<U>(object: U): Entity<D & U, O>
   unwrap(options?: O): Promise<D>
 }
 
 interface Context<D, T, O> {
   locked: boolean;
   source: Source<D, O>;
-  target: Mutator<D, T>;
+  target: Mapper<D, T>;
   commit: Commit<O>
 }
 
@@ -66,7 +69,7 @@ async function _unwrap<D, T, O> (
 
 function _create<D, T, O> (
   source: Source<D, O>,
-  target: Mutator<D, T>,
+  target: Mapper<D, T>,
   commit: Commit<O>
 ): Context<D, T, O> {
   return {
@@ -77,10 +80,14 @@ function _create<D, T, O> (
   }
 }
 
-function _update<D, T, U, O> (ctx: Context<D, T, O>, mutator: Mutator<T, U>) {
+function _update<D, T, U, O, A extends any[]> (
+  ctx: Context<D, T, O>,
+  mutator: Mutator<T, U, A>,
+  args: A
+) {
   return _create(
     ctx.source,
-    (data: D) => noUndef(mutator(ctx.target(data))),
+    (data: D) => noUndef(mutator(ctx.target(data), ...args)),
     ctx.commit
   )
 }
@@ -90,6 +97,14 @@ function _delete<D, T, O> (ctx: Context<D, T, O>) {
     ctx.source,
     asConst(null),
     ctx.commit
+  )
+}
+
+function _assign<D, T, O, E> (ctx: Context<D, T, O>, extension: E) {
+  return _update(
+    ctx,
+    data => ({ ...data, ...extension }),
+    []
   )
 }
 
@@ -103,9 +118,10 @@ function _lock<D, T, O> (ctx: Context<D, T, O>) {
 
 function _wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
   return {
-    update: mutator => _wrap(_update(_lock(ctx), mutator)),
+    update: (mutator, ...args) => _wrap(_update(_lock(ctx), mutator, args)),
     delete: () => _wrap(_delete(_lock(ctx))),
-    unwrap: (options?: O) => _unwrap(_lock(ctx), options)
+    assign: object => _wrap(_assign(_lock(ctx), object)),
+    unwrap: options => _unwrap(_lock(ctx), options)
   }
 }
 

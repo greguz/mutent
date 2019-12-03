@@ -107,3 +107,19 @@ test('read async', async t => {
     .unwrap()
   t.deepEqual(result, { a: 1, b: 2 })
 })
+
+test('mutator', async t => {
+  t.plan(2)
+  const result = await read({ a: 1 }, bind(t, { update: true }))
+    .update((data, b: number) => ({ ...data, b }), 2)
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
+})
+
+test('assign', async t => {
+  t.plan(2)
+  const result = await read({ a: 1 }, bind(t, { update: true }))
+    .assign({ b: 2 })
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
+})
