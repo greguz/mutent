@@ -17,7 +17,7 @@
   "scripts": {
     "test:lint": "eslint *.ts",
     "test:ts": "tsc --noEmit",
-    "test:unit": "ava",
+    "test:unit": "npm run build && ava",
     "test": "npm run test:ts && npm run test:lint && npm run test:unit",
     "build:types": "tsc --emitDeclarationOnly --declaration",
     "build:js": "tsc",
