@@ -36,6 +36,11 @@ const entity = mutent.read({
 });
 ```
 
+### Async read
+
+The `read` function may accept a function that returns the entity data or (both sync or with a Promise).
+With this mode, you can schedule the required transformations _before_ the actual read.
+
 ### Update
 
 After its creation, the entity data is hidden, and there's no way to alter its status directly. To perform an update it's necessary a mutator: a function that takes the
@@ -75,7 +80,7 @@ oldEntity.update(data => { ... }) // Error
 After a creation, or some mutations, or a deletion, you may wish to write the current entity status somewhere: this is the purpose of the `commit` function.
 
 The `create` and the `update` function accept a second argument: a `commit` function.
-This function define the method used to store the entity data when whe want to persist the current status.
+This function define the method used to store the entity data when we want to persist the current status.
 Most obvious example, is a database write.
 
 The `commit` function must return a `Promise`, and accept three arguments:
