@@ -1,21 +1,42 @@
-export type Mutator<T, U> = (entity: T) => U;
+export type Mutator<T, U> = (data: T) => U;
+
+export type Factory<T, O> = (options?: O) => T | Promise<T>
+
+export type Source<T, O> = T | Factory<T, O>
 
 export type Commit<O> = (source: any, target: any, options?: O) => Promise<any>;
 
-export interface Entity<T, O> {
-  update<U>(mutator: Mutator<T, U>): Entity<U, O>;
+export interface Entity<D, O> {
+  update<U>(mutator: Mutator<D, U>): Entity<U, O>;
   delete(): Entity<null, O>;
-  commit(options?: O): Promise<Entity<T, O>>;
-  toJSON(): T;
+  commit(options?: O): Promise<Entity<D, O>>;
+  toJSON(): D;
 }
 
-interface Context<S, T> {
+interface Context<D, T, O> {
   locked: boolean;
-  source: S;
-  target: T;
+  source: Source<D, O>;
+  target: Mutator<D, T>;
+  commit: Commit<O>
 }
 
-function _lock<S, T> (ctx: Context<S, T>) {
+function isNil (value: any) {
+  return value === undefined || value === null
+}
+
+function asConst<T> (data: T) {
+  return () => data
+}
+
+function passthrough<T> (value: T) {
+  return value
+}
+
+function volatile () {
+  return Promise.resolve()
+}
+
+function lock<D, T, O> (ctx: Context<D, T, O>) {
   if (ctx.locked) {
     throw new Error('This entity is immutable')
   }
@@ -23,63 +44,82 @@ function _lock<S, T> (ctx: Context<S, T>) {
   return ctx
 }
 
-function _create<S, T> (source: S, target: T): Context<S, T> {
-  if (source === undefined || target === undefined) {
-    throw new Error('An entity cannot be undefined')
+async function fetch<D, O> (source: Source<D, O>, options?: O): Promise<D> {
+  if (typeof source === 'function') {
+    return (source as any)(options)
+  } else {
+    return source
   }
+}
+
+function extract<D, T, O> (ctx: Context<D, T, O>) {
+  const { source, target } = ctx
+  if (typeof source === 'function') {
+    throw new Error('Entity not ready')
+  }
+  return target(source)
+}
+
+function ctxCreate<D, T, O> (
+  source: Source<D, O>,
+  target: Mutator<D, T>,
+  commit: Commit<O>
+): Context<D, T, O> {
   return {
     locked: false,
     source,
-    target
+    target,
+    commit
   }
 }
 
-function _update<S, T, U> (ctx: Context<S, T>, mutator: Mutator<T, U>) {
-  return _create(ctx.source, mutator(ctx.target))
+function ctxUpdate<D, T, U, O> (ctx: Context<D, T, O>, mutator: Mutator<T, U>) {
+  return ctxCreate(
+    ctx.source,
+    (data: D) => mutator(ctx.target(data)),
+    ctx.commit
+  )
 }
 
-function _delete<S, T> (ctx: Context<S, T>) {
-  return _create(ctx.source, null)
+function ctxDelete<D, T, O> (ctx: Context<D, T, O>) {
+  return ctxCreate(
+    ctx.source,
+    () => null,
+    ctx.commit
+  )
 }
 
-async function _commit<S, T, O> (
-  ctx: Context<S, T>,
-  commit: Commit<O>,
+async function ctxCommit<D, T, O> (
+  ctx: Context<D, T, O>,
   options?: O
-) {
-  const { source, target } = ctx
-  if (source === null && target === null) {
-    return _create(source, target)
+): Promise<Context<T, T, O>> {
+  const source = await fetch(ctx.source, options)
+  const target = ctx.target(source)
+  if (!isNil(source) || !isNil(target)) {
+    await ctx.commit(source, target, options)
   }
-  const output = await commit(source, target, options)
-  const data = target === null ? null : output || target
-  return _create(data, data)
+  return ctxCreate(target, passthrough, ctx.commit)
 }
 
-function _wrap<S, T, O> (ctx: Context<S, T>, commit: Commit<O>): Entity<T, O> {
+function wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
   return {
-    update: mutator => _wrap(_update(_lock(ctx), mutator), commit),
-    delete: () => _wrap(_delete(_lock(ctx)), commit),
-    commit: options =>
-      _commit(_lock(ctx), commit, options).then(ctx => _wrap(ctx, commit)),
-    toJSON: () => _lock(ctx).target
+    update: mutator => wrap(ctxUpdate(lock(ctx), mutator)),
+    delete: () => wrap(ctxDelete(lock(ctx))),
+    commit: options => ctxCommit(lock(ctx), options).then(wrap),
+    toJSON: () => extract(lock(ctx))
   }
 }
 
-function _passthrough () {
-  return Promise.resolve()
+export function create<D, O> (
+  data: D,
+  commit: Commit<O> = volatile
+): Entity<D, O> {
+  return wrap(ctxCreate(null, asConst(data), commit))
 }
 
-export function create<T, O> (
-  data: T,
-  commit: Commit<O> = _passthrough
-): Entity<T, O> {
-  return _wrap(_create(null, data), commit)
-}
-
-export function read<T, O> (
-  data: T,
-  commit: Commit<O> = _passthrough
-): Entity<T, O> {
-  return _wrap(_create(data, data), commit)
+export function read<D, O> (
+  source: Source<D, O>,
+  commit: Commit<O> = volatile
+): Entity<D, O> {
+  return wrap(ctxCreate(source, passthrough, commit))
 }
