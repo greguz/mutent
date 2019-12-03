@@ -11,6 +11,7 @@ export interface Entity<D, O> {
   delete(): Entity<null, O>;
   commit(options?: O): Promise<Entity<D, O>>;
   toJSON(): D;
+  unwrap(options?: O): Promise<D>
 }
 
 interface Context<D, T, O> {
@@ -105,11 +106,13 @@ function ctxExtract<D, T, O> (ctx: Context<D, T, O>) {
 }
 
 function wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
+  const commit = (options?: O) => ctxCommit(lock(ctx), options).then(wrap)
   return {
     update: mutator => wrap(ctxUpdate(lock(ctx), mutator)),
     delete: () => wrap(ctxDelete(lock(ctx))),
-    commit: options => ctxCommit(lock(ctx), options).then(wrap),
-    toJSON: () => ctxExtract(lock(ctx))
+    commit,
+    toJSON: () => ctxExtract(lock(ctx)),
+    unwrap: (options?: O) => commit(options).then(entity => entity.toJSON())
   }
 }
 

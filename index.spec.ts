@@ -109,3 +109,11 @@ test('async throw', async t => {
   const entity = read(fetch)
   t.throws(() => entity.toJSON())
 })
+
+test('unwrap', async t => {
+  t.plan(2)
+  const entity = await read({ a: 1 }, bind(t, { update: true }))
+    .update(data => ({ ...data, b: 2 }))
+    .unwrap()
+  t.deepEqual(entity, { a: 1, b: 2 })
+})
