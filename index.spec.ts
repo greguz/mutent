@@ -51,69 +51,59 @@ test('lock', async t => {
   })
   await t.throwsAsync(async () => {
     const entity = create({})
-    await entity.commit()
-    await entity.commit()
-  })
-  t.throws(() => {
-    const entity = create({})
-    entity.toJSON()
-    entity.toJSON()
+    await entity.unwrap()
+    await entity.unwrap()
   })
 })
 
 test('create', async t => {
   t.plan(2)
-  const entity = await create({ a: 1 }, bind(t, { create: true }))
+  const result = await create({ a: 1 }, bind(t, { create: true }))
     .update(data => ({ ...data, b: 2 }))
-    .commit()
-  t.deepEqual(entity.toJSON(), { a: 1, b: 2 })
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
 })
 
 test('update', async t => {
   t.plan(2)
-  const entity = await read({ a: 1 }, bind(t, { update: true }))
+  const result = await read({ a: 1 }, bind(t, { update: true }))
     .update(data => ({ ...data, b: 2 }))
-    .commit()
-  t.deepEqual(entity.toJSON(), { a: 1, b: 2 })
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
 })
 
 test('delete', async t => {
   t.plan(2)
-  const entity = await read({ a: 1 }, bind(t, { delete: true }))
+  const result = await read({ a: 1 }, bind(t, { delete: true }))
     .update(data => ({ ...data, b: 2 }))
     .delete()
-    .commit()
-  t.deepEqual(entity.toJSON(), null)
+    .unwrap()
+  t.deepEqual(result, null)
 })
 
 test('void', async t => {
   t.plan(1)
-  const entity = await create({ a: 1 }, bind(t))
+  const result = await create({ a: 1 }, bind(t))
     .update(data => ({ ...data, b: 2 }))
     .delete()
-    .commit()
-  t.is(entity.toJSON(), null)
+    .unwrap()
+  t.is(result, null)
 })
 
-test('async', async t => {
+test('read sync', async t => {
   t.plan(2)
-  const fetch = async () => ({ a: 1 })
-  const entity = await read(fetch, bind(t, { update: true }))
-    .update(data => ({ ...data, b: 2 }))
-    .commit()
-  t.deepEqual(entity.toJSON(), { a: 1, b: 2 })
-})
-
-test('async throw', async t => {
-  const fetch = async () => ({ a: 1 })
-  const entity = read(fetch)
-  t.throws(() => entity.toJSON())
-})
-
-test('unwrap', async t => {
-  t.plan(2)
-  const entity = await read({ a: 1 }, bind(t, { update: true }))
+  const fetch = () => ({ a: 1 })
+  const result = await read(fetch, bind(t, { update: true }))
     .update(data => ({ ...data, b: 2 }))
     .unwrap()
-  t.deepEqual(entity, { a: 1, b: 2 })
+  t.deepEqual(result, { a: 1, b: 2 })
+})
+
+test('read async', async t => {
+  t.plan(2)
+  const fetch = async () => ({ a: 1 })
+  const result = await read(fetch, bind(t, { update: true }))
+    .update(data => ({ ...data, b: 2 }))
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
 })

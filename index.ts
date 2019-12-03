@@ -1,16 +1,14 @@
-export type Mutator<T, U> = (data: T) => U;
+export type Mutator<D, U> = (data: D) => U;
 
-export type Factory<T, O> = (options?: O) => T | Promise<T>
+export type Factory<D, O> = (options?: O) => D | Promise<D>
 
-export type Source<T, O> = T | Factory<T, O>
+export type Source<D, O> = D | Factory<D, O>
 
-export type Commit<O> = (source: any, target: any, options?: O) => Promise<any>;
+export type Commit<O> = (source: any, target: any, options?: O) => any;
 
 export interface Entity<D, O> {
   update<U>(mutator: Mutator<D, U>): Entity<U, O>;
   delete(): Entity<null, O>;
-  commit(options?: O): Promise<Entity<D, O>>;
-  toJSON(): D;
   unwrap(options?: O): Promise<D>
 }
 
@@ -40,23 +38,33 @@ function volatile () {
   return Promise.resolve()
 }
 
-function lock<D, T, O> (ctx: Context<D, T, O>) {
-  if (ctx.locked) {
-    throw new Error('This entity is immutable')
-  }
-  ctx.locked = true
-  return ctx
+async function build<D, O> (factory: Factory<D, O>, options?: O): Promise<D> {
+  return factory(options)
 }
 
-async function fetch<D, O> (source: Source<D, O>, options?: O): Promise<D> {
-  if (typeof source === 'function') {
-    return (source as any)(options)
-  } else {
-    return source
-  }
+function extract<D, O> (source: Source<D, O>, options?: O): Promise<D> {
+  return typeof source === 'function'
+    ? build(source as any, options)
+    : Promise.resolve(source)
 }
 
-function ctxCreate<D, T, O> (
+function _source<D, T, O> (ctx: Context<D, T, O>, options?: O): Promise<D> {
+  return extract(ctx.source, options)
+}
+
+async function _unwrap<D, T, O> (
+  ctx: Context<D, T, O>,
+  options?: O
+): Promise<T> {
+  const source = await _source(ctx, options)
+  const target = ctx.target(source)
+  if (source !== null || target !== null) {
+    await ctx.commit(source, target, options)
+  }
+  return target
+}
+
+function _create<D, T, O> (
   source: Source<D, O>,
   target: Mutator<D, T>,
   commit: Commit<O>
@@ -69,50 +77,35 @@ function ctxCreate<D, T, O> (
   }
 }
 
-function ctxUpdate<D, T, U, O> (ctx: Context<D, T, O>, mutator: Mutator<T, U>) {
-  return ctxCreate(
+function _update<D, T, U, O> (ctx: Context<D, T, O>, mutator: Mutator<T, U>) {
+  return _create(
     ctx.source,
     (data: D) => noUndef(mutator(ctx.target(data))),
     ctx.commit
   )
 }
 
-function ctxDelete<D, T, O> (ctx: Context<D, T, O>) {
-  return ctxCreate(
+function _delete<D, T, O> (ctx: Context<D, T, O>) {
+  return _create(
     ctx.source,
-    () => null,
+    asConst(null),
     ctx.commit
   )
 }
 
-async function ctxCommit<D, T, O> (
-  ctx: Context<D, T, O>,
-  options?: O
-): Promise<Context<T, T, O>> {
-  const source = await fetch(ctx.source, options)
-  const target = ctx.target(source)
-  if (source !== null || target !== null) {
-    await ctx.commit(source, target, options)
+function _lock<D, T, O> (ctx: Context<D, T, O>) {
+  if (ctx.locked) {
+    throw new Error('This entity is immutable')
   }
-  return ctxCreate(target, passthrough, ctx.commit)
+  ctx.locked = true
+  return ctx
 }
 
-function ctxExtract<D, T, O> (ctx: Context<D, T, O>) {
-  const { source, target } = ctx
-  if (typeof source === 'function') {
-    throw new Error('Entity not ready')
-  }
-  return target(source)
-}
-
-function wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
-  const commit = (options?: O) => ctxCommit(lock(ctx), options).then(wrap)
+function _wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
   return {
-    update: mutator => wrap(ctxUpdate(lock(ctx), mutator)),
-    delete: () => wrap(ctxDelete(lock(ctx))),
-    commit,
-    toJSON: () => ctxExtract(lock(ctx)),
-    unwrap: (options?: O) => commit(options).then(entity => entity.toJSON())
+    update: mutator => _wrap(_update(_lock(ctx), mutator)),
+    delete: () => _wrap(_delete(_lock(ctx))),
+    unwrap: (options?: O) => _unwrap(_lock(ctx), options)
   }
 }
 
@@ -120,12 +113,12 @@ export function create<D, O> (
   data: D,
   commit: Commit<O> = volatile
 ): Entity<D, O> {
-  return wrap(ctxCreate(null, asConst(noUndef(data)), commit))
+  return _wrap(_create(null, asConst(noUndef(data)), commit))
 }
 
 export function read<D, O> (
   source: Source<D, O>,
   commit: Commit<O> = volatile
 ): Entity<D, O> {
-  return wrap(ctxCreate(noUndef(source), passthrough, commit))
+  return _wrap(_create(noUndef(source), passthrough, commit))
 }
