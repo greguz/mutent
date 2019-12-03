@@ -20,8 +20,11 @@ interface Context<D, T, O> {
   commit: Commit<O>
 }
 
-function isNil (value: any) {
-  return value === undefined || value === null
+function noUndef<T> (value: T): T {
+  if (value === undefined) {
+    throw new Error('An entity cannot be undefined')
+  }
+  return value
 }
 
 function asConst<T> (data: T) {
@@ -29,7 +32,7 @@ function asConst<T> (data: T) {
 }
 
 function passthrough<T> (value: T) {
-  return value
+  return noUndef(value)
 }
 
 function volatile () {
@@ -52,14 +55,6 @@ async function fetch<D, O> (source: Source<D, O>, options?: O): Promise<D> {
   }
 }
 
-function extract<D, T, O> (ctx: Context<D, T, O>) {
-  const { source, target } = ctx
-  if (typeof source === 'function') {
-    throw new Error('Entity not ready')
-  }
-  return target(source)
-}
-
 function ctxCreate<D, T, O> (
   source: Source<D, O>,
   target: Mutator<D, T>,
@@ -76,7 +71,7 @@ function ctxCreate<D, T, O> (
 function ctxUpdate<D, T, U, O> (ctx: Context<D, T, O>, mutator: Mutator<T, U>) {
   return ctxCreate(
     ctx.source,
-    (data: D) => mutator(ctx.target(data)),
+    (data: D) => noUndef(mutator(ctx.target(data))),
     ctx.commit
   )
 }
@@ -95,10 +90,18 @@ async function ctxCommit<D, T, O> (
 ): Promise<Context<T, T, O>> {
   const source = await fetch(ctx.source, options)
   const target = ctx.target(source)
-  if (!isNil(source) || !isNil(target)) {
+  if (source !== null || target !== null) {
     await ctx.commit(source, target, options)
   }
   return ctxCreate(target, passthrough, ctx.commit)
+}
+
+function ctxExtract<D, T, O> (ctx: Context<D, T, O>) {
+  const { source, target } = ctx
+  if (typeof source === 'function') {
+    throw new Error('Entity not ready')
+  }
+  return target(source)
 }
 
 function wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
@@ -106,7 +109,7 @@ function wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
     update: mutator => wrap(ctxUpdate(lock(ctx), mutator)),
     delete: () => wrap(ctxDelete(lock(ctx))),
     commit: options => ctxCommit(lock(ctx), options).then(wrap),
-    toJSON: () => extract(lock(ctx))
+    toJSON: () => ctxExtract(lock(ctx))
   }
 }
 
@@ -114,12 +117,12 @@ export function create<D, O> (
   data: D,
   commit: Commit<O> = volatile
 ): Entity<D, O> {
-  return wrap(ctxCreate(null, asConst(data), commit))
+  return wrap(ctxCreate(null, asConst(noUndef(data)), commit))
 }
 
 export function read<D, O> (
   source: Source<D, O>,
   commit: Commit<O> = volatile
 ): Entity<D, O> {
-  return wrap(ctxCreate(source, passthrough, commit))
+  return wrap(ctxCreate(noUndef(source), passthrough, commit))
 }
