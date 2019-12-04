@@ -34,7 +34,7 @@ function bind (file: string): mutent.Commit<Options> {
 }
 
 export function create<T> (file: string, data: T) {
-  return mutent.create(data, bind(file))
+  return mutent.create<T, Options>(data, bind(file))
 }
 
 export async function read<T = any> (file: string, options?: Options) {
