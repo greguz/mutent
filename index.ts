@@ -6,19 +6,21 @@ export type Factory<D, O> = (options?: O) => D | Promise<D>
 
 export type Source<D, O> = D | Factory<D, O>
 
-export type Commit<O> = (source: any, target: any, options?: O) => any;
+export type Commit<O> = (source: any, target: any, options?: O) => any
 
 export interface Entity<D, O> {
-  update<U, A extends any[]>(mutator: Mutator<D, U, A>, ...args: A): Entity<U, O>;
-  delete(): Entity<null, O>;
-  assign<U>(object: U): Entity<D & U, O>
+  update<U, A extends any[]>(mutator: Mutator<D, U, A>, ...args: A): Entity<U, O>
+  delete(): Entity<null, O>
+  assign<E>(object: E): Entity<D & E, O>
   unwrap(options?: O): Promise<D>
+  connect<X>(commit: Commit<X>): Entity<D, X>
+  release(): Entity<D, any>
 }
 
 interface Context<D, T, O> {
-  locked: boolean;
-  source: Source<D, O>;
-  target: Mapper<D, T>;
+  locked: boolean
+  source: Source<D, O>
+  target: Mapper<D, T>
   commit: Commit<O>
 }
 
@@ -92,7 +94,7 @@ function _update<D, T, U, O, A extends any[]> (
   )
 }
 
-function _delete<D, T, O> (ctx: Context<D, T, O>) {
+function _delete<D, O> (ctx: Context<D, any, O>) {
   return _create(
     ctx.source,
     asConst(null),
@@ -108,6 +110,18 @@ function _assign<D, T, O, E> (ctx: Context<D, T, O>, extension: E) {
   )
 }
 
+function _connect<D, T, O> (ctx: Context<D, T, any>, commit: Commit<O>) {
+  return _create(
+    ctx.source,
+    ctx.target,
+    commit
+  )
+}
+
+function _release<D, T> (ctx: Context<D, T, any>) {
+  return _connect(ctx, volatile)
+}
+
 function _lock<D, T, O> (ctx: Context<D, T, O>) {
   if (ctx.locked) {
     throw new Error('This entity is immutable')
@@ -121,7 +135,9 @@ function _wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
     update: (mutator, ...args) => _wrap(_update(_lock(ctx), mutator, args)),
     delete: () => _wrap(_delete(_lock(ctx))),
     assign: object => _wrap(_assign(_lock(ctx), object)),
-    unwrap: options => _unwrap(_lock(ctx), options)
+    unwrap: options => _unwrap(_lock(ctx), options),
+    connect: commit => _wrap(_connect(_lock(ctx), commit)),
+    release: () => _wrap(_release(_lock(ctx)))
   }
 }
 

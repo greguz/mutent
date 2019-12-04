@@ -123,3 +123,21 @@ test('assign', async t => {
     .unwrap()
   t.deepEqual(result, { a: 1, b: 2 })
 })
+
+test('connect', async t => {
+  t.plan(2)
+  const result = await read({ a: 1 }, bind(t))
+    .connect(bind(t, { update: true }))
+    .assign({ b: 2 })
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
+})
+
+test('release', async t => {
+  t.plan(1)
+  const result = await read({ a: 1 }, bind(t))
+    .release()
+    .assign({ b: 2 })
+    .unwrap()
+  t.deepEqual(result, { a: 1, b: 2 })
+})
