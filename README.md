@@ -8,191 +8,111 @@ An insanely small utility that helps you to keep business logic and other code s
 
 ## Entity
 
-An _entity_ is any data value that may represents something to you.
-The most straightforward example is a MongoDB document: the document data is our entity.
+An _entity_ represents a meaningful collection of data.
+This library provides a convenient way to manipulate entities and organize the manipulation code.
 
 ### Create
 
-By calling the `create` function, and passing the actual entity data, you create
-a new _entity_.
+The `create` function returns a new _entity_.
 
 ```javascript
 const entity = mutent.create({
   username: "pfudor",
   password: "PinkFluffyUnicornDancingOnRainbows"
-});
+})
 ```
 
 ### Read
 
-The `read` function is almost identical to the `create` function, the only difference
-is that we are telling that this _entity_ is **already saved somewhere**, and
-we just read the data from our source.
+The `read` function is almost identical to the `create` function.
+The only difference is that we are telling that this _entity_ is **already saved somewhere**,
+and we just read the data from the source.
+It supports **lazy readings** by passing a function as first argument.
 
 ```javascript
-const entity = mutent.read({
-  username: "admin",
-  password: "0123OHCMON!"
-});
+const e0 = mutent.read({ comment: "Pass the entity data directly" })
+const e1 = mutent.read(() => ({ comment: "Lazy read with functions" }))
+const e2 = mutent.read(async () => ({ comment: "Lazy (async) read with promises" }))
 ```
-
-### Async read
-
-The `read` function may accept a function that returns the entity data or (both sync or with a Promise).
-With this mode, you can schedule the required transformations _before_ the actual read.
 
 ### Update
 
-After its creation, the entity data is hidden, and there's no way to alter its status directly. To perform an update it's necessary a mutator: a function that takes the
-entity data as input, and output the updated one. After the execution, a new entity is returned.
+After its creation, the entity data is hidden, and there's no way to alter its status directly.
+To perform an update it's necessary a mapper: a function that takes the entity data as input, and output the updated one.
+After the execution, a new entity is returned.
 
-After any mutation, the current entity is not valid anymore, so if you try to
-perform a double update to the same entity, an error is raised. This ensure that
-we are always working with the last version of the entity.
+After any manipulation, the current entity is not valid anymore, so if you try to perform
+a double update to the same entity, an error is raised.
+This ensure that we are always working with the last version of the entity.
 
 ```javascript
+const oldEntity = mutent.create({ value: 12 })
+
 const newEntity = oldEntity.update(data => {
   return {
     ...data,
     updated: new Date()
-  };
-});
+  }
+})
 
-newEntity.update(data => { ... }) // OK
+newEntity.update(data => { ...data }) // OK
+oldEntity.update(data => { ...data }) // Error
+```
 
-oldEntity.update(data => { ... }) // Error
+### Assign
+
+The `assign` method mimics `Object.assign`, so it performs an update by joining the entity data and the passed argument.
+
+```javascript
+mutent
+  .create({ a: 1 })
+  .assign({ b: 2 })
+  .update(data => ({ a: data.a * 2, b: data.b * 2 }))
 ```
 
 ### Delete
 
-By calling the `delete` function, you flag this entity as "to be deleted".
+By calling the `delete` function, the entity data is set to `null` to indicate that this entity needs to be deleted.
+
+Tip: you can perform a deletion using the `update` method by returning `null` inside the mapper function.
+
+### Unwrap
+
+When `unwrap` method is called, the data is persisted on the configured datastore (defined throught **commit** function)
+and returned within a `Promise`.
+
+To achive data persistence, `create` and `read` functions may accept a **commit** procedure as second argument.
+
+The *commit* function define the way to **write** and **persist** the _entity_ data, and It's called automatically
+anytime that `unwrap` function is fired.
+
+It consists in a function that accepts three arguments and **may** return a `Promise`:
+- `source` data when the entity was loaded the first time (`create` or `read`)
+- `target` resulting data after all the configured manipulations
+- `options` first argument of `unwrap` method
 
 ```javascript
-const newEntity = oldEntity.delete();
-
-newEntity.update(data => { ... }) // OK (data is null, it's like a creation from scratch)
-
-oldEntity.update(data => { ... }) // Error
-```
-
-### Commit
-
-After a creation, or some mutations, or a deletion, you may wish to write the current entity status somewhere: this is the purpose of the `commit` function.
-
-The `create` and the `update` function accept a second argument: a `commit` function.
-This function define the method used to store the entity data when we want to persist the current status.
-Most obvious example, is a database write.
-
-The `commit` function must return a `Promise`, and accept three arguments:
-
-- `source` the original data when we loaded the entity (created, read or committed)
-- `target` the resulting data after our alterations (updated or deleted)
-- `options` some options passed to the _entity_
-
-Here `null` values are special values that indicate something.
-
-#### Creation
-
-If `source` is `null`, it means that this entity (`target`) is new and must be created.
-
-#### Deletion
-
-If `target` is `null`, it means that the `delete` function was called, and this
-entity (`source`) must be destroyed.
-
-#### Updation
-
-Both `source` and `target` are usable, you can diff the data and perform the required update.
-
-#### Both null
-
-There is a special case, when an entity is created and deleted before any commit.
-In that case, because the entity data resides entirely on memory, the commit call
-is automatically skipped, so there's no need to handle that case.
-
-```javascript
-async function commit(source, target, options) {
+async function commit (source, target, options) {
   if (source === null) {
-    // create a new entity (target is the data to save)
+    // create > there's no source data, this entity is new
   } else if (target === null) {
-    // delete the entity (source is the entity data)
+    // delete > there's no target data, this entity was deleted
   } else {
-    // update the entity (source is the original data, taget is the updated data)
+    // update > you can just write target data,
+    //          or diff source and target to update more efficently
   }
 }
 
-async function run() {
-  const inMemoryEntity = mutent.create({ value: 69 }, commit);
-
-  const savedEntity = await inMemoryEntity.commit({
-    any: "option",
-    here: true
-  });
+async function foo () {
+  // Define a new entity
+  const entity = mutent.create({ message: "Hello World" }, commit)
+  // Call unwrap to commit and retrieve the entity data
+  const data = await entity.unwrap()
+  // All done
+  console.log(data.message)
 }
 ```
 
 ## Examples
 
 You can check the _examples_ dir inside this repo.
-
-## Usage
-
-```javascript
-const mutent = require("mutent");
-
-async function commit(source, target, options) {
-  if (source === null) {
-    console.log("create", target);
-  } else if (target === null) {
-    console.log("delete", source);
-  } else {
-    console.log("update", source, target);
-  }
-}
-
-async function procedure() {
-  // create entity (commit function have to return a Promise)
-  const e0 = mutent.create({ a: 1 }, commit);
-
-  // create commit
-  // log "create { a: 1 }"
-  const e1 = await e0.commit();
-
-  const e2 = e1.update(data => ({ ...data, b: true }));
-  const e3 = e2.update(data => ({ ...data, c: "Hello World" }));
-
-  // update commit (with commit options)
-  // log "update { a: 1 } { a: 1, b: true, c: 'Hello World' }"
-  const e4 = await e3.commit({
-    db: "my-db",
-    collection: "entities"
-  });
-
-  const e5 = e4.delete();
-
-  // delete commit
-  // log "delete { a: 1, b: true, c: 'Hello World' }"
-  const e6 = await e5.commit();
-
-  // void commit (with fluent API)
-  // log nothing
-  const dead = await mutent
-    .create({}, commit)
-    .update(data => ({ ...data, value: "bye bye" }))
-    .delete()
-    .commit();
-
-  // read entity
-  const r0 = mutent.read({ value: 10 }, commit);
-  const r1 = r0.update(data => ({ ...data, value: -10 }));
-
-  // update commit
-  // log "update { value: 10 } { value: -10 }"
-  const r2 = await r1.commit();
-
-  // error "This entity is immutable"
-  e2.update(data => data);
-}
-
-procedure();
-```
