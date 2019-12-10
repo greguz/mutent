@@ -10,17 +10,22 @@ export type Commit<O> = (source: any, target: any, options?: O) => any
 
 export interface Entity<D, O> {
   update<U, A extends any[]>(mutator: Mutator<D, U, A>, ...args: A): Entity<U, O>
-  delete(): Entity<null, O>
   assign<E>(object: E): Entity<D & E, O>
+  delete(): Entity<null, O>
+  commit(): Entity<D, O>,
   unwrap(options?: O): Promise<D>
   connect<X>(commit: Commit<X>): Entity<D, X>
   release(): Entity<D, any>
 }
 
-interface Context<D, T, O> {
+interface Status<S, T> {
+  source: S,
+  target: T
+}
+
+interface Context<S, T, O> {
   locked: boolean
-  source: Source<D, O>
-  target: Mapper<D, T>
+  reduce: (options?: O) => Promise<Status<S, T>>
   commit: Commit<O>
 }
 
@@ -31,98 +36,123 @@ function noUndef<T> (value: T): T {
   return value
 }
 
-function asConst<T> (data: T) {
-  return () => data
-}
-
-function passthrough<T> (value: T) {
-  return noUndef(value)
-}
-
 function volatile () {
   return Promise.resolve()
 }
 
-async function build<D, O> (factory: Factory<D, O>, options?: O): Promise<D> {
+async function buildSource<D, O> (factory: Factory<D, O>, options?: O): Promise<D> {
   return factory(options)
 }
 
-function extract<D, O> (source: Source<D, O>, options?: O): Promise<D> {
+function extractSource<D, O> (source: Source<D, O>, options?: O): Promise<D> {
   return typeof source === 'function'
-    ? build(source as any, options)
+    ? buildSource(source as any, options)
     : Promise.resolve(source)
 }
 
-function _source<D, T, O> (ctx: Context<D, T, O>, options?: O): Promise<D> {
-  return extract(ctx.source, options)
+function createStatus<S, O> (source: Source<S, O>, options?: O): Promise<Status<null, S>> {
+  return extractSource(source, options).then(target => ({ source: null, target: noUndef(target) }))
 }
 
-async function _unwrap<D, T, O> (
-  ctx: Context<D, T, O>,
-  options?: O
-): Promise<T> {
-  const source = await _source(ctx, options)
-  const target = ctx.target(source)
-  if (source !== null || target !== null) {
-    await ctx.commit(source, target, options)
+function mapStatus<S, T, U> (status: Status<S, T>, mapper: Mapper<T, U>): Status<S, U> {
+  return {
+    source: status.source,
+    target: noUndef(mapper(status.target))
   }
-  return target
 }
 
-function _create<D, T, O> (
-  source: Source<D, O>,
-  target: Mapper<D, T>,
+async function commitStatus<S, T, O> (
+  { source, target }: Status<S, T>,
+  commit: Commit<O>,
+  options?: O
+): Promise<Status<T, T>> {
+  if (source !== null || target !== null) {
+    await commit(source, target, options)
+  }
+  return {
+    source: target,
+    target
+  }
+}
+
+function createContext<S, O> (
+  source: Source<S, O>,
   commit: Commit<O>
-): Context<D, T, O> {
+): Context<null, S, O> {
   return {
     locked: false,
-    source,
-    target,
+    reduce: options => createStatus(source, options),
     commit
   }
 }
 
-function _update<D, T, U, O, A extends any[]> (
+function readContext<S, O> (
+  source: Source<S, O>,
+  commit: Commit<O>
+): Context<S, S, O> {
+  return {
+    locked: false,
+    reduce: options => createStatus(source, options).then(status => commitStatus(status, volatile, options)),
+    commit
+  }
+}
+
+function updateContext<D, T, U, O, A extends any[]> (
   ctx: Context<D, T, O>,
   mutator: Mutator<T, U, A>,
   args: A
-) {
-  return _create(
-    ctx.source,
-    (data: D) => noUndef(mutator(ctx.target(data), ...args)),
-    ctx.commit
-  )
+): Context<D, U, O> {
+  return {
+    locked: false,
+    reduce: options => ctx.reduce(options).then(status => mapStatus(status, data => mutator(data, ...args))),
+    commit: ctx.commit
+  }
 }
 
-function _delete<D, O> (ctx: Context<D, any, O>) {
-  return _create(
-    ctx.source,
-    asConst(null),
-    ctx.commit
-  )
-}
-
-function _assign<D, T, O, E> (ctx: Context<D, T, O>, extension: E) {
-  return _update(
+function assignContext<D, T, O, E> (ctx: Context<D, T, O>, object: E) {
+  return updateContext(
     ctx,
-    data => ({ ...data, ...extension }),
+    data => ({ ...data, ...object }),
     []
   )
 }
 
-function _connect<D, T, O> (ctx: Context<D, T, any>, commit: Commit<O>) {
-  return _create(
-    ctx.source,
-    ctx.target,
-    commit
+function deleteContext<D, O> (ctx: Context<D, any, O>): Context<D, null, O> {
+  return updateContext(
+    ctx,
+    () => null,
+    []
   )
 }
 
-function _release<D, T> (ctx: Context<D, T, any>) {
-  return _connect(ctx, volatile)
+function commitContext<D, T, O> (ctx: Context<D, T, O>): Context<T, T, O> {
+  return {
+    locked: false,
+    commit: ctx.commit,
+    reduce: options => ctx.reduce(options).then(status => commitStatus(status, ctx.commit, options))
+  }
 }
 
-function _lock<D, T, O> (ctx: Context<D, T, O>) {
+function unwrapContext<S, T, O> (
+  ctx: Context<S, T, O>,
+  options?: O
+): Promise<T> {
+  return ctx.reduce(options).then(status => status.target)
+}
+
+function connectContext<D, T, O> (ctx: Context<D, T, any>, commit: Commit<O>): Context<D, T, O> {
+  return {
+    commit,
+    locked: false,
+    reduce: ctx.reduce
+  }
+}
+
+function releaseContext<D, T> (ctx: Context<D, T, any>) {
+  return connectContext(ctx, volatile)
+}
+
+function lockContext<D, T, O> (ctx: Context<D, T, O>) {
   if (ctx.locked) {
     throw new Error('This entity is immutable')
   }
@@ -130,27 +160,28 @@ function _lock<D, T, O> (ctx: Context<D, T, O>) {
   return ctx
 }
 
-function _wrap<D, T, O> (ctx: Context<D, T, O>): Entity<T, O> {
+function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
   return {
-    update: (mutator, ...args) => _wrap(_update(_lock(ctx), mutator, args)),
-    delete: () => _wrap(_delete(_lock(ctx))),
-    assign: object => _wrap(_assign(_lock(ctx), object)),
-    unwrap: options => _unwrap(_lock(ctx), options),
-    connect: commit => _wrap(_connect(_lock(ctx), commit)),
-    release: () => _wrap(_release(_lock(ctx)))
+    update: (mutator, ...args) => wrapContext(updateContext(lockContext(ctx), mutator, args)),
+    assign: object => wrapContext(assignContext(lockContext(ctx), object)),
+    delete: () => wrapContext(deleteContext(lockContext(ctx))),
+    commit: () => wrapContext(commitContext(lockContext(ctx))),
+    unwrap: options => unwrapContext(lockContext(ctx), options),
+    connect: commit => wrapContext(connectContext(lockContext(ctx), commit)),
+    release: () => wrapContext(releaseContext(lockContext(ctx)))
   }
 }
 
-export function create<D, O> (
-  data: D,
+export function create<S, O> (
+  source: Source<S, O>,
   commit: Commit<O> = volatile
-): Entity<D, O> {
-  return _wrap(_create(null, asConst(noUndef(data)), commit))
+): Entity<S, O> {
+  return wrapContext(createContext(source, commit))
 }
 
-export function read<D, O> (
-  source: Source<D, O>,
+export function read<S, O> (
+  source: Source<S, O>,
   commit: Commit<O> = volatile
-): Entity<D, O> {
-  return _wrap(_create(noUndef(source), passthrough, commit))
+): Entity<S, O> {
+  return wrapContext(readContext(source, commit))
 }
