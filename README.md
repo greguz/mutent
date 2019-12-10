@@ -59,15 +59,35 @@ newEntity.update(data => { ...data }) // OK
 oldEntity.update(data => { ...data }) // Error
 ```
 
+It is also possible to use a multi-arguments function directly.
+
+```javascript
+function multiply (data, n) {
+  return {
+    value: data.value * n
+  }
+}
+
+const entity = mutent
+  .create({ value: 12 })
+  .update(multiply, 2)
+
+// entity now contains { value: 24 }
+```
+
 ### Assign
 
 The `assign` method mimics `Object.assign`, so it performs an update by joining the entity data and the passed argument.
 
 ```javascript
 mutent
+  // null
   .create({ a: 1 })
+  // { a: 1 }
   .assign({ b: 2 })
+  // { a: 1, b: 2 }
   .update(data => ({ a: data.a * 2, b: data.b * 2 }))
+  // { a: 2, b: 4 }
 ```
 
 ### Delete
@@ -78,13 +98,11 @@ Tip: you can perform a deletion using the `update` method by returning `null` in
 
 ### Unwrap
 
-When `unwrap` method is called, the data is persisted on the configured datastore (defined throught **commit** function)
-and returned within a `Promise`.
+When `unwrap` method is called, all configured actions are executed, and the resulting data is returned as a `Promise`.
+
+### Commit
 
 To achive data persistence, `create` and `read` functions may accept a **commit** procedure as second argument.
-
-The *commit* function define the way to **write** and **persist** the _entity_ data, and It's called automatically
-anytime that `unwrap` function is fired.
 
 It consists in a function that accepts three arguments and **may** return a `Promise`:
 - `source` data when the entity was loaded the first time (`create` or `read`)
@@ -103,12 +121,15 @@ async function commit (source, target, options) {
   }
 }
 
-async function foo () {
-  // Define a new entity
-  const entity = mutent.create({ message: "Hello World" }, commit)
-  // Call unwrap to commit and retrieve the entity data
-  const data = await entity.unwrap()
-  // All done
+async function run () {
+  const data = await mutent
+    // Creates a new entity
+    .create({ message: "Hello World" }, commit)
+    // Require a commit
+    .commit()
+    // Apply configured actions and expose the resulting data
+    .unwrap()
+
   console.log(data.message)
 }
 ```
