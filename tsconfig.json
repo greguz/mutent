@@ -6,8 +6,10 @@
     "strict": true,
     "noUnusedLocals": true,
     "typeRoots": ["./node_modules/@types"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "rootDir": "src",
+    "outDir": "build"
   },
   "exclude": ["node_modules"],
-  "include": ["index.ts"]
+  "include": ["src/index.ts"]
 }

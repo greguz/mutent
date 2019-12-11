@@ -2,11 +2,10 @@
   "name": "mutent",
   "version": "0.7.0",
   "description": "Keep business logic and other code separated",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "build"
   ],
   "keywords": [
     "business-logic",
@@ -15,7 +14,7 @@
     "immutable"
   ],
   "scripts": {
-    "test:lint": "eslint *.ts",
+    "test:lint": "eslint src/**/*.ts",
     "test:ts": "tsc --noEmit",
     "test:unit": "npm run build && ava",
     "test": "npm run test:ts && npm run test:lint && npm run test:unit",
