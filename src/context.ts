@@ -44,18 +44,18 @@ export function readContext<S, O> (
   return mapContext(createContext(read, write), commitStatus)
 }
 
-export function updateContext<D, T, U, O, A extends any[]> (
-  ctx: Context<D, T, O>,
-  mutator: (data: T, ...args: A) => U,
+export function updateContext<S, T, O, U, A extends any[]> (
+  ctx: Context<S, T, O>,
+  mutator: (data: T, ...args: A) => U | Promise<U>,
   args: A
-): Context<D, U, O> {
+): Context<S, U, O> {
   return mapContext(
     ctx,
     status => mapStatus(status, data => mutator(data, ...args))
   )
 }
 
-export function assignContext<D, T, O, E> (ctx: Context<D, T, O>, object: E) {
+export function assignContext<S, T, O, E> (ctx: Context<S, T, O>, object: E) {
   return updateContext(
     ctx,
     data => ({ ...data, ...object }),
@@ -63,9 +63,9 @@ export function assignContext<D, T, O, E> (ctx: Context<D, T, O>, object: E) {
   )
 }
 
-export function deleteContext<D, O> (
-  ctx: Context<D, any, O>
-): Context<D, null, O> {
+export function deleteContext<S, O> (
+  ctx: Context<S, any, O>
+): Context<S, null, O> {
   return updateContext(
     ctx,
     () => null,
@@ -80,8 +80,8 @@ export function unwrapContext<S, T, O> (
   return ctx.reduce(options).then(status => status.target)
 }
 
-export function commitContext<D, T, O> (
-  ctx: Context<D, T, O>
+export function commitContext<S, T, O> (
+  ctx: Context<S, T, O>
 ): Context<T, T, O> {
   return {
     locked: false,
@@ -90,10 +90,10 @@ export function commitContext<D, T, O> (
   }
 }
 
-export function connectContext<D, T, O> (
-  ctx: Context<D, T, any>,
+export function connectContext<S, T, O> (
+  ctx: Context<S, T, any>,
   write: Write<O>
-): Context<D, T, O> {
+): Context<S, T, O> {
   return {
     locked: false,
     reduce: ctx.reduce,
@@ -101,7 +101,7 @@ export function connectContext<D, T, O> (
   }
 }
 
-export function lockContext<D, T, O> (ctx: Context<D, T, O>) {
+export function lockContext<S, T, O> (ctx: Context<S, T, O>) {
   if (ctx.locked) {
     throw new Error('This entity is immutable')
   }

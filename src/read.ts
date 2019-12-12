@@ -10,24 +10,26 @@ export type Source<T, O> = Factory<T, O> | T
 
 export type Read<T, O> = (options?: O) => Promise<Status<null, T, O>>
 
-async function extractFactory<D, O> (
-  factory: Factory<D, O>,
+async function extractFactory<T, O> (
+  factory: Factory<T, O>,
   options?: O
-): Promise<D> {
+): Promise<T> {
   return factory(options)
 }
 
-function extractSource<D, O> (source: Source<D, O>, options?: O): Promise<D> {
+function extractSource<T, O> (source: Source<T, O>, options?: O): Promise<T> {
   return typeof source === 'function'
     ? extractFactory(source as any, options)
     : Promise.resolve(source)
 }
 
-function extractStatus<S, O> (
-  source: Source<S, O>,
+function extractStatus<T, O> (
+  source: Source<T, O>,
   options?: O
-): Promise<Status<null, S, O>> {
-  return extractSource(source, options).then(target => createStatus(target, options))
+): Promise<Status<null, T, O>> {
+  return extractSource(source, options).then(
+    target => createStatus(target, options)
+  )
 }
 
 export function createReader<T, O> (
