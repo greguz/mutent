@@ -2,10 +2,11 @@
   "name": "mutent",
   "version": "0.8.0",
   "description": "Keep business logic and other code separated",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
+  "main": "mutent.js",
+  "types": "types/index.d.ts",
   "files": [
-    "build"
+    "mutent.js",
+    "types"
   ],
   "keywords": [
     "business-logic",
@@ -18,10 +19,9 @@
     "test:ts": "tsc --noEmit",
     "test:unit": "ava",
     "test": "npm run test:ts && npm run test:lint && npm run test:unit",
-    "build:clean": "rimraf build",
-    "build:types": "tsc --emitDeclarationOnly --declaration",
-    "build:js": "tsc",
-    "build": "npm run build:clean && npm run build:types && npm run build:js",
+    "build:types": "rimraf types && tsc --declaration --emitDeclarationOnly --declarationDir types",
+    "build:js": "rimraf .out && tsc --module es6 && rollup -c",
+    "build": "npm run build:types && npm run build:js",
     "prepublishOnly": "npm test && npm run build"
   },
   "author": "Giacomo Gregoletto",
@@ -37,6 +37,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "rimraf": "^3.0.0",
+    "rollup": "^1.27.11",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3"
   },
