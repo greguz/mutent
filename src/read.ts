@@ -10,11 +10,11 @@ export type Source<T, O> = Factory<T, O> | T
 
 export type Read<T, O> = (options?: O) => Promise<Status<null, T, O>>
 
-async function extractFactory<T, O> (
+function extractFactory<T, O> (
   factory: Factory<T, O>,
   options?: O
 ): Promise<T> {
-  return factory(options)
+  return Promise.resolve(factory(options))
 }
 
 function extractSource<T, O> (source: Source<T, O>, options?: O): Promise<T> {

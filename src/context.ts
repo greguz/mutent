@@ -19,11 +19,13 @@ function mapContext<S, T, O, X, Y> (
   }
 }
 
-async function mapStatus<S, T, O, U> (
+function mapStatus<S, T, O, U> (
   status: Status<S, T, O>,
   mapper: (data: T) => U | Promise<U>
 ): Promise<Status<S, U, O>> {
-  return updateStatus(status, await mapper(status.target))
+  return Promise.resolve(mapper(status.target)).then(
+    target => updateStatus(status, target)
+  )
 }
 
 export function createContext<S, O> (
