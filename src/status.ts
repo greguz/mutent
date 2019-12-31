@@ -1,7 +1,6 @@
-export interface Status<S, T, O> {
+export interface Status<S, T> {
   source: S,
   target: T
-  options?: O
 }
 
 function noUndef<T> (value: T): T {
@@ -11,34 +10,28 @@ function noUndef<T> (value: T): T {
   return value
 }
 
-export function createStatus<T, O> (
-  value: T,
-  options?: O
-): Status<null, T, O> {
+export function createStatus<T> (value: T): Status<null, T> {
   return {
     source: null,
-    target: noUndef(value),
-    options
+    target: noUndef(value)
   }
 }
 
-export function updateStatus<S, T, O, V> (
-  status: Status<S, T, O>,
+export function updateStatus<S, T, V> (
+  status: Status<S, T>,
   value: V
-): Status<S, V, O> {
+): Status<S, V> {
   return {
     source: status.source,
-    target: noUndef(value),
-    options: status.options
+    target: noUndef(value)
   }
 }
 
-export function commitStatus<T, O> (
-  status: Status<any, T, O>
-): Status<T, T, O> {
+export function commitStatus<T> (
+  status: Status<any, T>
+): Status<T, T> {
   return {
     source: status.target,
-    target: status.target,
-    options: status.options
+    target: status.target
   }
 }

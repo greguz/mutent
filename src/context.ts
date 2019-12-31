@@ -4,13 +4,13 @@ import { Write } from './write'
 
 export interface Context<S, T, O> {
   locked: boolean
-  reduce: (options?: O) => Promise<Status<S, T, O>>
+  reduce: (options?: O) => Promise<Status<S, T>>
   write: Write<O>
 }
 
 function mapContext<S, T, O, X, Y> (
   ctx: Context<S, T, O>,
-  mapper: (status: Status<S, T, O>) => Status<X, Y, O> | Promise<Status<X, Y, O>>
+  mapper: (status: Status<S, T>) => Status<X, Y> | Promise<Status<X, Y>>
 ): Context<X, Y, O> {
   return {
     locked: false,
@@ -20,9 +20,9 @@ function mapContext<S, T, O, X, Y> (
 }
 
 function mapStatus<S, T, O, U> (
-  status: Status<S, T, O>,
+  status: Status<S, T>,
   mapper: (data: T) => U | Promise<U>
-): Promise<Status<S, U, O>> {
+): Promise<Status<S, U>> {
   return Promise.resolve(mapper(status.target)).then(
     target => updateStatus(status, target)
   )
@@ -87,7 +87,7 @@ export function commitContext<S, T, O> (
 ): Context<T, T, O> {
   return {
     locked: false,
-    reduce: options => ctx.reduce(options).then(ctx.write),
+    reduce: options => ctx.reduce(options).then(status => ctx.write(status, options)),
     write: ctx.write
   }
 }

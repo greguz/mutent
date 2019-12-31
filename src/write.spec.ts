@@ -7,8 +7,7 @@ test('default writer', async t => {
   const status = await createWriter()(createStatus(42))
   t.deepEqual(status, {
     source: 42,
-    target: 42,
-    options: undefined
+    target: 42
   })
 })
 
@@ -21,8 +20,7 @@ test('sync writer', async t => {
   const status = await createWriter(commit)(createStatus(42))
   t.deepEqual(status, {
     source: 42,
-    target: 42,
-    options: undefined
+    target: 42
   })
 })
 
@@ -35,7 +33,6 @@ test('async writer', async t => {
   const status = await createWriter(commit)(createStatus(42))
   t.deepEqual(status, {
     source: 42,
-    target: 42,
-    options: undefined
+    target: 42
   })
 })
