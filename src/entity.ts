@@ -4,7 +4,6 @@ import {
   readContext,
   assignContext,
   commitContext,
-  connectContext,
   deleteContext,
   lockContext,
   unwrapContext,
@@ -21,8 +20,6 @@ export interface Entity<T, O> {
   delete(): Entity<null, O>
   commit(): Entity<T, O>,
   unwrap(options?: O): Promise<T>
-  connect<C>(commit: Commit<C>): Entity<T, C>
-  release(): Entity<T, any>
 }
 
 function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
@@ -31,9 +28,7 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
     assign: object => wrapContext(assignContext(lockContext(ctx), object)),
     delete: () => wrapContext(deleteContext(lockContext(ctx))),
     commit: () => wrapContext(commitContext(lockContext(ctx))),
-    unwrap: options => unwrapContext(lockContext(ctx), options),
-    connect: commit => wrapContext(connectContext(lockContext(ctx), createWriter(commit))),
-    release: () => wrapContext(connectContext(lockContext(ctx), createWriter()))
+    unwrap: options => unwrapContext(lockContext(ctx), options)
   }
 }
 

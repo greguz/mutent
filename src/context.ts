@@ -92,17 +92,6 @@ export function commitContext<S, T, O> (
   }
 }
 
-export function connectContext<S, T, O> (
-  ctx: Context<S, T, any>,
-  write: Write<O>
-): Context<S, T, O> {
-  return {
-    locked: false,
-    reduce: ctx.reduce,
-    write
-  }
-}
-
 export function lockContext<S, T, O> (ctx: Context<S, T, O>) {
   if (ctx.locked) {
     throw new Error('This entity is immutable')

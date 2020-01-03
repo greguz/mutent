@@ -65,16 +65,6 @@ test('lock', async t => {
     await entity.unwrap()
     await entity.unwrap()
   })
-  t.throws(() => {
-    const entity = create({})
-    entity.connect(() => Promise.resolve())
-    entity.connect(() => Promise.resolve())
-  })
-  t.throws(() => {
-    const entity = create({})
-    entity.release()
-    entity.release()
-  })
 })
 
 test('create', async t => {
@@ -150,25 +140,5 @@ test('assign', async t => {
     .assign({ b: 2 })
     .commit()
     .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('connect', async t => {
-  t.plan(3)
-  const result = await read({ a: 1 }, bind(t))
-    .connect(bind(t, { update: true }))
-    .assign({ b: 2 })
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('release', async t => {
-  t.plan(1)
-  const result = await read({ a: 1 }, bind(t))
-    .release()
-    .assign({ b: 2 })
-    .commit()
-    .unwrap()
   t.deepEqual(result, { a: 1, b: 2 })
 })

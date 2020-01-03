@@ -134,10 +134,6 @@ async function run () {
 }
 ```
 
-It is possible to change the commit function after the entity creation using the `connect` and `release` methods.
-The `connect` method permits to specify a new `commit` function that will replace the current one.
-The `release` method just remove the current `commit` function.
-
 ## Examples
 
 You can check the _examples_ dir inside this repo.
