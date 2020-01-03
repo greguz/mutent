@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 
-import { createEntity as create, readEntity as read } from './entity'
+import { create, read } from './entity'
 
 interface CommitMode {
   create: boolean;
