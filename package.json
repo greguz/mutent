@@ -1,6 +1,6 @@
 {
   "name": "mutent",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Keep business logic and other code separated",
   "main": "mutent.js",
   "types": "types/index.d.ts",
