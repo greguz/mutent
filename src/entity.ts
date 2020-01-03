@@ -12,7 +12,7 @@ import {
 import { Source, createReader } from './read'
 import { Commit, createWriter } from './write'
 
-export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U
+export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
 
 export interface Entity<T, O> {
   update<U, A extends any[]>(mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
