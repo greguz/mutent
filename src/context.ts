@@ -19,7 +19,7 @@ function mapContext<S, T, O, X, Y> (
   }
 }
 
-function mapStatus<S, T, O, U> (
+function mapStatus<S, T, U> (
   status: Status<S, T>,
   mapper: (data: T) => U | Promise<U>
 ): Promise<Status<S, U>> {
