@@ -77,7 +77,7 @@ const entity = mutent
 
 ### Assign
 
-The `assign` method mimics `Object.assign`, so it performs an update by joining the entity data and the passed argument.
+The `assign` method mimics `Object.assign`, so it performs an update by joining the entity data with the passed argument.
 
 ```javascript
 mutent
@@ -99,6 +99,15 @@ Tip: you can perform a deletion using the `update` method by returning `null` in
 ### Unwrap
 
 When `unwrap` method is called, all configured actions are executed, and the resulting data is returned as a `Promise`.
+
+```javascript
+// { a: 2, b: 4 }
+const data = await mutent
+  .read({ a: 1 })
+  .assign({ b: 2 })
+  .update(data => ({ a: data.a * 2, b: data.b * 2 }))
+  .unwrap()
+```
 
 ### Commit
 
@@ -128,12 +137,8 @@ async function run () {
     // Require a commit
     .commit()
     // Apply configured actions and expose the resulting data
-    .unwrap()
+    .unwrap({ some: 'option' })
 
   console.log(data.message)
 }
 ```
-
-## Examples
-
-You can check the _examples_ dir inside this repo.
