@@ -33,12 +33,18 @@ function bind (file: string): mutent.Commit<Options> {
   return (source, target, options) => commit(file, source, target, options)
 }
 
-export function create<T> (file: string, data: T) {
-  return mutent.create<T, Options>(data, bind(file))
+export function createFile<T> (file: string, data: T) {
+  return mutent.createOne(data, bind(file))
 }
 
-export async function read<T = any> (file: string, options?: Options) {
+async function readJSON (file: string, options: Options = {}) {
   const content = await fs.promises.readFile(file, options)
-  const data = JSON.parse(content.toString('utf8'))
-  return mutent.read<T, Options>(data, bind(file))
+  return JSON.parse(content.toString(options.encoding))
+}
+
+export function readFile<T = any> (file: string) {
+  return mutent.readOne<T, Options>(
+    options => readJSON(file, options),
+    bind(file)
+  )
 }

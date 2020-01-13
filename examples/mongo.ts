@@ -1,12 +1,18 @@
-import { Collection, FilterQuery, ObjectId, ClientSession } from 'mongodb'
+import { Collection, FilterQuery, ObjectId, CommonOptions } from 'mongodb'
 
 import uniq from 'lodash/uniq'
 import isPlainObject from 'lodash/isPlainObject'
 import set from 'lodash/set'
 
-import * as mutent from '../index'
+import * as mutent from '..'
 
-interface Item {
+export type Filter<T> = string | ObjectId | FilterQuery<T>
+
+export interface Options extends CommonOptions {
+  sort?: any;
+}
+
+interface Field {
   path: string[];
   oldValue: any;
   newValue: any;
@@ -14,21 +20,21 @@ interface Item {
 
 function compareDocs (oldDoc: any, newDoc: any) {
   const keys = uniq(Object.keys(oldDoc).concat(Object.keys(newDoc)))
-  const items: Item[] = []
+  const fields: Field[] = []
 
   for (const key of keys) {
     const oldValue = oldDoc[key]
     const newValue = newDoc[key]
 
     if (isPlainObject(oldValue) && isPlainObject(newValue)) {
-      items.push(
-        ...compareDocs(oldValue, newValue).map(item => ({
-          ...item,
-          path: [key, ...item.path]
+      fields.push(
+        ...compareDocs(oldValue, newValue).map(field => ({
+          ...field,
+          path: [key, ...field.path]
         }))
       )
     } else {
-      items.push({
+      fields.push({
         path: [key],
         oldValue,
         newValue
@@ -36,7 +42,7 @@ function compareDocs (oldDoc: any, newDoc: any) {
     }
   }
 
-  return items
+  return fields
 }
 
 function buildUpdateQuery (oldDoc: any, newDoc: any): any {
@@ -65,47 +71,47 @@ function parseFilter (filter: any): any {
   }
 }
 
-export interface Options {
-  session?: ClientSession;
-  sort?: object;
-}
-
 async function commit (
   collection: Collection<any>,
   source: any,
   target: any,
-  options: Options = {}
+  options?: Options
 ) {
-  const { session } = options
-
   if (source === null) {
-    await collection.insertOne(target, { session })
+    await collection.insertOne(target, options)
   } else if (target === null) {
-    await collection.deleteOne({ _id: source._id }, { session })
+    await collection.deleteOne({ _id: source._id }, options)
   } else {
     await collection.updateOne(
       { _id: source._id },
       buildUpdateQuery(source, target),
-      { session }
+      options
     )
   }
 }
 
 function bind (collection: Collection<any>): mutent.Commit<Options> {
-  return (source, target, options) =>
-    commit(collection, source, target, options)
+  return (s, t, o) => commit(collection, s, t, o)
 }
 
-export function create<T> (collection: Collection<any>, data: T) {
-  return mutent.create(data, bind(collection))
+export function insertOne<T> (collection: Collection<any>, data: T) {
+  return mutent.createOne(data, bind(collection))
 }
 
-export async function read<T> (
-  collection: Collection<T>,
-  filter: string | ObjectId | FilterQuery<T>,
-  options: Options = {}
-) {
-  const { session, sort } = options
-  const data = await collection.findOne(parseFilter(filter), { session, sort })
-  return data ? mutent.read(data, bind(collection)) : null
+export function findOne<T> (collection: Collection<T>, filter: Filter<T>) {
+  return mutent.readOne(
+    options => collection.findOne(parseFilter(filter), options),
+    bind(collection)
+  )
+}
+
+export function insertMany<T> (collection: Collection<T>, data: T[]) {
+  return mutent.createMany(data, bind(collection))
+}
+
+export function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
+  return mutent.readMany(
+    collection.find(parseFilter(filter)),
+    bind(collection)
+  )
 }
