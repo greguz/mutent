@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 
-import { createOne as create, readOne as read } from './entity'
+import { createOne, readOne } from './entity'
 
 interface CommitMode {
   create: boolean;
@@ -41,27 +41,27 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
 
 test('lock', async t => {
   t.throws(() => {
-    const entity = create({})
+    const entity = createOne({})
     entity.update(data => data)
     entity.update(data => data)
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createOne({})
     entity.assign({})
     entity.assign({})
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createOne({})
     entity.delete()
     entity.delete()
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createOne({})
     entity.commit()
     entity.commit()
   })
   await t.throwsAsync(async () => {
-    const entity = create({})
+    const entity = createOne({})
     await entity.unwrap()
     await entity.unwrap()
   })
@@ -69,7 +69,7 @@ test('lock', async t => {
 
 test('create', async t => {
   t.plan(3)
-  const result = await create({ a: 1 }, bind(t, { create: true }))
+  const result = await createOne({ a: 1 }, bind(t, { create: true }))
     .update(data => ({ ...data, b: 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -78,7 +78,7 @@ test('create', async t => {
 
 test('update', async t => {
   t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { update: true }))
+  const result = await readOne({ a: 1 }, bind(t, { update: true }))
     .update(data => ({ ...data, b: 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -87,7 +87,7 @@ test('update', async t => {
 
 test('delete', async t => {
   t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { delete: true }))
+  const result = await readOne({ a: 1 }, bind(t, { delete: true }))
     .update(data => ({ ...data, b: 2 }))
     .delete()
     .commit()
@@ -97,7 +97,7 @@ test('delete', async t => {
 
 test('void', async t => {
   t.plan(1)
-  const result = await create({ a: 1 }, bind(t))
+  const result = await createOne({ a: 1 }, bind(t))
     .update(data => ({ ...data, b: 2 }))
     .delete()
     .commit()
@@ -108,7 +108,7 @@ test('void', async t => {
 test('read sync', async t => {
   t.plan(3)
   const fetch = () => ({ a: 1 })
-  const result = await read(fetch, bind(t, { update: true }))
+  const result = await readOne(fetch, bind(t, { update: true }))
     .update(data => ({ ...data, b: 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -118,7 +118,7 @@ test('read sync', async t => {
 test('read async', async t => {
   t.plan(3)
   const fetch = async () => ({ a: 1 })
-  const result = await read(fetch, bind(t, { update: true }))
+  const result = await readOne(fetch, bind(t, { update: true }))
     .update(data => ({ ...data, b: 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -127,7 +127,7 @@ test('read async', async t => {
 
 test('mutator', async t => {
   t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { update: true }))
+  const result = await readOne({ a: 1 }, bind(t, { update: true }))
     .update((data, b: number) => ({ ...data, b }), 2)
     .commit()
     .unwrap({ db: 'test' })
@@ -136,7 +136,7 @@ test('mutator', async t => {
 
 test('assign', async t => {
   t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { update: true }))
+  const result = await readOne({ a: 1 }, bind(t, { update: true }))
     .assign({ b: 2 })
     .commit()
     .unwrap({ db: 'test' })
