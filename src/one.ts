@@ -6,32 +6,32 @@ export type SyncFactory<T, O> = (options?: O) => T
 
 export type Factory<T, O> = AsyncFactory<T, O> | SyncFactory<T, O>
 
-export type Source<T, O> = Factory<T, O> | T
+export type One<T, O> = Factory<T, O> | T
 
 export type Read<T, O> = (options?: O) => Promise<Status<null, T>>
 
 function extractFactory<T, O> (
-  factory: Factory<T, O>,
+  one: Factory<T, O>,
   options?: O
 ): Promise<T> {
-  return Promise.resolve(factory(options))
+  return Promise.resolve(one(options))
 }
 
-function extractSource<T, O> (source: Source<T, O>, options?: O): Promise<T> {
-  return typeof source === 'function'
-    ? extractFactory(source as any, options)
-    : Promise.resolve(source)
+function extractSource<T, O> (one: One<T, O>, options?: O): Promise<T> {
+  return typeof one === 'function'
+    ? extractFactory(one as any, options)
+    : Promise.resolve(one)
 }
 
 function extractStatus<T, O> (
-  source: Source<T, O>,
+  one: One<T, O>,
   options?: O
 ): Promise<Status<null, T>> {
-  return extractSource(source, options).then(target => createStatus(target))
+  return extractSource(one, options).then(target => createStatus(target))
 }
 
 export function createReader<T, O> (
-  source: Source<T, O>
+  one: One<T, O>
 ): Read<T, O> {
-  return options => extractStatus(source, options)
+  return options => extractStatus(one, options)
 }

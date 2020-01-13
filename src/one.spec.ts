@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { createReader } from './read'
+import { createReader } from './one'
 
 test('read data', async t => {
   const status = await createReader(42)()
