@@ -110,7 +110,7 @@ export function insertMany<T> (collection: Collection<T>, data: T[]) {
 }
 
 export function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
-  return mutent.readMany(
+  return mutent.readMany<T, Options>(
     collection.find(parseFilter(filter)),
     bind(collection)
   )
