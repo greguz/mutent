@@ -27,6 +27,7 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^13.1.6",
     "@typescript-eslint/eslint-plugin": "^2.14.0",
     "@typescript-eslint/parser": "^2.14.0",
     "ava": "^2.4.0",
@@ -56,5 +57,8 @@
     "require": [
       "ts-node/register"
     ]
+  },
+  "engines": {
+    "node": ">=10.0.0"
   }
 }
