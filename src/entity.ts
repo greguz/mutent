@@ -120,14 +120,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
   }
 }
 
-export function createOne<T, O> (
+export function create<T, O> (
   one: One<T, O>,
   commit?: Commit<O>
 ): Entity<T, O> {
   return wrapContext(createContext(createReader(one), createWriter(commit)))
 }
 
-export function readOne<T, O> (
+export function read<T, O> (
   one: One<T, O>,
   commit?: Commit<O>
 ): Entity<T, O> {

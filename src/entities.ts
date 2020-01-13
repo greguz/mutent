@@ -1,6 +1,6 @@
 import { Readable, Writable, pipeline } from 'stream'
 
-import { Entity, Mutator, createOne, readOne } from './entity'
+import { Entity, Mutator, create, read } from './entity'
 import { Many, toStream } from './many'
 import { Commit } from './write'
 
@@ -26,7 +26,7 @@ function createContext<T, O> (
   return {
     locked: false,
     stream,
-    mapper: data => createOne(data, commit)
+    mapper: data => create(data, commit)
   }
 }
 
@@ -37,7 +37,7 @@ function readContext<T, O> (
   return {
     locked: false,
     stream,
-    mapper: data => readOne(data, commit)
+    mapper: data => read(data, commit)
   }
 }
 
@@ -126,14 +126,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
   }
 }
 
-export function createMany<T = any, O = any> (
+export function insert<T = any, O = any> (
   many: Many<T>,
   commit?: Commit<O>
 ): Entities<T, O> {
   return wrapContext(createContext(toStream(many), commit))
 }
 
-export function readMany<T = any, O = any> (
+export function find<T = any, O = any> (
   many: Many<T>,
   commit?: Commit<O>
 ): Entities<T, O> {

@@ -34,7 +34,7 @@ function bind (file: string): mutent.Commit<Options> {
 }
 
 export function createFile<T> (file: string, data: T) {
-  return mutent.createOne(data, bind(file))
+  return mutent.create(data, bind(file))
 }
 
 async function readJSON (file: string, options: Options = {}) {
@@ -43,7 +43,7 @@ async function readJSON (file: string, options: Options = {}) {
 }
 
 export function readFile<T = any> (file: string) {
-  return mutent.readOne<T, Options>(
+  return mutent.read<T, Options>(
     options => readJSON(file, options),
     bind(file)
   )

@@ -16,7 +16,7 @@ This library provides a convenient way to manipulate entities and organize the m
 The `create` function returns a new _entity_.
 
 ```javascript
-const entity = mutent.createOne({
+const entity = mutent.create({
   username: "pfudor",
   password: "PinkFluffyUnicornDancingOnRainbows"
 })
@@ -30,9 +30,9 @@ and we just read the data from the source.
 It supports **lazy readings** by passing a function as first argument.
 
 ```javascript
-const e0 = mutent.readOne({ comment: "Pass the entity data directly" })
-const e1 = mutent.readOne(() => ({ comment: "Lazy read with functions" }))
-const e2 = mutent.readOne(async () => ({ comment: "Lazy (async) read with promises" }))
+const e0 = mutent.read({ comment: "Pass the entity data directly" })
+const e1 = mutent.read(() => ({ comment: "Lazy read with functions" }))
+const e2 = mutent.read(async () => ({ comment: "Lazy (async) read with promises" }))
 ```
 
 ### Update
@@ -46,7 +46,7 @@ a double update to the same entity, an error is raised.
 This ensure that we are always working with the last version of the entity.
 
 ```javascript
-const oldEntity = mutent.createOne({ value: 12 })
+const oldEntity = mutent.create({ value: 12 })
 
 const newEntity = oldEntity.update(data => {
   return {
@@ -69,7 +69,7 @@ function multiply (data, n) {
 }
 
 const entity = mutent
-  .createOne({ value: 12 })
+  .create({ value: 12 })
   .update(multiply, 2)
 
 // entity now contains { value: 24 }
@@ -82,7 +82,7 @@ The `assign` method mimics `Object.assign`, so it performs an update by joining 
 ```javascript
 mutent
   // null
-  .createOne({ a: 1 })
+  .create({ a: 1 })
   // { a: 1 }
   .assign({ b: 2 })
   // { a: 1, b: 2 }
@@ -103,7 +103,7 @@ When `unwrap` method is called, all configured actions are executed, and the res
 ```javascript
 // { a: 2, b: 4 }
 const data = await mutent
-  .readOne({ a: 1 })
+  .read({ a: 1 })
   .assign({ b: 2 })
   .update(data => ({ a: data.a * 2, b: data.b * 2 }))
   .unwrap()
@@ -133,7 +133,7 @@ async function commit (source, target, options) {
 async function run () {
   const data = await mutent
     // Creates a new entity
-    .createOne({ message: "Hello World" }, commit)
+    .create({ message: "Hello World" }, commit)
     // Require a commit
     .commit()
     // Apply configured actions and expose the resulting data

@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 
-import { createMany, readMany } from './entities'
+import { insert, find } from './entities'
 
 interface CommitMode {
   create: boolean;
@@ -53,27 +53,27 @@ function getItems (count: number = 16) {
 
 test('lock', async t => {
   t.throws(() => {
-    const entities = createMany([])
+    const entities = insert([])
     entities.update(data => data)
     entities.update(data => data)
   })
   t.throws(() => {
-    const entities = createMany([])
+    const entities = insert([])
     entities.assign({})
     entities.assign({})
   })
   t.throws(() => {
-    const entities = createMany([])
+    const entities = insert([])
     entities.delete()
     entities.delete()
   })
   t.throws(() => {
-    const entities = createMany([])
+    const entities = insert([])
     entities.commit()
     entities.commit()
   })
   await t.throwsAsync(async () => {
-    const entities = createMany([])
+    const entities = insert([])
     await entities.unwrap()
     await entities.unwrap()
   })
@@ -81,7 +81,7 @@ test('lock', async t => {
 
 test('create', async t => {
   t.plan(35)
-  const results = await createMany(getItems(), bind(t, { create: true }))
+  const results = await insert(getItems(), bind(t, { create: true }))
     .commit()
     .unwrap({ db: 'test' })
   t.is(results.length, 16)
@@ -91,7 +91,7 @@ test('create', async t => {
 
 test('update', async t => {
   t.plan(35)
-  const results = await readMany(getItems(), bind(t, { update: true }))
+  const results = await find(getItems(), bind(t, { update: true }))
     .update(data => ({ value: data.value / 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -102,7 +102,7 @@ test('update', async t => {
 
 test('delete', async t => {
   t.plan(35)
-  const results = await readMany(getItems(), bind(t, { delete: true }))
+  const results = await find(getItems(), bind(t, { delete: true }))
     .delete()
     .commit()
     .unwrap({ db: 'test' })

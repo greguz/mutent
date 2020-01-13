@@ -95,22 +95,22 @@ function bind (collection: Collection<any>): mutent.Commit<Options> {
 }
 
 export function insertOne<T> (collection: Collection<any>, data: T) {
-  return mutent.createOne(data, bind(collection))
+  return mutent.create(data, bind(collection))
 }
 
 export function findOne<T> (collection: Collection<T>, filter: Filter<T>) {
-  return mutent.readOne(
+  return mutent.read(
     options => collection.findOne(parseFilter(filter), options),
     bind(collection)
   )
 }
 
 export function insertMany<T> (collection: Collection<T>, data: T[]) {
-  return mutent.createMany(data, bind(collection))
+  return mutent.insert(data, bind(collection))
 }
 
 export function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
-  return mutent.readMany<T, Options>(
+  return mutent.find<T, Options>(
     collection.find(parseFilter(filter)),
     bind(collection)
   )
