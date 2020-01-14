@@ -31,8 +31,8 @@ It supports **lazy readings** by passing a function as first argument.
 
 ```javascript
 const e0 = mutent.read({ comment: "Pass the entity data directly" })
-const e1 = mutent.read(() => ({ comment: "Lazy read with functions" }))
-const e2 = mutent.read(async () => ({ comment: "Lazy (async) read with promises" }))
+const e1 = mutent.read(options => ({ comment: "Lazy read with functions" }))
+const e2 = mutent.read(async options => ({ comment: "Lazy (async) read with promises" }))
 ```
 
 ### Update
@@ -141,4 +141,50 @@ async function run () {
 
   console.log(data.message)
 }
+```
+
+### Insert
+
+It is also possible to insert multiple entities and operate on them with the `insert` function.
+
+```javascript
+function commit (source, target, options) {
+  // 1st call create target 'A'
+  // 2nd call create target 'B'
+  // 3rd call create target 'C'
+  // 4th call create target 'D'
+}
+
+mutent.insert(['A', 'C', 'D', 'C'], commit)
+  .commit()
+  .unwrap()
+```
+
+### Find
+
+The "reading" counterpart of the `insert` function is `find` function.
+
+```javascript
+function commit (source, target, options) {
+  // 1st call update source 'A' with target 'a'
+  // 2nd call update source 'B' with target 'b'
+  // 3rd call update source 'C' with target 'c'
+  // 4th call update source 'D' with target 'd'
+}
+
+mutent.find(['A', 'B', 'C', 'D'], commit)
+  .update(data => data.toLowerCase())
+  .commit()
+  .unwrap()
+```
+
+It support lazy loading, promises and readable streams (or a combination of those).
+
+```javascript
+mutent.find([...])
+mutent.find(new Readable())
+mutent.find(options => [...])
+mutent.find(options => new Readable())
+mutent.find(async options => [...])
+mutent.find(async options => new Readable())
 ```
