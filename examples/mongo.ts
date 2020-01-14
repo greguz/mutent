@@ -111,7 +111,7 @@ export function insertMany<T> (collection: Collection<T>, data: T[]) {
 
 export function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
   return mutent.find<T, Options>(
-    collection.find(parseFilter(filter)),
+    options => collection.find(parseFilter(filter), options),
     bind(collection)
   )
 }

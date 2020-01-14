@@ -1,5 +1,5 @@
-import { Read, One, createReader } from './one'
-import { Status, updateStatus, commitStatus } from './status'
+import { One, getOne } from './one'
+import { Status, updateStatus, commitStatus, createStatus } from './status'
 import { Write, Commit, createWriter } from './write'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
@@ -39,21 +39,21 @@ function mapStatus<S, T, U> (
 }
 
 function createContext<T, O> (
-  read: Read<T, O>,
+  one: One<T, O>,
   write: Write<O>
 ): Context<null, T, O> {
   return {
     locked: false,
-    reduce: read,
+    reduce: options => getOne(one, options).then(createStatus),
     write
   }
 }
 
 function readContext<T, O> (
-  read: Read<T, O>,
+  one: One<T, O>,
   write: Write<O>
 ): Context<T, T, O> {
-  return mapContext(createContext(read, write), commitStatus)
+  return mapContext(createContext(one, write), commitStatus)
 }
 
 function updateContext<S, T, O, U, A extends any[]> (
@@ -124,12 +124,12 @@ export function create<T, O> (
   one: One<T, O>,
   commit?: Commit<O>
 ): Entity<T, O> {
-  return wrapContext(createContext(createReader(one), createWriter(commit)))
+  return wrapContext(createContext(one, createWriter(commit)))
 }
 
 export function read<T, O> (
   one: One<T, O>,
   commit?: Commit<O>
 ): Entity<T, O> {
-  return wrapContext(readContext(createReader(one), createWriter(commit)))
+  return wrapContext(readContext(one, createWriter(commit)))
 }

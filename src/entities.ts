@@ -1,7 +1,7 @@
-import { Readable, Writable, pipeline } from 'stream'
+import { Writable, pipeline, Readable } from 'stream'
 
 import { Entity, Mutator, create, read } from './entity'
-import { Many, toStream } from './many'
+import { Many, getMany } from './many'
 import { Commit } from './write'
 
 export interface Entities<T, O> {
@@ -15,28 +15,28 @@ export interface Entities<T, O> {
 
 interface Context<S, T, O> {
   locked: boolean
-  stream: Readable
+  extract: (options?: O) => Promise<Readable>
   mapper: (data: S) => Entity<T, O>
 }
 
 function createContext<T, O> (
-  stream: Readable,
+  many: Many<T, O>,
   commit?: Commit<O>
 ): Context<T, T, O> {
   return {
     locked: false,
-    stream,
+    extract: options => getMany(many, options),
     mapper: data => create(data, commit)
   }
 }
 
 function readContext<T, O> (
-  stream: Readable,
+  many: Many<T, O>,
   commit?: Commit<O>
 ): Context<T, T, O> {
   return {
     locked: false,
-    stream,
+    extract: options => getMany(many, options),
     mapper: data => read(data, commit)
   }
 }
@@ -47,7 +47,7 @@ function mapContext<S, T, U, O> (
 ): Context<S, U, O> {
   return {
     locked: false,
-    stream: ctx.stream,
+    extract: ctx.extract,
     mapper: (data: S) => mapper(ctx.mapper(data))
   }
 }
@@ -80,11 +80,11 @@ function commitContext<S, T, O> (
 }
 
 function unwrapContext<S, T, O> (ctx: Context<S, T, O>, options?: O) {
-  return new Promise<T[]>((resolve, reject) => {
+  return ctx.extract(options).then(stream => new Promise<T[]>((resolve, reject) => {
     const result: T[] = []
 
     pipeline(
-      ctx.stream,
+      stream,
       new Writable({
         objectMode: true,
         write (chunk, encoding, callback) {
@@ -105,7 +105,7 @@ function unwrapContext<S, T, O> (ctx: Context<S, T, O>, options?: O) {
         }
       }
     )
-  })
+  }))
 }
 
 function lockContext<S, T, O> (ctx: Context<S, T, O>) {
@@ -127,15 +127,15 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
 }
 
 export function insert<T = any, O = any> (
-  many: Many<T>,
+  many: Many<T, O>,
   commit?: Commit<O>
 ): Entities<T, O> {
-  return wrapContext(createContext(toStream(many), commit))
+  return wrapContext(createContext(many, commit))
 }
 
 export function find<T = any, O = any> (
-  many: Many<T>,
+  many: Many<T, O>,
   commit?: Commit<O>
 ): Entities<T, O> {
-  return wrapContext(readContext(toStream(many), commit))
+  return wrapContext(readContext(many, commit))
 }
