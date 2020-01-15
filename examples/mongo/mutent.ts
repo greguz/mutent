@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq'
 import isPlainObject from 'lodash/isPlainObject'
 import set from 'lodash/set'
 
-import * as mutent from '..'
+import * as mutent from '../..'
 
 export type Filter<T> = string | ObjectId | FilterQuery<T>
 
@@ -94,7 +94,7 @@ function bind (collection: Collection<any>): mutent.Commit<Options> {
   return (s, t, o) => commit(collection, s, t, o)
 }
 
-export function insertOne<T> (collection: Collection<any>, data: T) {
+export function insertOne<T> (collection: Collection<T>, data: T) {
   return mutent.create(data, bind(collection))
 }
 
