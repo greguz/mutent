@@ -37,7 +37,7 @@ export default async function server (db: Db) {
     .findMany({ username: /^a/i })
     // UpperCase the username
     .update(toUpperCase)
-    // Concat a char
+    // Set as disabled
     .update(_.set, "disabled", true)
     // Write
     .commit()
