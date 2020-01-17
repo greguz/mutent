@@ -1,4 +1,4 @@
-import { Readable } from 'stream'
+import { Readable, readArray } from 'fluido'
 
 export type AsyncReadable<O> = (options?: O) => Promise<Readable>
 
@@ -16,28 +16,12 @@ export type Many<T, O> =
   | Readable
   | T[]
 
-function wrapArray (arr: any[]) {
-  let index = 0
-  return new Readable({
-    objectMode: true,
-    read () {
-      let flowing = true
-      while (flowing && index < arr.length) {
-        flowing = this.push(arr[index++])
-      }
-      if (index >= arr.length) {
-        this.push(null)
-      }
-    }
-  })
-}
-
 export function getMany<T, O> (
   many: Many<T, O>,
   options?: O
 ): Promise<Readable> {
   if (Array.isArray(many)) {
-    return Promise.resolve(wrapArray(many))
+    return Promise.resolve(readArray(many))
   } else if (typeof many === 'function') {
     return Promise.resolve(many(options)).then(getMany)
   } else {

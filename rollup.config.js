@@ -4,5 +4,5 @@ export default {
     file: 'mutent.js',
     format: 'cjs'
   },
-  external: ['stream']
+  external: ['fluido']
 }

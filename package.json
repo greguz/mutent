@@ -26,6 +26,9 @@
   },
   "author": "Giacomo Gregoletto",
   "license": "MIT",
+  "dependencies": {
+    "fluido": "^0.15.0"
+  },
   "devDependencies": {
     "@types/lodash": "^4.14.149",
     "@types/mongodb": "^3.3.14",
@@ -59,8 +62,5 @@
     "require": [
       "ts-node/register"
     ]
-  },
-  "engines": {
-    "node": ">=10.0.0"
   }
 }

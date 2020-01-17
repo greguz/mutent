@@ -1,11 +1,11 @@
 import test from 'ava'
-import { Readable } from 'stream'
+import { isReadable } from 'fluido'
 
 import { getMany } from './many'
 
 test('read array', async t => {
   const value = await getMany(['test'])
-  t.is(value instanceof Readable, true)
+  t.is(isReadable(value), true)
 })
 
 // test('read promised array', async t => {
@@ -15,10 +15,10 @@ test('read array', async t => {
 
 test('extract array', async t => {
   const value = await getMany(() => ['test'])
-  t.is(value instanceof Readable, true)
+  t.is(isReadable(value), true)
 })
 
 test('extract promised array', async t => {
   const value = await getMany(() => Promise.resolve(['test']))
-  t.is(value instanceof Readable, true)
+  t.is(isReadable(value), true)
 })

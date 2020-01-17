@@ -1,15 +1,20 @@
-import { Writable, pipeline, Readable } from 'stream'
+import { Readable, collect, transform, subscribe } from 'fluido'
 
 import { Entity, Mutator, create, read } from './entity'
 import { Many, getMany } from './many'
 import { Commit } from './write'
+
+export interface EntitiesOptions {
+  concurrency?: number
+  highWaterMark?: number
+}
 
 export interface Entities<T, O> {
   update<U, A extends any[]>(mutator: Mutator<T, U, A>, ...args: A): Entities<U, O>
   assign<E>(object: E): Entities<T & E, O>
   delete(): Entities<null, O>
   commit(): Entities<T, O>,
-  unwrap(options?: O): Promise<T[]>
+  unwrap(options?: O & EntitiesOptions): Promise<T[]>
   // reduce: any
 }
 
@@ -79,33 +84,23 @@ function commitContext<S, T, O> (
   return mapContext(ctx, entity => entity.commit())
 }
 
-function unwrapContext<S, T, O> (ctx: Context<S, T, O>, options?: O) {
-  return ctx.extract(options).then(stream => new Promise<T[]>((resolve, reject) => {
-    const result: T[] = []
-
-    pipeline(
+function unwrapContext<S, T, O> (ctx: Context<S, T, O>, options: any = {}) {
+  return ctx.extract(options).then(stream =>
+    subscribe(
       stream,
-      new Writable({
+      transform({
+        concurrency: options.concurrency,
+        highWaterMark: options.highWaterMark,
         objectMode: true,
-        write (chunk, encoding, callback) {
-          ctx.mapper(chunk)
+        transform (data) {
+          return ctx.mapper(data)
             .unwrap(options)
-            .then(data => {
-              result.push(data)
-              callback()
-            })
-            .catch(callback)
+            .then(result => result === null ? undefined : result)
         }
       }),
-      err => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(result)
-        }
-      }
+      collect(false)
     )
-  }))
+  )
 }
 
 function lockContext<S, T, O> (ctx: Context<S, T, O>) {
