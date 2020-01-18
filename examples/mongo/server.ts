@@ -33,12 +33,12 @@ export default async function server (db: Db) {
     .unwrap()
 
   const updatedUsers = await wrapped
-    // All users with username starting with an "a"
+    // All users with username starting with an 'a'
     .findMany({ username: /^a/i })
     // UpperCase the username
     .update(toUpperCase)
     // Set as disabled
-    .update(_.set, "disabled", true)
+    .update(_.set, 'disabled', true)
     // Write
     .commit()
     // Execute
@@ -48,7 +48,7 @@ export default async function server (db: Db) {
     // All users
     .findMany({})
     // Get the username
-    .update(_.get, "username")
+    .update(_.get, 'username')
     // Execute (no writes)
     .unwrap()
 

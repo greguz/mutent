@@ -17,8 +17,8 @@ The `create` function returns a new _entity_.
 
 ```javascript
 const entity = mutent.create({
-  username: "pfudor",
-  password: "PinkFluffyUnicornDancingOnRainbows"
+  username: 'pfudor',
+  password: 'PinkFluffyUnicornDancingOnRainbows'
 })
 ```
 
@@ -30,9 +30,9 @@ and we just read the data from the source.
 It supports **lazy readings** by passing a function as first argument.
 
 ```javascript
-const e0 = mutent.read({ comment: "Pass the entity data directly" })
-const e1 = mutent.read(options => ({ comment: "Lazy read with functions" }))
-const e2 = mutent.read(async options => ({ comment: "Lazy (async) read with promises" }))
+const e0 = mutent.read({ comment: 'Pass the entity data directly' })
+const e1 = mutent.read(options => ({ comment: 'Lazy read with functions' }))
+const e2 = mutent.read(async options => ({ comment: 'Lazy (async) read with promises' }))
 ```
 
 ### Update
@@ -133,7 +133,7 @@ async function commit (source, target, options) {
 async function run () {
   const data = await mutent
     // Creates a new entity
-    .create({ message: "Hello World" }, commit)
+    .create({ message: 'Hello World' }, commit)
     // Require a commit
     .commit()
     // Apply configured actions and expose the resulting data
@@ -162,7 +162,7 @@ mutent.insert(['A', 'C', 'D', 'C'], commit)
 
 ### Find
 
-The "reading" counterpart of the `insert` function is `find` function.
+The reading counterpart of the `insert` function is `find` function.
 
 ```javascript
 function commit (source, target, options) {
