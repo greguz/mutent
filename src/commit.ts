@@ -7,7 +7,7 @@ export function applyCommit<S, T, O> (
   commit?: Commit<O>,
   options?: O
 ): Promise<Status<T, T>> {
-  if (commit) {
+  if (commit && (status.source as any) !== status.target) {
     return Promise.resolve(commit(status.source, status.target, options)).then(
       () => commitStatus(status)
     )
