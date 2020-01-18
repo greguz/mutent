@@ -1,4 +1,4 @@
-import { Readable, collect, transform, subscribe } from 'fluido'
+import { Readable, transform, subscribe } from 'fluido'
 
 import { Entity, Mutator, create, read } from './entity'
 import { Many, getMany } from './many'
@@ -84,22 +84,26 @@ function commitContext<S, T, O> (
   return mapContext(ctx, entity => entity.commit())
 }
 
-function unwrapContext<S, T, O> (ctx: Context<S, T, O>, options: any = {}) {
-  return ctx.extract(options).then(stream =>
-    subscribe(
-      stream,
-      transform({
-        concurrency: options.concurrency,
-        highWaterMark: options.highWaterMark,
-        objectMode: true,
-        transform (data) {
-          return ctx.mapper(data)
-            .unwrap(options)
-            .then(result => result === null ? undefined : result)
-        }
-      }),
-      collect(false)
-    )
+function createReducer (ctx: Context<any, any, any>, options: any) {
+  const results: any[] = []
+  function push (result: any) {
+    results.push(result)
+  }
+  return transform({
+    objectMode: true,
+    transform (data) {
+      return ctx.mapper(data).unwrap(options).then(push)
+    },
+    flush (callback) {
+      this.push(results)
+      callback()
+    }
+  })
+}
+
+function unwrapContext (ctx: Context<any, any, any>, options: any = {}) {
+  return ctx.extract(options).then(
+    stream => subscribe(stream, createReducer(ctx, options))
   )
 }
 

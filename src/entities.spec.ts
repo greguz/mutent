@@ -101,10 +101,12 @@ test('update', async t => {
 })
 
 test('delete', async t => {
-  t.plan(33)
+  t.plan(35)
   const results = await find(getItems(), bind(t, { delete: true }))
     .delete()
     .commit()
     .unwrap({ db: 'test' })
-  t.is(results.length, 0)
+  t.is(results.length, 16)
+  t.is(results[0], null)
+  t.is(results[15], null)
 })
