@@ -1,7 +1,7 @@
 import { Db, ObjectId } from 'mongodb'
 import _ from 'lodash'
 
-import { wrapCollection } from './collection'
+import { wrapCollection } from './mutent'
 
 interface User {
   _id: ObjectId

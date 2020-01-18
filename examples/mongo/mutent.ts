@@ -8,14 +8,22 @@ import * as mutent from '../..'
 
 export type Filter<T> = string | ObjectId | FilterQuery<T>
 
+export interface WrappedCollection<T> {
+  collection: Collection<T>
+  fineOne(filter: Filter<T>): mutent.Entity<T, Options>
+  findMany(filter: Filter<T>): mutent.Entities<T, Options>
+  insertOne(data: T): mutent.Entity<T, Options>
+  insertMany(data: T[]): mutent.Entities<T, Options>
+}
+
 export interface Options extends CommonOptions {
-  sort?: any;
+  sort?: any
 }
 
 interface Field {
-  path: string[];
-  oldValue: any;
-  newValue: any;
+  path: string[]
+  oldValue: any
+  newValue: any
 }
 
 function compareDocs (oldDoc: any, newDoc: any) {
@@ -94,24 +102,36 @@ function bind (collection: Collection<any>): mutent.Commit<Options> {
   return (s, t, o) => commit(collection, s, t, o)
 }
 
-export function insertOne<T> (collection: Collection<T>, data: T) {
+function insertOne<T> (collection: Collection<T>, data: T) {
   return mutent.create(data, bind(collection))
 }
 
-export function findOne<T> (collection: Collection<T>, filter: Filter<T>) {
+function findOne<T> (collection: Collection<T>, filter: Filter<T>) {
   return mutent.read(
     options => collection.findOne(parseFilter(filter), options),
     bind(collection)
   )
 }
 
-export function insertMany<T> (collection: Collection<T>, data: T[]) {
+function insertMany<T> (collection: Collection<T>, data: T[]) {
   return mutent.insert(data, bind(collection))
 }
 
-export function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
+function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
   return mutent.find<T, Options>(
     options => collection.find(parseFilter(filter), options),
     bind(collection)
   )
+}
+
+export function wrapCollection<T> (
+  collection: Collection<T>
+): WrappedCollection<T> {
+  return {
+    collection,
+    fineOne: filter => findOne(collection, filter),
+    findMany: filter => findMany(collection, filter),
+    insertOne: data => insertOne(collection, data),
+    insertMany: data => insertMany(collection, data)
+  }
 }
