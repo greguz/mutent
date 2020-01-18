@@ -1,6 +1,6 @@
+import { Commit, applyCommit } from './commit'
 import { One, getOne } from './one'
 import { Status, updateStatus, commitStatus, createStatus } from './status'
-import { Write, Commit, createWriter } from './write'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
 
@@ -15,7 +15,7 @@ export interface Entity<T, O> {
 interface Context<S, T, O> {
   locked: boolean
   reduce: (options?: O) => Promise<Status<S, T>>
-  write: Write<O>
+  commit?: Commit<O>
 }
 
 function mapContext<S, T, O, X, Y> (
@@ -25,7 +25,7 @@ function mapContext<S, T, O, X, Y> (
   return {
     locked: false,
     reduce: options => ctx.reduce(options).then(mapper),
-    write: ctx.write
+    commit: ctx.commit
   }
 }
 
@@ -40,20 +40,20 @@ function mapStatus<S, T, U> (
 
 function createContext<T, O> (
   one: One<T, O>,
-  write: Write<O>
+  commit?: Commit<O>
 ): Context<null, T, O> {
   return {
     locked: false,
     reduce: options => getOne(one, options).then(createStatus),
-    write
+    commit
   }
 }
 
 function readContext<T, O> (
   one: One<T, O>,
-  write: Write<O>
+  commit?: Commit<O>
 ): Context<T, T, O> {
-  return mapContext(createContext(one, write), commitStatus)
+  return mapContext(createContext(one, commit), commitStatus)
 }
 
 function updateContext<S, T, O, U, A extends any[]> (
@@ -97,8 +97,8 @@ function commitContext<S, T, O> (
 ): Context<T, T, O> {
   return {
     locked: false,
-    reduce: options => ctx.reduce(options).then(status => ctx.write(status, options)),
-    write: ctx.write
+    reduce: options => ctx.reduce(options).then(status => applyCommit(status, ctx.commit, options)),
+    commit: ctx.commit
   }
 }
 
@@ -124,12 +124,12 @@ export function create<T, O> (
   one: One<T, O>,
   commit?: Commit<O>
 ): Entity<T, O> {
-  return wrapContext(createContext(one, createWriter(commit)))
+  return wrapContext(createContext(one, commit))
 }
 
 export function read<T, O> (
   one: One<T, O>,
   commit?: Commit<O>
 ): Entity<T, O> {
-  return wrapContext(readContext(one, createWriter(commit)))
+  return wrapContext(readContext(one, commit))
 }

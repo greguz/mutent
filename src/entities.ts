@@ -2,7 +2,7 @@ import { Readable, transform, subscribe } from 'fluido'
 
 import { Entity, Mutator, create, read } from './entity'
 import { Many, getMany } from './many'
-import { Commit } from './write'
+import { Commit } from './commit'
 
 export interface EntitiesOptions {
   concurrency?: number
