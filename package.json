@@ -27,14 +27,14 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "dependencies": {
-    "fluido": "^0.15.0"
+    "fluido": "^0.15.1"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.149",
     "@types/mongodb": "^3.3.14",
     "@types/node": "^13.1.6",
-    "@typescript-eslint/eslint-plugin": "^2.16.0",
-    "@typescript-eslint/parser": "^2.16.0",
+    "@typescript-eslint/eslint-plugin": "^2.17.0",
+    "@typescript-eslint/parser": "^2.17.0",
     "ava": "^2.4.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
@@ -43,7 +43,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "rimraf": "^3.0.0",
-    "rollup": "^1.29.0",
+    "rollup": "^1.29.1",
     "ts-node": "^8.6.2",
     "typescript": "^3.7.5"
   },
