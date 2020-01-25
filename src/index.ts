@@ -1,5 +1,6 @@
 export { Commit } from './commit'
 export { Entities, insert, find } from './entities'
 export { Entity, Mutator, create, read } from './entity'
+export { Execution, execute } from './execution'
 export { AsyncArray, Many, AsyncReadable, SyncArray, SyncReadable } from './many'
 export { AsyncValue, SyncValue, One } from './one'
