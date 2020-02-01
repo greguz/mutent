@@ -160,6 +160,9 @@ mutent.insert(['A', 'C', 'D', 'C'], commit)
   .unwrap()
 ```
 
+When `unwrap()` is called, entities are processed sequentially
+using a Node.js stream internally.
+
 ### Find
 
 The reading counterpart of the `insert` function is `find` function.
