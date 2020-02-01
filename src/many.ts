@@ -1,4 +1,4 @@
-import { Readable,Stream } from 'readable-stream'
+import { Readable, Stream } from 'readable-stream'
 
 export type SyncReadable<O> = (options?: O) => Readable | Stream
 
