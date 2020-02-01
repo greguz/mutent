@@ -3,11 +3,11 @@ import fs from 'fs'
 import * as mutent from '..'
 
 export interface Options {
-  encoding?: string;
-  flag?: string | number;
-  mode?: string | number;
-  replacer?: (key: string, value: any) => any;
-  space?: number;
+  encoding?: string
+  flag?: string | number
+  mode?: string | number
+  replacer?: (key: string, value: any) => any
+  space?: number
 }
 
 async function commit (

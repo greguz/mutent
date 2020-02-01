@@ -22,17 +22,18 @@
     "build:types": "rimraf types && tsc --declaration --emitDeclarationOnly --declarationDir types",
     "build:js": "rimraf .out && tsc --module es6 && rollup -c",
     "build": "npm run build:types && npm run build:js",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm run test && npm run build"
   },
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "dependencies": {
-    "fluido": "^0.15.1"
+    "readable-stream": "^3.5.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.149",
     "@types/mongodb": "^3.3.15",
     "@types/node": "^13.7.0",
+    "@types/readable-stream": "^2.3.5",
     "@typescript-eslint/eslint-plugin": "^2.18.0",
     "@typescript-eslint/parser": "^2.18.0",
     "ava": "^3.1.0",

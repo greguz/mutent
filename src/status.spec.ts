@@ -2,7 +2,7 @@ import test from 'ava'
 
 import { createStatus, updateStatus, commitStatus } from './status'
 
-test('createStatus', t => {
+test('create status', t => {
   t.throws(() => createStatus(undefined))
   t.deepEqual(createStatus('CREATE'), {
     source: null,
@@ -10,7 +10,7 @@ test('createStatus', t => {
   })
 })
 
-test('updateStatus', t => {
+test('update status', t => {
   t.throws(() => updateStatus(createStatus({}), undefined))
   t.deepEqual(
     updateStatus(createStatus({}), 'UPDATE'),

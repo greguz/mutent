@@ -3,9 +3,9 @@ import test, { ExecutionContext } from 'ava'
 import { insert, find } from './entities'
 
 interface CommitMode {
-  create: boolean;
-  update: boolean;
-  delete: boolean;
+  create: boolean
+  update: boolean
+  delete: boolean
 }
 
 function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {

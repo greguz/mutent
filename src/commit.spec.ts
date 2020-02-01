@@ -3,7 +3,7 @@ import test from 'ava'
 import { applyCommit } from './commit'
 import { createStatus } from './status'
 
-test('default writer', async t => {
+test('default commit', async t => {
   const status = await applyCommit(createStatus(42))
   t.deepEqual(status, {
     source: 42,
@@ -11,7 +11,7 @@ test('default writer', async t => {
   })
 })
 
-test('sync writer', async t => {
+test('sync commit', async t => {
   t.plan(4)
   function commit (source: any, target: any, options: any) {
     t.is(source, null)
@@ -25,7 +25,7 @@ test('sync writer', async t => {
   })
 })
 
-test('async writer', async t => {
+test('async commit', async t => {
   t.plan(4)
   async function commit (source: any, target: any, options: any) {
     t.is(source, null)
