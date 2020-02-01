@@ -43,6 +43,7 @@
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "husky": "^4.2.1",
     "rimraf": "^3.0.1",
     "rollup": "^1.31.0",
     "ts-node": "^8.6.2",
@@ -62,5 +63,11 @@
     "require": [
       "ts-node/register/transpile-only"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run test:lint",
+      "pre-push": "npm test"
+    }
   }
 }
