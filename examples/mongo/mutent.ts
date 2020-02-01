@@ -6,12 +6,12 @@ import set from 'lodash/set'
 
 import * as mutent from '../..'
 
-export type Filter<T> = string | ObjectId | FilterQuery<T>
+export type Filter<T> = undefined | string | ObjectId | FilterQuery<T>
 
 export interface WrappedCollection<T> {
   collection: Collection<T>
-  fineOne(filter: Filter<T>): mutent.Entity<T, Options>
-  findMany(filter: Filter<T>): mutent.Entities<T, Options>
+  fineOne(filter?: Filter<T>): mutent.Entity<T, Options>
+  findMany(filter?: Filter<T>): mutent.Entities<T, Options>
   insertOne(data: T): mutent.Entity<T, Options>
   insertMany(data: T[]): mutent.Entities<T, Options>
 }
@@ -69,8 +69,8 @@ function buildUpdateQuery (oldDoc: any, newDoc: any): any {
   )
 }
 
-function parseFilter (filter: any): any {
-  if (filter && ObjectId.isValid(filter)) {
+function parseFilter (filter: any = {}): any {
+  if (ObjectId.isValid(filter)) {
     return { _id: new ObjectId(filter) }
   } else if (isPlainObject(filter)) {
     return filter
@@ -106,7 +106,7 @@ function insertOne<T> (collection: Collection<T>, data: T) {
   return mutent.create(data, bind(collection))
 }
 
-function findOne<T> (collection: Collection<T>, filter: Filter<T>) {
+function findOne<T> (collection: Collection<T>, filter?: Filter<T>) {
   return mutent.read(
     options => collection.findOne(parseFilter(filter), options),
     bind(collection)
@@ -117,7 +117,7 @@ function insertMany<T> (collection: Collection<T>, data: T[]) {
   return mutent.insert(data, bind(collection))
 }
 
-function findMany<T> (collection: Collection<T>, filter: Filter<T>) {
+function findMany<T> (collection: Collection<T>, filter?: Filter<T>) {
   return mutent.find<T, Options>(
     options => collection.find(parseFilter(filter), options),
     bind(collection)
