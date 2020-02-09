@@ -4,18 +4,12 @@ import { Entity, Mutator, create, read } from './entity'
 import { Many, getMany } from './many'
 import { Commit } from './commit'
 
-export interface EntitiesOptions {
-  concurrency?: number
-  highWaterMark?: number
-}
-
 export interface Entities<T, O> {
   update<U, A extends any[]>(mutator: Mutator<T, U, A>, ...args: A): Entities<U, O>
   assign<E>(object: E): Entities<T & E, O>
   delete(): Entities<null, O>
   commit(): Entities<T, O>,
-  unwrap(options?: O & EntitiesOptions): Promise<T[]>
-  // reduce: any
+  unwrap(options?: O): Promise<T[]>
 }
 
 interface Context<S, T, O> {
