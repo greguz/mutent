@@ -5,11 +5,11 @@ import { Status, updateStatus, commitStatus, createStatus } from './status'
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
 
 export interface Entity<T, O> {
-  update<U, A extends any[]>(mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
-  assign<E>(object: E): Entity<T & E, O>
-  delete(): Entity<null, O>
-  commit(): Entity<T, O>,
-  unwrap(options?: O): Promise<T>
+  update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
+  assign<E> (object: E): Entity<T & E, O>
+  delete (): Entity<null, O>
+  commit (): Entity<T, O>,
+  unwrap (options?: O): Promise<T>
 }
 
 interface Context<S, T, O> {
