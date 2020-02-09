@@ -3,6 +3,7 @@
 [![npm version](https://badge.fury.io/js/mutent.svg)](https://badge.fury.io/js/mutent)
 [![Dependencies Status](https://david-dm.org/greguz/mutent.svg)](https://david-dm.org/greguz/mutent.svg)
 [![Build Status](https://travis-ci.com/greguz/mutent.svg?branch=master)](https://travis-ci.com/greguz/mutent)
+[![Coverage Status](https://coveralls.io/repos/github/greguz/mutent/badge.svg?branch=master)](https://coveralls.io/github/greguz/mutent?branch=master)
 
 An insanely small utility that helps you to keep business logic and other code separated.
 

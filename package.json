@@ -19,6 +19,8 @@
     "test:lint": "tslint --project tsconfig.json src/**/*.ts",
     "test:unit": "ava",
     "test": "npm run test:ts && npm run test:lint && npm run test:unit",
+    "coverage": "nyc --reporter=lcov --reporter=text-summary ava",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "build:types": "rimraf types && tsc --declaration --emitDeclarationOnly --declarationDir types",
     "build:js": "rimraf .out && tsc --module es6 && rollup -c",
     "build": "npm run build:types && npm run build:js",
@@ -35,7 +37,9 @@
     "@types/node": "^13.7.0",
     "@types/readable-stream": "^2.3.5",
     "ava": "^3.2.0",
+    "coveralls": "^3.0.9",
     "husky": "^4.2.1",
+    "nyc": "^15.0.0",
     "rimraf": "^3.0.2",
     "rollup": "^1.31.0",
     "ts-node": "^8.6.2",
@@ -56,6 +60,15 @@
     ],
     "require": [
       "ts-node/register/transpile-only"
+    ]
+  },
+  "nyc": {
+    "all": true,
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "**/*.spec.ts"
     ]
   },
   "husky": {
