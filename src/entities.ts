@@ -1,8 +1,7 @@
 import { Readable, Writable, pipeline } from 'readable-stream'
 
-import { Entity, Mutator, create, read } from './entity'
+import { Commit, Entity, Mutator, create, read } from './entity'
 import { Many, getMany } from './many'
-import { Commit } from './commit'
 
 export interface Entities<T, O> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entities<U, O>

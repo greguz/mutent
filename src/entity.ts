@@ -1,8 +1,9 @@
-import { Commit, applyCommit } from './commit'
 import { One, getOne } from './one'
 import { Status, updateStatus, commitStatus, createStatus } from './status'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
+
+export type Commit<O> = (source: any, target: any, options?: O) => any
 
 export interface Entity<T, O> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
@@ -90,6 +91,20 @@ function unwrapContext<S, T, O> (
   options?: O
 ): Promise<T> {
   return ctx.reduce(options).then(status => status.target)
+}
+
+function applyCommit<S, T, O> (
+  status: Status<S, T>,
+  commit?: Commit<O>,
+  options?: O
+): Promise<Status<T, T>> {
+  if (commit && (status.source as any) !== status.target) {
+    return Promise.resolve(commit(status.source, status.target, options)).then(
+      () => commitStatus(status)
+    )
+  } else {
+    return Promise.resolve(commitStatus(status))
+  }
 }
 
 function commitContext<S, T, O> (
