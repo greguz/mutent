@@ -3,7 +3,11 @@ import { Readable, Writable, pipeline } from 'readable-stream'
 
 import { getMany, Many } from './many'
 
-async function extract<T, O> (many: Many<T, O>, options?: O): Promise<T[]> {
+async function extract<T, O> (
+  many: Many<T, O>,
+  options?: O,
+  ms?: number
+): Promise<T[]> {
   const source = await getMany(many, options)
   return new Promise((resolve, reject) => {
     const results: T[] = []
@@ -13,7 +17,11 @@ async function extract<T, O> (many: Many<T, O>, options?: O): Promise<T[]> {
         objectMode: true,
         write (chunk, encoding, callback) {
           results.push(chunk)
-          callback()
+          if (ms) {
+            setTimeout(callback, ms, null)
+          } else {
+            callback()
+          }
         }
       }),
       err => {
@@ -61,4 +69,16 @@ test('many async stream', async t => {
   const values = await extract(async () => Readable.from([42]) as any)
   t.is(values.length, 1)
   t.is(values[0], 42)
+})
+
+test('array backpressure', async t => {
+  const towels: any[] = []
+  for (let i = 0; i < 128; i++) {
+    towels.push({ value: 42 * i })
+  }
+  const values = await extract(towels, {}, 10)
+  t.is(values.length, towels.length)
+  t.is(values[0].value, 0)
+  t.is(values[1].value, 42)
+  t.is(values[127].value, 42 * 127)
 })
