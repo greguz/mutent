@@ -1,4 +1,4 @@
-import { Readable, Writable, pipeline } from 'readable-stream'
+import { Readable, Writable, Transform, pipeline } from 'readable-stream'
 
 import { Commit, Entity, Mutator, create, read } from './entity'
 import { Many, getMany } from './many'
@@ -13,7 +13,7 @@ export interface Entities<T, O> {
 
 interface Context<S, T, O> {
   locked: boolean
-  extract: (options?: O) => Promise<Readable>
+  extract: (options?: O) => Readable
   mapper: (data: S) => Entity<T, O>
 }
 
@@ -77,20 +77,29 @@ function commitContext<S, T, O> (
   return mapContext(ctx, entity => entity.commit())
 }
 
-function handleStream<S, T, O> (
-  stream: Readable,
+function createEntityMapper (ctx: Context<any, any, any>): Transform {
+  return new Transform({
+    objectMode: true,
+    transform (data, encoding, callback) {
+      this.push(ctx.mapper(data))
+      callback()
+    }
+  })
+}
+
+function unwrapContext<S, T, O> (
   ctx: Context<S, T, O>,
   options?: O
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
     pipeline(
-      stream,
+      ctx.extract(options),
+      createEntityMapper(ctx),
       new Writable({
         objectMode: true,
-        write (data: S, encoding, callback) {
-          ctx.mapper(data)
-            .unwrap(options)
+        write (data: Entity<T, O>, encoding, callback) {
+          data.unwrap(options)
             .then(result => {
               results.push(result)
               callback()
@@ -107,12 +116,6 @@ function handleStream<S, T, O> (
       }
     )
   })
-}
-
-function unwrapContext<S, T, O> (ctx: Context<S, T, O>, options?: O) {
-  return ctx.extract(options).then(
-    stream => handleStream(stream, ctx, options)
-  )
 }
 
 function lockContext<S, T, O> (ctx: Context<S, T, O>) {

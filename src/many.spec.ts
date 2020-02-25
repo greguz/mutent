@@ -8,11 +8,10 @@ async function extract<T, O> (
   options?: O,
   ms?: number
 ): Promise<T[]> {
-  const source = await getMany(many, options)
   return new Promise((resolve, reject) => {
     const results: T[] = []
     pipeline(
-      source,
+      getMany(many, options),
       new Writable({
         objectMode: true,
         write (chunk, encoding, callback) {
@@ -81,4 +80,15 @@ test('array backpressure', async t => {
   t.is(values[0].value, 0)
   t.is(values[1].value, 42)
   t.is(values[127].value, 42 * 127)
+})
+
+test('many errored', async t => {
+  await t.throwsAsync(
+    async () => {
+      await extract(async () => {
+        throw new Error('STOP')
+      })
+    },
+    { message: "STOP" }
+  )
 })
