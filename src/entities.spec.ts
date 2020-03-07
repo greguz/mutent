@@ -1,6 +1,8 @@
 import test, { ExecutionContext } from 'ava'
+import { pipeline, Writable } from 'readable-stream'
 
 import { insert, find } from './entities'
+import { Entity } from './entity'
 
 interface CommitMode {
   create: boolean
@@ -129,5 +131,79 @@ test('insert-error', async t => {
     await insert([1])
       .update(async () => { throw new Error('TEST') })
       .unwrap()
+  })
+})
+
+test('stream', async t => {
+  t.plan(48)
+  await new Promise((resolve, reject) => {
+    let index = 0
+    pipeline(
+      insert(getItems(), bind(t, { create: true })).stream(),
+      new Writable({
+        objectMode: true,
+        write (entity: Entity<Item, any>, encoding, callback) {
+          entity
+            .commit()
+            .unwrap({ db: 'test' })
+            .then(result => t.is(result.value, index++ * 2))
+            .then(() => callback())
+            .catch(callback)
+        }
+      }),
+      err => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      }
+    )
+  })
+})
+
+test('stream-error', async t => {
+  await t.throwsAsync(async () => {
+    await new Promise((resolve, reject) => {
+      pipeline(
+        insert((): any => Promise.reject(new Error())).stream(),
+        new Writable({
+          objectMode: true,
+          write (chunk, encoding, callback) {
+            callback()
+          }
+        }),
+        err => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        }
+      )
+    })
+  })
+})
+
+test('reduce', async t => {
+  t.plan(49)
+  const result = await insert(getItems(), bind(t, { create: true }))
+    .reduce<number>(
+      async (accumulator, entity, index, options) => {
+        t.pass()
+        const data = await entity
+          .commit()
+          .unwrap(options)
+        return accumulator + (data.value / 2)
+      },
+      0,
+      { db: 'test' }
+    )
+  t.is(result, 120)
+})
+
+test('reduce-error', async t => {
+  await t.throwsAsync(async () => {
+    await insert(getItems()).reduce(() => Promise.reject(new Error()), 0)
   })
 })
