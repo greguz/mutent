@@ -211,7 +211,7 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
     commit: () => wrapContext(commitContext(lockContext(ctx))),
     unwrap: options => unwrapContext(lockContext(ctx), options),
     stream: options => streamContext(lockContext(ctx), options),
-    reduce: (reducer, init, options) => reduceContext(ctx, reducer, init, options)
+    reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options)
   }
 }
 
