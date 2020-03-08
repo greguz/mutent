@@ -86,30 +86,46 @@ function commitContext<S, T, O> (
   return mapContext(ctx, entity => entity.commit())
 }
 
+type Callback = (err?: any) => void
+
+function handleContext<S, T, O> (
+  ctx: Context<S, T, O>,
+  options: O | undefined,
+  write: (entity: Entity<T, O>, callback: Callback) => void,
+  end: Callback
+) {
+  pipeline(
+    ctx.extract(options),
+    new Writable({
+      objectMode: true,
+      write (data: S, encoding, callback) {
+        write(ctx.mapper(data), callback)
+      }
+    }),
+    end
+  )
+}
+
 function unwrapContext<S, T, O> (
   ctx: Context<S, T, O>,
   options?: O
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
-    pipeline(
-      ctx.extract(options),
-      new Writable({
-        objectMode: true,
-        write (data: S, encoding, callback) {
-          ctx
-            .mapper(data)
-            .unwrap(options)
-            .then(result => {
-              results.push(result)
-              callback()
-            })
-            .catch(callback)
-        }
-      }),
-      error => {
-        if (error) {
-          reject(error)
+    handleContext(
+      ctx,
+      options,
+      (entity, callback) => {
+        entity.unwrap(options)
+          .then(result => {
+            results.push(result)
+            callback()
+          })
+          .catch(callback)
+      },
+      err => {
+        if (err) {
+          reject(err)
         } else {
           resolve(results)
         }
@@ -130,21 +146,18 @@ function streamContext<S, T, O> (
         return
       }
       reading = true
-      const self = this
-      pipeline(
-        ctx.extract(options),
-        new Writable({
-          objectMode: true,
-          write (data: S, encoding, callback) {
-            self.push(ctx.mapper(data))
-            callback()
-          }
-        }),
-        error => {
-          if (error) {
-            self.emit('error', error)
+      handleContext(
+        ctx,
+        options,
+        (entity, callback) => {
+          this.push(entity)
+          callback()
+        },
+        err => {
+          if (err) {
+            this.emit('error', err)
           } else {
-            self.push(null)
+            this.push(null)
           }
         }
       )
@@ -160,22 +173,20 @@ function reduceContext<S, T, O, R> (
 ): Promise<R> {
   return new Promise<R>((resolve, reject) => {
     let index = 0
-    pipeline(
-      ctx.extract(options),
-      new Writable({
-        objectMode: true,
-        write (data: S, encoding, callback) {
-          reducer(accumulator, ctx.mapper(data), index++, options)
-            .then(result => {
-              accumulator = result
-              callback()
-            })
-            .catch(callback)
-        }
-      }),
-      error => {
-        if (error) {
-          reject(error)
+    handleContext(
+      ctx,
+      options,
+      (entity, callback) => {
+        reducer(accumulator, entity, index++, options)
+          .then(result => {
+            accumulator = result
+            callback()
+          })
+          .catch(callback)
+      },
+      err => {
+        if (err) {
+          reject(err)
         } else {
           resolve(accumulator)
         }
