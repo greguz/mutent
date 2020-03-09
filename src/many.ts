@@ -1,10 +1,11 @@
 import { Readable, Writable, pipeline } from 'readable-stream'
+import stream from 'stream'
 
-export type SyncReadable<O> = (options?: O) => Readable
+export type SyncReadable<O> = (options?: O) => stream.Readable
 
 export type SyncArray<T, O> = (options?: O) => T[]
 
-export type AsyncReadable<O> = (options?: O) => Promise<Readable>
+export type AsyncReadable<O> = (options?: O) => Promise<stream.Readable>
 
 export type AsyncArray<T, O> = (options?: O) => Promise<T[]>
 
@@ -34,7 +35,7 @@ function readArray (arr: any[]) {
 
 function pipeReadable (
   target: Readable,
-  source: Readable,
+  source: stream.Readable,
   end: (err?: any) => void
 ) {
   pipeline(
@@ -60,7 +61,7 @@ function pipeArray (
 
 function pipeSource (
   target: Readable,
-  source: Readable | any[],
+  source: stream.Readable | any[],
   end: (err?: any) => void
 ) {
   if (Array.isArray(source)) {
