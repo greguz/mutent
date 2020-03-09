@@ -1,4 +1,10 @@
-import { Collection, FilterQuery, ObjectId, CommonOptions } from 'mongodb'
+import {
+  Collection,
+  CommonOptions,
+  FilterQuery,
+  ObjectId,
+  ReadPreferenceOrMode
+} from 'mongodb'
 
 import uniq from 'lodash/uniq'
 import isPlainObject from 'lodash/isPlainObject'
@@ -6,7 +12,12 @@ import set from 'lodash/set'
 
 import * as mutent from '../..'
 
-export type Filter<T> = undefined | string | ObjectId | FilterQuery<T>
+export type Filter<T> =
+  | undefined
+  | string
+  | ObjectId
+  | Array<string | ObjectId>
+  | FilterQuery<T>
 
 export interface WrappedCollection<T> {
   collection: Collection<T>
@@ -17,7 +28,8 @@ export interface WrappedCollection<T> {
 }
 
 export interface Options extends CommonOptions {
-  sort?: any
+  readPreference?: ReadPreferenceOrMode
+  sort?: any[] | object
 }
 
 interface Field {
@@ -69,18 +81,26 @@ function buildUpdateQuery (oldDoc: any, newDoc: any): any {
   )
 }
 
-function parseFilter (filter: any = {}): any {
+function parseFilter (filter: any = {}): FilterQuery<any> {
   if (ObjectId.isValid(filter)) {
-    return { _id: new ObjectId(filter) }
+    return {
+      _id: new ObjectId(filter)
+    }
   } else if (isPlainObject(filter)) {
     return filter
+  } else if (Array.isArray(filter)) {
+    return {
+      _id: {
+        $in: filter.map(item => new ObjectId(item))
+      }
+    }
   } else {
     throw new Error('Invalid filter')
   }
 }
 
 async function commit (
-  collection: Collection<any>,
+  collection: Collection,
   source: any,
   target: any,
   options?: Options
@@ -98,23 +118,23 @@ async function commit (
   }
 }
 
-function bind (collection: Collection<any>): mutent.Commit<Options> {
+function bind (collection: Collection): mutent.Commit<Options> {
   return (s, t, o) => commit(collection, s, t, o)
 }
 
 function insertOne<T> (collection: Collection<T>, data: T) {
-  return mutent.create(data, bind(collection))
+  return mutent.create<T, Options>(data, bind(collection))
 }
 
 function findOne<T> (collection: Collection<T>, filter?: Filter<T>) {
-  return mutent.read(
+  return mutent.read<T, Options>(
     options => collection.findOne(parseFilter(filter), options),
     bind(collection)
   )
 }
 
 function insertMany<T> (collection: Collection<T>, data: T[]) {
-  return mutent.insert(data, bind(collection))
+  return mutent.insert<T, Options>(data, bind(collection))
 }
 
 function findMany<T> (collection: Collection<T>, filter?: Filter<T>) {

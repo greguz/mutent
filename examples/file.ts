@@ -1,4 +1,4 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
 
 import * as mutent from '..'
 
@@ -19,13 +19,13 @@ async function commit (
   const { encoding, flag, mode, replacer, space } = options
 
   if (target) {
-    await fs.promises.writeFile(file, JSON.stringify(target, replacer, space), {
+    await fs.writeFile(file, JSON.stringify(target, replacer, space), {
       encoding,
       flag,
       mode
     })
   } else {
-    await fs.promises.unlink(file)
+    await fs.unlink(file)
   }
 }
 
@@ -34,11 +34,11 @@ function bind (file: string): mutent.Commit<Options> {
 }
 
 export function createFile<T> (file: string, data: T) {
-  return mutent.create(data, bind(file))
+  return mutent.create<T, Options>(data, bind(file))
 }
 
 async function readJSON (file: string, options: Options = {}) {
-  const content = await fs.promises.readFile(file, options)
+  const content = await fs.readFile(file, options)
   return JSON.parse(content.toString(options.encoding))
 }
 
