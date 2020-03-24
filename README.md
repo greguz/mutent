@@ -7,188 +7,114 @@
 
 An insanely small utility that helps you to keep business logic and other code separated.
 
+## Why
+
+This library try to provide an abstracted method to interface to any data source, and a standardized way to write manipulation code.
+
+## Installation
+
+```
+npm install --save mutent
+```
+
 ## Entity
 
-An _entity_ represents a meaningful collection of data.
-This library provides a convenient way to manipulate entities and organize the manipulation code.
-
-### Create
-
-The `create` function returns a new _entity_.
+Represents a meaningful collection of data, and provides a convenient way for its manipulation.
 
 ```javascript
-const entity = mutent.create({
-  username: 'pfudor',
-  password: 'PinkFluffyUnicornDancingOnRainbows'
-})
-```
+const mutent = require('mutent')
 
-### Read
+// A data source driver that define write methods
+const driver = {
+  async create (target, options) {
+    // Do something like...
+    // await db.insertDocument(target, options)
+  },
+  async update (source, target, options) {
+    // Do something like...
+    // const updateQuery = diffObjects(source, target)
+    // await db.updateDocument(source.id, updateQuery, options)
+  },
+  async delete (source, options) {
+    // Do something like...
+    // await db.removeDocument(source.id, options)
+  }
+}
 
-The `read` function is almost identical to the `create` function.
-The only difference is that we are telling that this _entity_ is **already saved somewhere**,
-and we just read the data from the source.
-It supports **lazy readings** by passing a function as first argument.
-
-```javascript
-const e0 = mutent.read({ comment: 'Pass the entity data directly' })
-const e1 = mutent.read(options => ({ comment: 'Lazy read with functions' }))
-const e2 = mutent.read(async options => ({ comment: 'Lazy (async) read with promises' }))
-```
-
-### Update
-
-After its creation, the entity data is hidden, and there's no way to alter its status directly.
-To perform an update it's necessary a mapper: a function that takes the entity data as input, and output the updated one.
-After the execution, a new entity is returned.
-
-After any manipulation, the current entity is not valid anymore, so if you try to perform
-a double update to the same entity, an error is raised.
-This ensure that we are always working with the last version of the entity.
-
-```javascript
-const oldEntity = mutent.create({ value: 12 })
-
-const newEntity = oldEntity.update(data => {
+// A nice pure-JS mutation procedure
+function setDocumentMessage (data, message) {
   return {
     ...data,
-    updated: new Date()
-  }
-})
-
-newEntity.update(data => { ...data }) // OK
-oldEntity.update(data => { ...data }) // Error
-```
-
-It is also possible to use a multi-arguments function directly.
-
-```javascript
-function multiply (data, n) {
-  return {
-    value: data.value * n
+    message,
+    updatedAt: new Date()
   }
 }
 
-const entity = mutent
-  .create({ value: 12 })
-  .update(multiply, 2)
-
-// entity now contains { value: 24 }
-```
-
-### Assign
-
-The `assign` method mimics `Object.assign`, so it performs an update by joining the entity data with the passed argument.
-
-```javascript
 mutent
-  // null
-  .create({ a: 1 })
-  // { a: 1 }
-  .assign({ b: 2 })
-  // { a: 1, b: 2 }
-  .update(data => ({ a: data.a * 2, b: data.b * 2 }))
-  // { a: 2, b: 4 }
-```
-
-### Delete
-
-By calling the `delete` function, the entity data is set to `null` to indicate that this entity needs to be deleted.
-
-Tip: you can perform a deletion using the `update` method by returning `null` inside the mapper function.
-
-### Unwrap
-
-When `unwrap` method is called, all configured actions are executed, and the resulting data is returned as a `Promise`.
-
-```javascript
-// { a: 2, b: 4 }
-const data = await mutent
-  .read({ a: 1 })
-  .assign({ b: 2 })
-  .update(data => ({ a: data.a * 2, b: data.b * 2 }))
-  .unwrap()
-```
-
-### Commit
-
-To achive data persistence, `create` and `read` functions may accept a **commit** procedure as second argument.
-
-It consists in a function that accepts three arguments and **may** return a `Promise`:
-- `source` data when the entity was loaded the first time (`create` or `read`)
-- `target` resulting data after all the configured manipulations
-- `options` first argument of `unwrap` method
-
-```javascript
-async function commit (source, target, options) {
-  if (source === null) {
-    // create > there's no source data, this entity is new
-  } else if (target === null) {
-    // delete > there's no target data, this entity was deleted
-  } else {
-    // update > you can just write target data,
-    //          or diff source and target to update more efficently
-  }
-}
-
-async function run () {
-  const data = await mutent
-    // Creates a new entity
-    .create({ message: 'Hello World' }, commit)
-    // Require a commit
-    .commit()
-    // Apply configured actions and expose the resulting data
-    .unwrap({ some: 'option' })
-
-  console.log(data.message)
-}
-```
-
-### Insert
-
-It is also possible to insert multiple entities and operate on them with the `insert` function.
-
-```javascript
-function commit (source, target, options) {
-  // 1st call create target 'A'
-  // 2nd call create target 'B'
-  // 3rd call create target 'C'
-  // 4th call create target 'D'
-}
-
-mutent.insert(['A', 'C', 'D', 'C'], commit)
+  // Declare a new entity
+  .create({ id: 42, createdAt: new Date() }, driver)
+  // Describe mutation
+  .update(setDocumentMessage, 'Hello World')
+  // Require data source write
   .commit()
-  .unwrap()
+  // Execute and expose
+  .unwrap({ here: 'some options' })
+  // Get updated entity data (Promise)
+  .then(result => console.log(result))
+  // Handle errors (Promise)
+  .catch(err => console.error(err))
+
+// Will log something like this:
+// {
+//   id: 42,
+//   createdAt: 2020-03-24T17:09:25.044Z,
+//   message: 'Hello World',
+//   updatedAt: 2020-03-24T17:09:25.045Z
+// }
 ```
 
-When `unwrap()` is called, entities are processed sequentially
-using a Node.js stream internally.
+### Declaring
 
-### Find
+- [create](./docs/create.md)
+- [read](./docs/read.md)
 
-The reading counterpart of the `insert` function is `find` function.
+### Manipulating
 
-```javascript
-function commit (source, target, options) {
-  // 1st call update source 'A' with target 'a'
-  // 2nd call update source 'B' with target 'b'
-  // 3rd call update source 'C' with target 'c'
-  // 4th call update source 'D' with target 'd'
-}
+- [update](./docs/update.md)
+- [assign](./docs/assign.md)
+- [delete](./docs/delete.md)
+- [commit](./docs/commit.md)
 
-mutent.find(['A', 'B', 'C', 'D'], commit)
-  .update(data => data.toLowerCase())
-  .commit()
-  .unwrap()
-```
+### Exposing
 
-It support lazy loading, promises and readable streams (or a combination of those).
+- [unwrap](./docs/unwrap.md)
 
-```javascript
-mutent.find([...])
-mutent.find(new Readable())
-mutent.find(options => [...])
-mutent.find(options => new Readable())
-mutent.find(async options => [...])
-mutent.find(async options => new Readable())
-```
+## Entities
+
+Represents a collection of entities. It shares the same features of its "single" counterpart, plus some specialized methods. Uses Node.js streams internally to handle large datasets.
+
+<!-- ```javascript
+const mutent = require('mutent')
+
+mutent
+  .insert([])
+// TODO
+``` -->
+
+### Declaring
+
+- [insert](./docs/insert.md)
+- [find](./docs/find.md)
+
+### Manipulating
+
+- [update](./docs/update.md)
+- [assign](./docs/assign.md)
+- [delete](./docs/delete.md)
+- [commit](./docs/commit.md)
+- [stream](./docs/stream.md)
+- [reduce](./docs/reduce.md)
+
+### Exposing
+
+- [unwrap](./docs/unwrap.md)
