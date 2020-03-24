@@ -5,6 +5,7 @@ export type SyncValue<T, O> = (options?: O) => T
 export type One<T, O> =
   | AsyncValue<T, O>
   | SyncValue<T, O>
+  // TODO: deprecate this (v2)
   | Promise<T>
   | T
 

@@ -5,6 +5,7 @@ export type SyncReadable<O> = (options?: O) => stream.Readable
 
 export type SyncArray<T, O> = (options?: O) => T[]
 
+// TODO: deprecate this (v2)
 export type AsyncReadable<O> = (options?: O) => Promise<stream.Readable>
 
 export type AsyncArray<T, O> = (options?: O) => Promise<T[]>
