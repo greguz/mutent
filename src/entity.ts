@@ -30,13 +30,12 @@ function mapContext<S, T, O, X, Y> (
   }
 }
 
-function mapStatus<S, T, U> (
+async function mapStatus<S, T, U> (
   status: Status<S, T>,
   mapper: (data: T) => U | Promise<U>
 ): Promise<Status<S, U>> {
-  return Promise.resolve(mapper(status.target)).then(
-    target => updateStatus(status, target)
-  )
+  const target = await mapper(status.target)
+  return updateStatus(status, target)
 }
 
 function createContext<T, O> (
@@ -93,18 +92,16 @@ function unwrapContext<S, T, O> (
   return ctx.reduce(options).then(status => status.target)
 }
 
-function applyCommit<S, T, O> (
+async function applyCommit<S, T, O> (
   status: Status<S, T>,
   commit?: Commit<O>,
   options?: O
 ): Promise<Status<T, T>> {
-  if (commit && (status.source as any) !== status.target) {
-    return Promise.resolve(commit(status.source, status.target, options)).then(
-      () => commitStatus(status)
-    )
-  } else {
-    return Promise.resolve(commitStatus(status))
+  const { source, target } = status
+  if (commit && (source as any) !== target) {
+    await commit(source, target, options)
   }
+  return commitStatus(status)
 }
 
 function commitContext<S, T, O> (

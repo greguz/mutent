@@ -8,15 +8,10 @@ export type One<T, O> =
   | Promise<T>
   | T
 
-function extractFactory<T, O> (
-  one: AsyncValue<T, O> | SyncValue<T, O>,
-  options?: O
-): Promise<T> {
-  return Promise.resolve(one(options))
-}
-
-export function getOne<T, O> (one: One<T, O>, options?: O): Promise<T> {
-  return typeof one === 'function'
-    ? extractFactory(one as any, options)
-    : Promise.resolve(one)
+export async function getOne<T, O> (one: One<T, O>, options?: O): Promise<T> {
+  if (typeof one === 'function') {
+    return (one as any)(options)
+  } else {
+    return one
+  }
 }
