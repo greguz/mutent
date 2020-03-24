@@ -1,9 +1,8 @@
+import { Driver, Handler, createHandler } from './handler'
 import { One, getOne } from './one'
 import { Status, updateStatus, commitStatus, createStatus } from './status'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
-
-export type Commit<O> = (source: any, target: any, options?: O) => any
 
 export interface Entity<T, O> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
@@ -16,7 +15,7 @@ export interface Entity<T, O> {
 interface Context<S, T, O> {
   locked: boolean
   reduce: (options?: O) => Promise<Status<S, T>>
-  commit?: Commit<O>
+  handle: Handler<O>
 }
 
 function mapContext<S, T, O, X, Y> (
@@ -26,7 +25,7 @@ function mapContext<S, T, O, X, Y> (
   return {
     locked: false,
     reduce: options => ctx.reduce(options).then(mapper),
-    commit: ctx.commit
+    handle: ctx.handle
   }
 }
 
@@ -40,20 +39,20 @@ async function mapStatus<S, T, U> (
 
 function createContext<T, O> (
   one: One<T, O>,
-  commit?: Commit<O>
+  handle: Handler<O>
 ): Context<null, T, O> {
   return {
     locked: false,
     reduce: options => getOne(one, options).then(createStatus),
-    commit
+    handle
   }
 }
 
 function readContext<T, O> (
   one: One<T, O>,
-  commit?: Commit<O>
+  handle: Handler<O>
 ): Context<T, T, O> {
-  return mapContext(createContext(one, commit), commitStatus)
+  return mapContext(createContext(one, handle), commitStatus)
 }
 
 function updateContext<S, T, O, U, A extends any[]> (
@@ -92,25 +91,13 @@ function unwrapContext<S, T, O> (
   return ctx.reduce(options).then(status => status.target)
 }
 
-async function applyCommit<S, T, O> (
-  status: Status<S, T>,
-  commit?: Commit<O>,
-  options?: O
-): Promise<Status<T, T>> {
-  const { source, target } = status
-  if (commit && (source as any) !== target) {
-    await commit(source, target, options)
-  }
-  return commitStatus(status)
-}
-
 function commitContext<S, T, O> (
-  ctx: Context<S, T, O>
+  { handle, reduce }: Context<S, T, O>
 ): Context<T, T, O> {
   return {
     locked: false,
-    reduce: options => ctx.reduce(options).then(status => applyCommit(status, ctx.commit, options)),
-    commit: ctx.commit
+    reduce: options => reduce(options).then(status => handle(status, options)),
+    handle
   }
 }
 
@@ -134,14 +121,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
 
 export function create<T, O> (
   one: One<T, O>,
-  commit?: Commit<O>
+  driver?: Driver<O>
 ): Entity<T, O> {
-  return wrapContext(createContext(one, commit))
+  return wrapContext(createContext(one, createHandler(driver)))
 }
 
 export function read<T, O> (
   one: One<T, O>,
-  commit?: Commit<O>
+  driver?: Driver<O>
 ): Entity<T, O> {
-  return wrapContext(readContext(one, commit))
+  return wrapContext(readContext(one, createHandler(driver)))
 }

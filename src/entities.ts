@@ -1,6 +1,7 @@
 import { Readable, Writable, pipeline } from 'readable-stream'
 
-import { Commit, Entity, Mutator, create, read } from './entity'
+import { Entity, Mutator, create, read } from './entity'
+import { Driver } from './handler'
 import { Many, getMany } from './many'
 
 export type Reducer<T, O, R> = (
@@ -28,23 +29,23 @@ interface Context<S, T, O> {
 
 function createContext<T, O> (
   many: Many<T, O>,
-  commit?: Commit<O>
+  driver?: Driver<O>
 ): Context<T, T, O> {
   return {
     locked: false,
     extract: options => getMany(many, options),
-    mapper: data => create(data, commit)
+    mapper: data => create(data, driver)
   }
 }
 
 function readContext<T, O> (
   many: Many<T, O>,
-  commit?: Commit<O>
+  driver?: Driver<O>
 ): Context<T, T, O> {
   return {
     locked: false,
     extract: options => getMany(many, options),
-    mapper: data => read(data, commit)
+    mapper: data => read(data, driver)
   }
 }
 
@@ -217,14 +218,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
 
 export function insert<T = any, O = any> (
   many: Many<T, O>,
-  commit?: Commit<O>
+  driver?: Driver<O>
 ): Entities<T, O> {
-  return wrapContext(createContext(many, commit))
+  return wrapContext(createContext(many, driver))
 }
 
 export function find<T = any, O = any> (
   many: Many<T, O>,
-  commit?: Commit<O>
+  driver?: Driver<O>
 ): Entities<T, O> {
-  return wrapContext(readContext(many, commit))
+  return wrapContext(readContext(many, driver))
 }
