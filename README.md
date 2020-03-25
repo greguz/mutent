@@ -21,6 +21,22 @@ npm install --save mutent
 
 Represents a meaningful collection of data, and provides a convenient way for its manipulation.
 
+### Declaring
+
+- [create](./docs/create.md)
+- [read](./docs/read.md)
+
+### Manipulating
+
+- [update](./docs/update.md)
+- [assign](./docs/assign.md)
+- [delete](./docs/delete.md)
+- [commit](./docs/commit.md)
+
+### Exposing
+
+- [unwrap](./docs/unwrap.md)
+
 ```javascript
 const mutent = require('mutent')
 
@@ -73,33 +89,9 @@ mutent
 // }
 ```
 
-### Declaring
-
-- [create](./docs/create.md)
-- [read](./docs/read.md)
-
-### Manipulating
-
-- [update](./docs/update.md)
-- [assign](./docs/assign.md)
-- [delete](./docs/delete.md)
-- [commit](./docs/commit.md)
-
-### Exposing
-
-- [unwrap](./docs/unwrap.md)
-
 ## Entities
 
 Represents a collection of entities. It shares the same features of its "single" counterpart, plus some specialized methods. Uses Node.js streams internally to handle large datasets.
-
-<!-- ```javascript
-const mutent = require('mutent')
-
-mutent
-  .insert([])
-// TODO
-``` -->
 
 ### Declaring
 
@@ -118,3 +110,11 @@ mutent
 ### Exposing
 
 - [unwrap](./docs/unwrap.md)
+
+<!-- ```javascript
+const mutent = require('mutent')
+
+mutent
+  .insert([])
+// TODO
+``` -->
