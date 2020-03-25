@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 
-import { Commit, Driver, Plugin, Handler, createHandler } from './handler'
+import { Plugin, Handler, createHandler } from './handler'
 import { Status } from './status'
 
 async function handleStatus<S, T, O> (
@@ -34,7 +34,7 @@ test('void handler', async t => {
 
 test('commit handler', async t => {
   t.plan(8 + 3 + 4)
-  async function commit (source: any, target: any, options: any = {}) {
+  async function commit (source: any, target: any, options: any) {
     if (source === null && target === null) {
       t.fail()
     }
