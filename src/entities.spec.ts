@@ -139,13 +139,14 @@ test('stream', async t => {
   await new Promise((resolve, reject) => {
     let index = 0
     pipeline(
-      insert(getItems(), bind(t, { create: true })).stream(),
+      insert(getItems(), bind(t, { create: true }))
+        .commit()
+        .stream({ db: 'test' }),
       new Writable({
         objectMode: true,
-        write (entity: Entity<Item, any>, encoding, callback) {
+        write ({ entity, options }, encoding, callback) {
           entity
-            .commit()
-            .unwrap({ db: 'test' })
+            .unwrap(options)
             .then(result => t.is(result.value, index++ * 2))
             .then(() => callback())
             .catch(callback)

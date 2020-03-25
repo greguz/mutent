@@ -151,7 +151,7 @@ function streamContext<S, T, O> (
         ctx,
         options,
         (entity, callback) => {
-          this.push(entity)
+          this.push({ entity, options })
           callback()
         },
         err => {
