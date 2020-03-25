@@ -5,7 +5,7 @@ Describe a mutation that will be applied to entity's data. `mutator` function ac
 - `mutator` `<Function>`
   - `data` `<*>`
   - Returns: `<*>`
-- `args` `<...*>` Those args are passed to `mutator` starting from the second argument
+- `args` `<...*>` Those arguments are passed to `mutator`, starting from the second one
 - Returns: `<Entity>`
 
 ## Example
