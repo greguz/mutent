@@ -17,8 +17,8 @@ async function execCommit<S, T, O> (
   status: Status<S, T>,
   options?: O
 ): Promise<Status<T, T>> {
-  const { source, target } = status
-  if (commit && (source as any) !== target) {
+  const { source, target }: Status<any, any> = status
+  if (source !== target) {
     await commit(source, target, options)
   }
   return commitStatus(status)
