@@ -1,10 +1,10 @@
 import { One, getOne } from './data'
-import { Driver, Handler, createHandler } from './handler'
-import { Status, updateStatus, commitStatus, createStatus } from './status'
+import { Driver, Handler, bindDriver } from './handler'
+import { Status, updateStatus, commitStatus, createStatus, unwrapStatus } from './status'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
 
-export interface Entity<T, O> {
+export interface Entity<T, O = unknown> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
   assign<E> (object: E): Entity<T & E, O>
   delete (): Entity<null, O>
@@ -12,123 +12,126 @@ export interface Entity<T, O> {
   unwrap (options?: O): Promise<T>
 }
 
-interface Context<S, T, O> {
+interface State<S, T, O> {
+  handler: Handler<O>
   locked: boolean
-  reduce: (options?: O) => Promise<Status<S, T>>
-  handle: Handler<O>
+  mapper: (options?: O) => Promise<Status<S, T>>
 }
 
-function mapContext<S, T, O, X, Y> (
-  ctx: Context<S, T, O>,
+function createState<T, O, C> (
+  context: any = {},
+  one: One<T, O, C>,
+  driver?: Driver<O, C>
+): State<null, T, O> {
+  return {
+    handler: bindDriver(context, driver),
+    locked: false,
+    mapper: options => getOne(context, one, options).then(createStatus)
+  }
+}
+
+function mapState<S, T, O, X, Y> (
+  state: State<S, T, O>,
   mapper: (status: Status<S, T>) => Status<X, Y> | Promise<Status<X, Y>>
-): Context<X, Y, O> {
+): State<X, Y, O> {
   return {
+    handler: state.handler,
     locked: false,
-    reduce: options => ctx.reduce(options).then(mapper),
-    handle: ctx.handle
+    mapper: options => state.mapper(options).then(mapper)
   }
 }
 
-async function mapStatus<S, T, U> (
-  status: Status<S, T>,
-  mapper: (data: T) => U | Promise<U>
-): Promise<Status<S, U>> {
-  const target = await mapper(status.target)
-  return updateStatus(status, target)
+function readState<T, O, C> (
+  context: any = {},
+  one: One<T, O, C>,
+  driver?: Driver<O, C>
+): State<T, T, O> {
+  return mapState(createState(context, one, driver), commitStatus)
 }
 
-function createContext<T, O> (
-  one: One<T, O>,
-  handle: Handler<O>
-): Context<null, T, O> {
-  return {
-    locked: false,
-    reduce: options => getOne(one, options).then(createStatus),
-    handle
-  }
-}
-
-function readContext<T, O> (
-  one: One<T, O>,
-  handle: Handler<O>
-): Context<T, T, O> {
-  return mapContext(createContext(one, handle), commitStatus)
-}
-
-function updateContext<S, T, O, U, A extends any[]> (
-  ctx: Context<S, T, O>,
+function updateState<S, T, O, U, A extends any[]> (
+  state: State<S, T, O>,
   mutator: Mutator<T, U, A>,
   args: A
-): Context<S, U, O> {
-  return mapContext(
-    ctx,
+): State<S, U, O> {
+  async function mapStatus<S, T, U> (
+    status: Status<S, T>,
+    mapper: (data: T) => U | Promise<U>
+  ): Promise<Status<S, U>> {
+    const target = await mapper(status.target)
+    return updateStatus(status, target)
+  }
+  return mapState(
+    state,
     status => mapStatus(status, data => mutator(data, ...args))
   )
 }
 
-function assignContext<S, T, O, E> (ctx: Context<S, T, O>, object: E) {
-  return updateContext(
-    ctx,
+function assignState<S, T, O, E> (state: State<S, T, O>, object: E) {
+  return updateState(
+    state,
     data => ({ ...data, ...object }),
     []
   )
 }
 
-function deleteContext<S, O> (
-  ctx: Context<S, any, O>
-): Context<S, null, O> {
-  return updateContext(
-    ctx,
+function deleteState<S, O> (
+  state: State<S, any, O>
+): State<S, null, O> {
+  return updateState(
+    state,
     () => null,
     []
   )
 }
 
-function unwrapContext<S, T, O> (
-  ctx: Context<S, T, O>,
+function unwrapState<S, T, O> (
+  state: State<S, T, O>,
   options?: O
 ): Promise<T> {
-  return ctx.reduce(options).then(status => status.target)
+  return state.mapper(options).then(unwrapStatus)
 }
 
-function commitContext<S, T, O> (
-  { handle, reduce }: Context<S, T, O>
-): Context<T, T, O> {
+function commitState<S, T, O> (
+  state: State<S, T, O>
+): State<T, T, O> {
   return {
+    handler: state.handler,
     locked: false,
-    reduce: options => reduce(options).then(status => handle(status, options)),
-    handle
+    mapper: options => state.mapper(options).then(status => state.handler(status, options))
   }
 }
 
-function lockContext<S, T, O> (ctx: Context<S, T, O>) {
-  if (ctx.locked) {
+function lockState<S, T, O> (state: State<S, T, O>) {
+  if (state.locked) {
     throw new Error('This entity is immutable')
   }
-  ctx.locked = true
-  return ctx
+  state.locked = true
+  return state
 }
 
-function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
+function wrapState<S, T, O> (state: State<S, T, O>): Entity<T, O> {
   return {
-    update: (mutator, ...args) => wrapContext(updateContext(lockContext(ctx), mutator, args)),
-    assign: object => wrapContext(assignContext(lockContext(ctx), object)),
-    delete: () => wrapContext(deleteContext(lockContext(ctx))),
-    commit: () => wrapContext(commitContext(lockContext(ctx))),
-    unwrap: options => unwrapContext(lockContext(ctx), options)
+    update: (mutator, ...args) => wrapState(updateState(lockState(state), mutator, args)),
+    assign: object => wrapState(assignState(lockState(state), object)),
+    delete: () => wrapState(deleteState(lockState(state))),
+    commit: () => wrapState(commitState(lockState(state))),
+    unwrap: options => unwrapState(lockState(state), options)
   }
 }
 
-export function create<T, O> (
-  one: One<T, O>,
-  driver?: Driver<O>
+export function create<T, O = unknown, C = unknown> (
+  one: One<T, O, C>,
+  driver?: Driver<O, C>,
+  context?: C
 ): Entity<T, O> {
-  return wrapContext(createContext(one, createHandler(driver)))
+  return wrapState(createState(context, one, driver))
 }
 
-export function read<T, O> (
-  one: One<T, O>,
-  driver?: Driver<O>
+export function read<T, O = unknown, C = unknown> (
+  one: One<T, O, C>,
+  driver?: Driver<O, C>,
+  context?: C
 ): Entity<T, O> {
-  return wrapContext(readContext(one, createHandler(driver)))
+  return wrapState(readState(context, one, driver))
 }

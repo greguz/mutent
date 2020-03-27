@@ -1,8 +1,6 @@
 import core from 'stream'
 import { Stream, Readable, Writable, pipeline } from 'readable-stream'
 
-export type Lazy<T, O> = ((options?: O) => T) | T
-
 export type Value<T> =
   | Promise<T>
   | T
@@ -15,9 +13,11 @@ export type Values<T> =
   | Iterable<T>
   | AsyncIterable<T>
 
-export type One<T, O> = Lazy<Value<T>, O>
+export type Lazy<T, O = unknown, C = unknown> = ((this: C, options?: O) => T) | T
 
-export type Many<T, O> = Lazy<Values<T>, O>
+export type One<T, O = unknown, C = unknown> = Lazy<Value<T>, O, C>
+
+export type Many<T, O = unknown, C = unknown> = Lazy<Values<T>, O, C>
 
 function handlePromise (promise: Promise<any>) {
   promise = promise
@@ -88,12 +88,13 @@ function handlePromise (promise: Promise<any>) {
   })
 }
 
-export function getMany<T, O> (
-  many: Many<T, O>,
+export function getMany<T, O, C> (
+  context: C,
+  many: Many<T, O, C>,
   options?: O
 ): core.Readable {
   if (typeof many === 'function') {
-    return getMany(many.call(null, options))
+    return getMany(context, many.call(context, options))
   } else if (many instanceof Stream) {
     return many
   } else if (many instanceof Promise) {
@@ -103,12 +104,13 @@ export function getMany<T, O> (
   }
 }
 
-export function getOne<T, O> (
-  one: One<T, O>,
+export function getOne<T, O, C> (
+  context: C,
+  one: One<T, O, C>,
   options?: O
 ): Promise<T> {
   if (typeof one === 'function') {
-    return getOne((one as any).call(null, options))
+    return getOne(context, (one as any).call(context, options))
   } else {
     return Promise.resolve(one)
   }

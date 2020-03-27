@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 
-import { Plugin, Handler, createHandler } from './handler'
+import { Plugin, Handler, bindDriver } from './handler'
 import { Status } from './status'
 
 async function handleStatus<S, T, O> (
@@ -29,7 +29,7 @@ async function testHandler<S, T, O> (
 
 test('void handler', async t => {
   t.plan(8)
-  await testHandler(t, createHandler(), 'Bob', 'Alice')
+  await testHandler(t, bindDriver({}), 'Bob', 'Alice')
 })
 
 test('commit handler', async t => {
@@ -48,7 +48,7 @@ test('commit handler', async t => {
   }
   await testHandler(
     t,
-    createHandler(commit),
+    bindDriver({}, commit),
     'Bob',
     'Alice',
     { hello: 'world' }
@@ -65,7 +65,7 @@ test('plugin create handler', async t => {
   }
   await testHandler(
     t,
-    createHandler(plugin),
+    bindDriver({}, plugin),
     'Bob',
     'Alice',
     { hello: 'world' }
@@ -83,7 +83,7 @@ test('plugin update handler', async t => {
   }
   await testHandler(
     t,
-    createHandler(plugin),
+    bindDriver({}, plugin),
     'Bob',
     'Alice',
     { hello: 'world' }
@@ -100,7 +100,7 @@ test('plugin delete handler', async t => {
   }
   await testHandler(
     t,
-    createHandler(plugin),
+    bindDriver({}, plugin),
     'Bob',
     'Alice',
     { hello: 'world' }
