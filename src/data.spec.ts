@@ -52,6 +52,7 @@ function collectValues<T, O> (
       getMany(many, options),
       new Writable({
         objectMode: true,
+        highWaterMark: 1,
         write (chunk, encoding, callback) {
           results.push(chunk)
           if (wait) {
@@ -142,13 +143,12 @@ test('many rejections', async t => {
   const message = 'NOPE'
 
   await t.throwsAsync(
-    async () => {
-      await collectValues(
-        async () => {
-          throw new Error(message)
-        }
-      )
-    },
+    () => collectValues(Promise.reject<any>(new Error(message))),
+    { message }
+  )
+
+  await t.throwsAsync(
+    () => collectValues(() => Promise.reject<any>(new Error(message))),
     { message }
   )
 })
