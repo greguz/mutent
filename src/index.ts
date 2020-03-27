@@ -1,6 +1,7 @@
 import core from 'stream'
 
-export { Entities, insert, find } from './entities'
+export { Lazy, Many, One, Value, Values } from './data'
+export { Entities, Reducer, insert, find } from './entities'
 export { Entity, Mutator, create, read } from './entity'
 export { Commit, Driver, Plugin } from './handler'
 
