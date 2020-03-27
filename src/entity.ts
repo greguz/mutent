@@ -1,5 +1,5 @@
+import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './handler'
-import { One, getOne } from './one'
 import { Status, updateStatus, commitStatus, createStatus } from './status'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
