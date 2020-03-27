@@ -1,5 +1,5 @@
-import cs from 'stream'
-import gs from 'readable-stream'
+import core from 'stream'
+import { Stream, Readable, Writable, pipeline } from 'readable-stream'
 
 export type Lazy<T, O> = ((options?: O) => T) | T
 
@@ -8,9 +8,9 @@ export type Value<T> =
   | T
 
 export type Values<T> =
-  | Promise<cs.Readable>
+  | Promise<core.Readable>
   | Promise<T[]>
-  | cs.Readable
+  | core.Readable
   | T[]
   | Iterable<T>
   | AsyncIterable<T>
@@ -19,7 +19,7 @@ export type One<T, O> = Lazy<Value<T>, O>
 
 export type Many<T, O> = Lazy<Values<T>, O>
 
-function handlePromise<T> (promise: Promise<any>) {
+function handlePromise (promise: Promise<any>) {
   promise = promise
     .then(result => ({
       status: 'FULFILLED',
@@ -32,7 +32,7 @@ function handlePromise<T> (promise: Promise<any>) {
 
   let reading: boolean = false
   let resume: any
-  return new gs.Readable({
+  return new Readable({
     highWaterMark: 16,
     objectMode: true,
     read () {
@@ -57,13 +57,11 @@ function handlePromise<T> (promise: Promise<any>) {
       }
 
       function handleFulfillment (result: any) {
-        const source = Array.isArray(result)
-          ? gs.Readable.from(result)
-          : result
-
-        gs.pipeline(
-          source,
-          new gs.Writable({
+        pipeline(
+          Array.isArray(result)
+            ? Readable.from(result)
+            : result,
+          new Writable({
             objectMode: true,
             write (chunk, encoding, callback) {
               if (self.push(chunk, encoding)) {
@@ -93,15 +91,15 @@ function handlePromise<T> (promise: Promise<any>) {
 export function getMany<T, O> (
   many: Many<T, O>,
   options?: O
-): cs.Readable {
+): core.Readable {
   if (typeof many === 'function') {
     return getMany(many.call(null, options))
-  } else if (many instanceof cs.Stream) {
+  } else if (many instanceof Stream) {
     return many
   } else if (many instanceof Promise) {
     return handlePromise(many)
   } else {
-    return gs.Readable.from(many)
+    return Readable.from(many)
   }
 }
 

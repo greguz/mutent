@@ -1,5 +1,5 @@
-import cs from 'stream'
-import gs from 'readable-stream'
+import core from 'stream'
+import { Readable, Writable, pipeline } from 'readable-stream'
 
 import { Many, getMany } from './data'
 import { Entity, Mutator, create, read } from './entity'
@@ -18,13 +18,13 @@ export interface Entities<T, O> {
   delete (): Entities<null, O>
   commit (): Entities<T, O>,
   unwrap (options?: O): Promise<T[]>
-  stream (options?: O): gs.Readable
+  stream (options?: O): core.Readable
   reduce<R> (reducer: Reducer<T, O, R>, init: R, options?: O): Promise<R>
 }
 
 interface Context<S, T, O> {
   locked: boolean
-  extract: (options?: O) => cs.Readable
+  extract: (options?: O) => core.Readable
   mapper: (data: S) => Entity<T, O>
 }
 
@@ -95,10 +95,10 @@ function handleContext<S, T, O> (
   options: O | undefined,
   write: (entity: Entity<T, O>, callback: Callback) => void,
   end: Callback
-) {
-  gs.pipeline(
+): void {
+  pipeline(
     ctx.extract(options),
-    new gs.Writable({
+    new Writable({
       objectMode: true,
       write (data: S, encoding, callback) {
         write(ctx.mapper(data), callback)
@@ -139,9 +139,9 @@ function unwrapContext<S, T, O> (
 function streamContext<S, T, O> (
   ctx: Context<S, T, O>,
   options?: O
-): gs.Readable {
+): core.Readable {
   let reading = false
-  return new gs.Readable({
+  return new Readable({
     objectMode: true,
     read () {
       if (reading) {
