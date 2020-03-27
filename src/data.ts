@@ -19,24 +19,6 @@ export type One<T, O> = Lazy<Value<T>, O>
 
 export type Many<T, O> = Lazy<Values<T>, O>
 
-function pipeReadable (
-  target: cs.Readable,
-  source: cs.Readable,
-  end: (err?: any) => void
-) {
-  gs.pipeline(
-    source,
-    new gs.Writable({
-      objectMode: true,
-      write (chunk, encoding, callback) {
-        target.push(chunk, encoding)
-        callback()
-      }
-    }),
-    end
-  )
-}
-
 function handlePromise<T> (promise: Promise<any>) {
   promise = promise
     .then(result => ({
@@ -48,29 +30,49 @@ function handlePromise<T> (promise: Promise<any>) {
       error
     }))
 
-  let reading = false
+  let reading: boolean = false
+  let resume: any
   return new gs.Readable({
+    highWaterMark: 16,
     objectMode: true,
     read () {
+      if (resume) {
+        const fn = resume
+        resume = undefined
+        fn()
+      }
       if (reading) {
         return
       }
       reading = true
 
-      const closeStream = (err?: any) => {
+      const self = this
+
+      function closeStream (err?: any) {
         if (err) {
-          process.nextTick(() => this.emit('error', err))
+          process.nextTick(() => self.emit('error', err))
         } else {
-          this.push(null)
+          self.push(null)
         }
       }
 
-      const handleFulfillment = (result: any) => {
-        pipeReadable(
-          this,
-          Array.isArray(result)
-            ? gs.Readable.from(result)
-            : result,
+      function handleFulfillment (result: any) {
+        const source = Array.isArray(result)
+          ? gs.Readable.from(result)
+          : result
+
+        gs.pipeline(
+          source,
+          new gs.Writable({
+            objectMode: true,
+            write (chunk, encoding, callback) {
+              if (self.push(chunk, encoding)) {
+                callback()
+              } else {
+                resume = callback
+              }
+            }
+          }),
           closeStream
         )
       }

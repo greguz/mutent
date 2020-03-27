@@ -115,7 +115,10 @@ function createReadableStream (values: any[]) {
 test('many readable', async t => {
   t.plan(5)
 
-  const values = [{ value: 42 }, true, 'Pizza']
+  const values: any[] = []
+  for (let i = 0; i < 32; i++) {
+    values.push({ index: i })
+  }
 
   const a = await collectValues(createReadableStream(values))
   t.deepEqual(a, values)
