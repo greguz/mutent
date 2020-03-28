@@ -5,119 +5,117 @@ import { Many, getMany } from './data'
 import { Entity, Mutator, create, read } from './entity'
 import { Driver } from './handler'
 
-export type Reducer<T, R, O = unknown> = (
+export type Reducer<T, O, R> = (
   accumulator: R,
   entity: Entity<T, O>,
   index: number,
   options?: O
 ) => Promise<R>
 
-export interface Entities<T, O = unknown> {
+export interface Entities<T, O> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entities<U, O>
   assign<E> (object: E): Entities<T & E, O>
   delete (): Entities<null, O>
   commit (): Entities<T, O>,
   unwrap (options?: O): Promise<T[]>
   stream (options?: O): core.Readable
-  reduce<R> (reducer: Reducer<T, R, O>, init: R, options?: O): Promise<R>
+  reduce<R> (reducer: Reducer<T, O, R>, init: R, options?: O): Promise<R>
 }
 
-interface State<S, T, O> {
-  extract: (options?: O) => core.Readable
+interface Context<S, T, O> {
   locked: boolean
+  extract: (options?: O) => core.Readable
   mapper: (data: S) => Entity<T, O>
 }
 
-function createState<T, O, C> (
-  context: any = {},
-  many: Many<T, O, C>,
-  driver?: Driver<O, C>
-): State<T, T, O> {
+function createContext<T, O> (
+  many: Many<T, O>,
+  driver?: Driver<O>
+): Context<T, T, O> {
   return {
-    extract: options => getMany(context, many, options),
     locked: false,
+    extract: options => getMany(many, options),
     mapper: data => create(data, driver)
   }
 }
 
-function readState<T, O, C> (
-  context: any = {},
-  many: Many<T, O, C>,
-  driver?: Driver<O, C>
-): State<T, T, O> {
+function readContext<T, O> (
+  many: Many<T, O>,
+  driver?: Driver<O>
+): Context<T, T, O> {
   return {
-    extract: options => getMany(context, many, options),
     locked: false,
+    extract: options => getMany(many, options),
     mapper: data => read(data, driver)
   }
 }
 
-function mapState<S, T, U, O> (
-  state: State<S, T, O>,
+function mapContext<S, T, U, O> (
+  ctx: Context<S, T, O>,
   mapper: (entity: Entity<T, O>) => Entity<U, O>
-): State<S, U, O> {
+): Context<S, U, O> {
   return {
     locked: false,
-    extract: state.extract,
-    mapper: (data: S) => mapper(state.mapper(data))
+    extract: ctx.extract,
+    mapper: (data: S) => mapper(ctx.mapper(data))
   }
 }
 
-function updateState<S, T, O, U, A extends any[]> (
-  state: State<S, T, O>,
+function updateContext<S, T, O, U, A extends any[]> (
+  ctx: Context<S, T, O>,
   mutator: Mutator<T, U, A>,
   args: A
-): State<S, U, O> {
-  return mapState(state, entity => entity.update(mutator, ...args))
+): Context<S, U, O> {
+  return mapContext(ctx, entity => entity.update(mutator, ...args))
 }
 
-function assignState<S, T, E, O> (
-  state: State<S, T, O>,
+function assignContext<S, T, E, O> (
+  ctx: Context<S, T, O>,
   object: E
-): State<S, T & E, O> {
-  return mapState(state, entity => entity.assign(object))
+): Context<S, T & E, O> {
+  return mapContext(ctx, entity => entity.assign(object))
 }
 
-function deleteState<S, T, O> (
-  state: State<S, T, O>
-): State<S, null, O> {
-  return mapState(state, entity => entity.delete())
+function deleteContext<S, T, O> (
+  ctx: Context<S, T, O>
+): Context<S, null, O> {
+  return mapContext(ctx, entity => entity.delete())
 }
 
-function commitState<S, T, O> (
-  state: State<S, T, O>
-): State<S, T, O> {
-  return mapState(state, entity => entity.commit())
+function commitContext<S, T, O> (
+  ctx: Context<S, T, O>
+): Context<S, T, O> {
+  return mapContext(ctx, entity => entity.commit())
 }
 
 type Callback = (err?: any) => void
 
-function handleState<S, T, O> (
-  state: State<S, T, O>,
+function handleContext<S, T, O> (
+  ctx: Context<S, T, O>,
   options: O | undefined,
   write: (entity: Entity<T, O>, callback: Callback) => void,
   end: Callback
 ): void {
   pipeline(
-    state.extract(options),
+    ctx.extract(options),
     new Writable({
       objectMode: true,
       write (data: S, encoding, callback) {
-        write(state.mapper(data), callback)
+        write(ctx.mapper(data), callback)
       }
     }),
     end
   )
 }
 
-function unwrapState<S, T, O> (
-  state: State<S, T, O>,
+function unwrapContext<S, T, O> (
+  ctx: Context<S, T, O>,
   options?: O
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
-    handleState(
-      state,
+    handleContext(
+      ctx,
       options,
       (entity, callback) => {
         entity.unwrap(options)
@@ -138,8 +136,8 @@ function unwrapState<S, T, O> (
   })
 }
 
-function streamState<S, T, O> (
-  state: State<S, T, O>,
+function streamContext<S, T, O> (
+  ctx: Context<S, T, O>,
   options?: O
 ): core.Readable {
   let reading = false
@@ -150,8 +148,8 @@ function streamState<S, T, O> (
         return
       }
       reading = true
-      handleState(
-        state,
+      handleContext(
+        ctx,
         options,
         (entity, callback) => {
           this.push({ entity, options })
@@ -169,15 +167,15 @@ function streamState<S, T, O> (
   })
 }
 
-function reduceState<S, T, O, R> (
-  ctx: State<S, T, O>,
-  reducer: Reducer<T, R, O>,
+function reduceContext<S, T, O, R> (
+  ctx: Context<S, T, O>,
+  reducer: Reducer<T, O, R>,
   accumulator: R,
   options?: O
 ): Promise<R> {
   return new Promise<R>((resolve, reject) => {
     let index = 0
-    handleState(
+    handleContext(
       ctx,
       options,
       (entity, callback) => {
@@ -199,38 +197,36 @@ function reduceState<S, T, O, R> (
   })
 }
 
-function lockState<S, T, O> (state: State<S, T, O>) {
-  if (state.locked) {
+function lockContext<S, T, O> (ctx: Context<S, T, O>) {
+  if (ctx.locked) {
     throw new Error('Those entities are immutable')
   }
-  state.locked = true
-  return state
+  ctx.locked = true
+  return ctx
 }
 
-function wrapState<S, T, O> (state: State<S, T, O>): Entities<T, O> {
+function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
   return {
-    update: (mutator, ...args) => wrapState(updateState(lockState(state), mutator, args)),
-    assign: object => wrapState(assignState(lockState(state), object)),
-    delete: () => wrapState(deleteState(lockState(state))),
-    commit: () => wrapState(commitState(lockState(state))),
-    unwrap: options => unwrapState(lockState(state), options),
-    stream: options => streamState(lockState(state), options),
-    reduce: (reducer, init, options) => reduceState(lockState(state), reducer, init, options)
+    update: (mutator, ...args) => wrapContext(updateContext(lockContext(ctx), mutator, args)),
+    assign: object => wrapContext(assignContext(lockContext(ctx), object)),
+    delete: () => wrapContext(deleteContext(lockContext(ctx))),
+    commit: () => wrapContext(commitContext(lockContext(ctx))),
+    unwrap: options => unwrapContext(lockContext(ctx), options),
+    stream: options => streamContext(lockContext(ctx), options),
+    reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options)
   }
 }
 
-export function insert<T, O = unknown, C = unknown> (
-  many: Many<T, O, C>,
-  driver?: Driver<O, C>,
-  context?: C
+export function insert<T = any, O = any> (
+  many: Many<T, O>,
+  driver?: Driver<O>
 ): Entities<T, O> {
-  return wrapState(createState(context, many, driver))
+  return wrapContext(createContext(many, driver))
 }
 
-export function find<T, O = unknown, C = unknown> (
-  many: Many<T, O, C>,
-  driver?: Driver<O, C>,
-  context?: C
+export function find<T = any, O = any> (
+  many: Many<T, O>,
+  driver?: Driver<O>
 ): Entities<T, O> {
-  return wrapState(readState(context, many, driver))
+  return wrapContext(readContext(many, driver))
 }

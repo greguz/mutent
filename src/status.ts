@@ -35,9 +35,3 @@ export function commitStatus<T> (
     target: status.target
   }
 }
-
-export function unwrapStatus<T> (
-  status: Status<any, T>
-): T {
-  return status.target
-}
