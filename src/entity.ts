@@ -1,6 +1,6 @@
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './handler'
-import { Status, updateStatus, commitStatus, createStatus } from './status'
+import { Status, createStatus, commitStatus, updateStatus, unwrapStatus } from './status'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
 
@@ -88,7 +88,7 @@ function unwrapContext<S, T, O> (
   ctx: Context<S, T, O>,
   options?: O
 ): Promise<T> {
-  return ctx.reduce(options).then(status => status.target)
+  return ctx.reduce(options).then(unwrapStatus)
 }
 
 function commitContext<S, T, O> (
