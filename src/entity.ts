@@ -4,7 +4,7 @@ import { Status, updateStatus, commitStatus, createStatus } from './status'
 
 export type Mutator<T, U, A extends any[]> = (data: T, ...args: A) => U | Promise<U>
 
-export interface Entity<T, O> {
+export interface Entity<T, O = any> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entity<U, O>
   assign<E> (object: E): Entity<T & E, O>
   delete (): Entity<null, O>
@@ -119,14 +119,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entity<T, O> {
   }
 }
 
-export function create<T, O> (
+export function create<T, O = any> (
   one: One<T, O>,
   driver?: Driver<O>
 ): Entity<T, O> {
   return wrapContext(createContext(one, createHandler(driver)))
 }
 
-export function read<T, O> (
+export function read<T, O = any> (
   one: One<T, O>,
   driver?: Driver<O>
 ): Entity<T, O> {

@@ -1,7 +1,7 @@
 import core from 'stream'
 import { Stream, Readable, Writable, pipeline } from 'readable-stream'
 
-export type Lazy<T, O> = ((options?: O) => T) | T
+export type Lazy<T, O = any> = ((options?: O) => T) | T
 
 export type Value<T> =
   | Promise<T>
@@ -15,9 +15,9 @@ export type Values<T> =
   | Iterable<T>
   | AsyncIterable<T>
 
-export type One<T, O> = Lazy<Value<T>, O>
+export type One<T, O = any> = Lazy<Value<T>, O>
 
-export type Many<T, O> = Lazy<Values<T>, O>
+export type Many<T, O = any> = Lazy<Values<T>, O>
 
 function handlePromise (promise: Promise<any>) {
   promise = promise

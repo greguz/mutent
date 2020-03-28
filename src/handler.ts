@@ -1,14 +1,14 @@
 import { Status, commitStatus } from './status'
 
-export type Commit<O> = (source: any, target: any, options?: O) => any
+export type Commit<O = any> = (source: any, target: any, options?: O) => any
 
-export interface Plugin<O> {
+export interface Plugin<O = any> {
   create? (target: any, options?: O): any
   update? (source: any, target: any, options?: O): any
   delete? (source: any, options?: O): any
 }
 
-export type Driver<O> = Commit<O> | Plugin<O>
+export type Driver<O = any> = Commit<O> | Plugin<O>
 
 export type Handler<O> = <S, T>(status: Status<S, T>, options?: O) => Promise<Status<T, T>>
 

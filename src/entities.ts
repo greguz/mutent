@@ -5,21 +5,21 @@ import { Many, getMany } from './data'
 import { Entity, Mutator, create, read } from './entity'
 import { Driver } from './handler'
 
-export type Reducer<T, O, R> = (
+export type Reducer<T, R, O = any> = (
   accumulator: R,
   entity: Entity<T, O>,
   index: number,
   options?: O
 ) => Promise<R>
 
-export interface Entities<T, O> {
+export interface Entities<T, O = any> {
   update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entities<U, O>
   assign<E> (object: E): Entities<T & E, O>
   delete (): Entities<null, O>
   commit (): Entities<T, O>,
   unwrap (options?: O): Promise<T[]>
   stream (options?: O): core.Readable
-  reduce<R> (reducer: Reducer<T, O, R>, init: R, options?: O): Promise<R>
+  reduce<R> (reducer: Reducer<T, R, O>, init: R, options?: O): Promise<R>
 }
 
 interface Context<S, T, O> {
@@ -169,7 +169,7 @@ function streamContext<S, T, O> (
 
 function reduceContext<S, T, O, R> (
   ctx: Context<S, T, O>,
-  reducer: Reducer<T, O, R>,
+  reducer: Reducer<T, R, O>,
   accumulator: R,
   options?: O
 ): Promise<R> {
@@ -217,14 +217,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
   }
 }
 
-export function insert<T = any, O = any> (
+export function insert<T, O = any> (
   many: Many<T, O>,
   driver?: Driver<O>
 ): Entities<T, O> {
   return wrapContext(createContext(many, driver))
 }
 
-export function find<T = any, O = any> (
+export function find<T, O = any> (
   many: Many<T, O>,
   driver?: Driver<O>
 ): Entities<T, O> {
