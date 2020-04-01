@@ -27,10 +27,10 @@ interface Context<T, O> {
 
 function createContext<T, O> (
   one: One<T, O>,
-  handler: Handler<T, O>
+  driver?: Driver<T, O>
 ): Context<T, O> {
   return {
-    handler,
+    handler: createHandler(driver),
     locked: false,
     extract: options => getOne(one, options).then(createStatus),
     past: [],
@@ -51,9 +51,9 @@ function mapContext<T, O> (
 
 function readContext<T, O> (
   one: One<T, O>,
-  handle: Handler<T, O>
+  driver?: Driver<T, O>
 ): Context<T, O> {
-  return mapContext(createContext(one, handle), commitStatus)
+  return mapContext(createContext(one, driver), commitStatus)
 }
 
 function updateContext<T, O, A extends any[]> (
@@ -142,12 +142,12 @@ export function create<T, O = any> (
   one: One<T, O>,
   driver?: Driver<T, O>
 ): Entity<T, O> {
-  return wrapContext(createContext(one, createHandler(driver)))
+  return wrapContext(createContext(one, driver))
 }
 
 export function read<T, O = any> (
   one: One<T, O>,
   driver?: Driver<T, O>
 ): Entity<T, O> {
-  return wrapContext(readContext(one, createHandler(driver)))
+  return wrapContext(readContext(one, driver))
 }
