@@ -3,10 +3,10 @@ import test, { ExecutionContext } from 'ava'
 import { Plugin, Handler, createHandler } from './handler'
 import { Status } from './status'
 
-async function handleStatus<S, T, O> (
+async function handleStatus<T, O> (
   t: ExecutionContext,
-  handler: Handler<O>,
-  status: Status<S, T>,
+  handler: Handler<T, O>,
+  status: Status<T>,
   options?: O
 ) {
   const result = await handler(status, options)
@@ -14,10 +14,10 @@ async function handleStatus<S, T, O> (
   t.true(result.target === status.target)
 }
 
-async function testHandler<S, T, O> (
+async function testHandler<T, O> (
   t: ExecutionContext,
-  handler: Handler<O>,
-  source: S,
+  handler: Handler<T, O>,
+  source: T,
   target: T,
   options?: O
 ) {

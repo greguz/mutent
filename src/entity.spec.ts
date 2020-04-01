@@ -1,5 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 
+import { isDeleted } from './deleted'
 import { create, read } from './entity'
 
 interface CommitMode {
@@ -86,23 +87,27 @@ test('update', async t => {
 })
 
 test('delete', async t => {
-  t.plan(3)
+  t.plan(5)
   const result = await read({ a: 1 }, bind(t, { delete: true }))
     .update(data => ({ ...data, b: 2 }))
     .delete()
     .commit()
     .unwrap({ db: 'test' })
-  t.deepEqual(result, null)
+  t.is(result.a, 1)
+  t.is(result.b, 2)
+  t.true(isDeleted(result))
 })
 
 test('void', async t => {
-  t.plan(1)
+  t.plan(3)
   const result = await create({ a: 1 }, bind(t))
     .update(data => ({ ...data, b: 2 }))
     .delete()
     .commit()
     .unwrap()
-  t.is(result, null)
+  t.is(result.a, 1)
+  t.is(result.b, 2)
+  t.true(isDeleted(result))
 })
 
 test('read sync', async t => {

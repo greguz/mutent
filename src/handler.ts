@@ -1,54 +1,65 @@
-import { Status, commitStatus } from './status'
+import { isDeleted } from './deleted'
+import { Status, commitStatus, updateStatus } from './status'
 
-export type Commit<O = any> = (source: any, target: any, options?: O) => any
+export type Commit<T, O = any> = (
+  source: T | null,
+  target: T | null,
+  options?: O
+) => Promise<T | void>
 
-export interface Plugin<O = any> {
-  create? (target: any, options?: O): any
-  update? (source: any, target: any, options?: O): any
-  delete? (source: any, options?: O): any
+export interface Plugin<T, O = any> {
+  create? (target: T, options?: O): Promise<T | void>
+  update? (source: T, target: T, options?: O): Promise<T | void>
+  delete? (source: T, options?: O): Promise<T | void>
 }
 
-export type Driver<O = any> = Commit<O> | Plugin<O>
+export type Driver<T, O = any> = Commit<T, O> | Plugin<T, O>
 
-export type Handler<O> = <S, T>(status: Status<S, T>, options?: O) => Promise<Status<T, T>>
+export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
 
-async function execCommit<S, T, O> (
-  commit: Commit<O>,
-  status: Status<S, T>,
+async function execCommit<T, O> (
+  commit: Commit<T, O>,
+  status: Status<T>,
   options?: O
-): Promise<Status<T, T>> {
-  const { source, target }: Status<any, any> = status
+): Promise<Status<T>> {
+  const source = status.source
+  const target = isDeleted(status.target) ? null : status.target
   if (source !== target) {
-    await commit(source, target, options)
+    const out = await commit(source, target, options)
+    if (out !== undefined) {
+      status = updateStatus(status, out)
+    }
   }
   return commitStatus(status)
 }
 
-function bindCommit<O> (commit: Commit<O>): Handler<O> {
-  return (status, options) => execCommit(commit, status, options)
+function noop (): Promise<void> {
+  return Promise.resolve()
 }
 
-function noop () {
-  // nothing to do
-}
-
-function reducePlugin<O> (plugin: Plugin<O>): Commit<O> {
+function reducePlugin<T, O> (plugin: Plugin<T, O>): Commit<T, O> {
   const pCreate = plugin.create || noop
   const pUpdate = plugin.update || noop
   const pDelete = plugin.delete || noop
 
   return function (source, target, options) {
-    if (source === null) {
-      return pCreate(target, options)
-    } else if (target === null) {
-      return pDelete(source, options)
-    } else {
+    if (source !== null && target !== null) {
       return pUpdate(source, target, options)
+    } else if (source !== null) {
+      return pDelete(source, options)
+    } else if (target !== null) {
+      return pCreate(target, options)
+    } else {
+      return noop()
     }
   }
 }
 
-export function createHandler<O> (driver?: Driver<O>): Handler<O> {
+function bindCommit<T, O> (commit: Commit<T, O>): Handler<T, O> {
+  return (status, options) => execCommit(commit, status, options)
+}
+
+export function createHandler<T, O> (driver?: Driver<T, O>): Handler<T, O> {
   if (typeof driver === 'function') {
     return bindCommit(driver)
   } else if (typeof driver === 'object') {

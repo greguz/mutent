@@ -1,8 +1,7 @@
 import test, { ExecutionContext } from 'ava'
-import { pipeline, Writable } from 'readable-stream'
+import { pipeline, Readable, Writable } from 'readable-stream'
 
 import { insert, find } from './entities'
-import { Entity } from './entity'
 
 interface CommitMode {
   create: boolean
@@ -122,8 +121,8 @@ test('delete', async t => {
     .commit()
     .unwrap({ db: 'test' })
   t.is(results.length, 16)
-  t.is(results[0], null)
-  t.is(results[15], null)
+  t.is(results[0].value, 0)
+  t.is(results[15].value, 30)
 })
 
 test('insert-error', async t => {
@@ -164,10 +163,18 @@ test('stream', async t => {
 })
 
 test('stream-error', async t => {
+  function getErroredStream (err: any) {
+    return new Readable({
+      read () {
+        this.emit('error', err)
+      }
+    })
+  }
+
   await t.throwsAsync(async () => {
     await new Promise((resolve, reject) => {
       pipeline(
-        insert((): any => Promise.reject(new Error())).stream(),
+        insert(getErroredStream(new Error())).stream(),
         new Writable({
           objectMode: true,
           write (chunk, encoding, callback) {

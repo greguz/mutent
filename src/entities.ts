@@ -13,25 +13,25 @@ export type Reducer<T, R, O = any> = (
 ) => Promise<R>
 
 export interface Entities<T, O = any> {
-  update<U, A extends any[]> (mutator: Mutator<T, U, A>, ...args: A): Entities<U, O>
-  assign<E> (object: E): Entities<T & E, O>
-  delete (): Entities<null, O>
+  update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entities<T, O>
+  assign (object: Partial<T>): Entities<T, O>
+  delete (): Entities<T, O>
   commit (): Entities<T, O>,
   unwrap (options?: O): Promise<T[]>
   stream (options?: O): core.Readable
   reduce<R> (reducer: Reducer<T, R, O>, init: R, options?: O): Promise<R>
 }
 
-interface Context<S, T, O> {
+interface Context<T, O> {
   locked: boolean
   extract: (options?: O) => core.Readable
-  mapper: (data: S) => Entity<T, O>
+  mapper: (data: T) => Entity<T, O>
 }
 
 function createContext<T, O> (
   many: Many<T, O>,
-  driver?: Driver<O>
-): Context<T, T, O> {
+  driver?: Driver<T, O>
+): Context<T, O> {
   return {
     locked: false,
     extract: options => getMany(many, options),
@@ -41,8 +41,8 @@ function createContext<T, O> (
 
 function readContext<T, O> (
   many: Many<T, O>,
-  driver?: Driver<O>
-): Context<T, T, O> {
+  driver?: Driver<T, O>
+): Context<T, O> {
   return {
     locked: false,
     extract: options => getMany(many, options),
@@ -50,48 +50,48 @@ function readContext<T, O> (
   }
 }
 
-function mapContext<S, T, U, O> (
-  ctx: Context<S, T, O>,
-  mapper: (entity: Entity<T, O>) => Entity<U, O>
-): Context<S, U, O> {
+function mapContext<T, O> (
+  ctx: Context<T, O>,
+  mapper: (entity: Entity<T, O>) => Entity<T, O>
+): Context<T, O> {
   return {
     locked: false,
     extract: ctx.extract,
-    mapper: (data: S) => mapper(ctx.mapper(data))
+    mapper: data => mapper(ctx.mapper(data))
   }
 }
 
-function updateContext<S, T, O, U, A extends any[]> (
-  ctx: Context<S, T, O>,
-  mutator: Mutator<T, U, A>,
+function updateContext<T, O, A extends any[]> (
+  ctx: Context<T, O>,
+  mutator: Mutator<T, A>,
   args: A
-): Context<S, U, O> {
+): Context<T, O> {
   return mapContext(ctx, entity => entity.update(mutator, ...args))
 }
 
 function assignContext<S, T, E, O> (
-  ctx: Context<S, T, O>,
-  object: E
-): Context<S, T & E, O> {
+  ctx: Context<T, O>,
+  object: Partial<T>
+): Context<T, O> {
   return mapContext(ctx, entity => entity.assign(object))
 }
 
-function deleteContext<S, T, O> (
-  ctx: Context<S, T, O>
-): Context<S, null, O> {
+function deleteContext<T, O> (
+  ctx: Context<T, O>
+): Context<T, O> {
   return mapContext(ctx, entity => entity.delete())
 }
 
-function commitContext<S, T, O> (
-  ctx: Context<S, T, O>
-): Context<S, T, O> {
+function commitContext<T, O> (
+  ctx: Context<T, O>
+): Context<T, O> {
   return mapContext(ctx, entity => entity.commit())
 }
 
 type Callback = (err?: any) => void
 
-function handleContext<S, T, O> (
-  ctx: Context<S, T, O>,
+function handleContext<T, O> (
+  ctx: Context<T, O>,
   options: O | undefined,
   write: (entity: Entity<T, O>, callback: Callback) => void,
   end: Callback
@@ -100,7 +100,7 @@ function handleContext<S, T, O> (
     ctx.extract(options),
     new Writable({
       objectMode: true,
-      write (data: S, encoding, callback) {
+      write (data: T, encoding, callback) {
         write(ctx.mapper(data), callback)
       }
     }),
@@ -108,8 +108,8 @@ function handleContext<S, T, O> (
   )
 }
 
-function unwrapContext<S, T, O> (
-  ctx: Context<S, T, O>,
+function unwrapContext<T, O> (
+  ctx: Context<T, O>,
   options?: O
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
@@ -136,8 +136,8 @@ function unwrapContext<S, T, O> (
   })
 }
 
-function streamContext<S, T, O> (
-  ctx: Context<S, T, O>,
+function streamContext<T, O> (
+  ctx: Context<T, O>,
   options?: O
 ): core.Readable {
   let reading = false
@@ -167,8 +167,8 @@ function streamContext<S, T, O> (
   })
 }
 
-function reduceContext<S, T, O, R> (
-  ctx: Context<S, T, O>,
+function reduceContext<T, O, R> (
+  ctx: Context<T, O>,
   reducer: Reducer<T, R, O>,
   accumulator: R,
   options?: O
@@ -197,7 +197,7 @@ function reduceContext<S, T, O, R> (
   })
 }
 
-function lockContext<S, T, O> (ctx: Context<S, T, O>) {
+function lockContext<T, O> (ctx: Context<T, O>) {
   if (ctx.locked) {
     throw new Error('Those entities are immutable')
   }
@@ -205,7 +205,7 @@ function lockContext<S, T, O> (ctx: Context<S, T, O>) {
   return ctx
 }
 
-function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
+function wrapContext<T, O> (ctx: Context<T, O>): Entities<T, O> {
   return {
     update: (mutator, ...args) => wrapContext(updateContext(lockContext(ctx), mutator, args)),
     assign: object => wrapContext(assignContext(lockContext(ctx), object)),
@@ -219,14 +219,14 @@ function wrapContext<S, T, O> (ctx: Context<S, T, O>): Entities<T, O> {
 
 export function insert<T, O = any> (
   many: Many<T, O>,
-  driver?: Driver<O>
+  driver?: Driver<T, O>
 ): Entities<T, O> {
   return wrapContext(createContext(many, driver))
 }
 
 export function find<T, O = any> (
   many: Many<T, O>,
-  driver?: Driver<O>
+  driver?: Driver<T, O>
 ): Entities<T, O> {
   return wrapContext(readContext(many, driver))
 }

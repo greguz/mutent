@@ -1,5 +1,5 @@
-export interface Status<S, T> {
-  source: S,
+export interface Status<T> {
+  source: T | null,
   target: T
 }
 
@@ -10,26 +10,26 @@ function noUndef<T> (value: T): T {
   return value
 }
 
-export function createStatus<T> (value: T): Status<null, T> {
+export function createStatus<T> (target: T): Status<T> {
   return {
     source: null,
-    target: noUndef(value)
+    target: noUndef(target)
   }
 }
 
-export function updateStatus<S, T, V> (
-  status: Status<S, T>,
-  value: V
-): Status<S, V> {
+export function updateStatus<T> (
+  status: Status<T>,
+  target: T
+): Status<T> {
   return {
     source: status.source,
-    target: noUndef(value)
+    target: noUndef(target)
   }
 }
 
 export function commitStatus<T> (
-  status: Status<any, T>
-): Status<T, T> {
+  status: Status<T>
+): Status<T> {
   return {
     source: status.target,
     target: status.target
@@ -37,7 +37,7 @@ export function commitStatus<T> (
 }
 
 export function unwrapStatus<T> (
-  status: Status<any, T>
+  status: Status<T>
 ): T {
   return status.target
 }
