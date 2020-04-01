@@ -84,15 +84,14 @@ function deleteContext<T, O> (
   return updateContext(ctx, deleteValue, [])
 }
 
-async function unwrapContext<T, O> (
+function unwrapContext<T, O> (
   ctx: Context<T, O>,
   options?: O
 ): Promise<T> {
-  const { target } = await ctx.past.reduce(
+  return ctx.past.reduce(
     (acc, mapper) => acc.then(status => mapper(status, options)),
     ctx.extract(options)
-  )
-  return target
+  ).then(status => status.target)
 }
 
 function commitContext<T, O> (ctx: Context<T, O>): Context<T, O> {
