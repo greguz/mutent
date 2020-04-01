@@ -221,7 +221,7 @@ function wrapContext<T, O> (ctx: Context<T, O>): Entities<T, O> {
     stream: options => streamContext(lockContext(ctx), options),
     reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options),
     undo: () => wrapContext(undoContext(lockContext(ctx))),
-    redo: () => wrapContext(undoContext(redoContext(ctx)))
+    redo: () => wrapContext(redoContext(lockContext(ctx)))
   }
 }
 
