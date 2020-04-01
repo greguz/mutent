@@ -11,6 +11,8 @@ export interface Entity<T, O = any> {
   delete (): Entity<T, O>
   commit (): Entity<T, O>
   unwrap (options?: O): Promise<T>
+  undo (): Entity<T, O>
+  redo (): Entity<T, O>
 }
 
 type Mapper<T, O> = (status: Status<T>, options?: O) => Status<T> | Promise<Status<T>>
@@ -105,13 +107,35 @@ function lockContext<T, O> (ctx: Context<T, O>) {
   return ctx
 }
 
+function undoContext<T, O> (ctx: Context<T, O>): Context<T, O> {
+  const past = ctx.past
+  const mapper = past.pop()
+  return {
+    ...ctx,
+    past,
+    future: mapper ? [...ctx.future, mapper] : ctx.future
+  }
+}
+
+function redoContext<T, O> (ctx: Context<T, O>): Context<T, O> {
+  const future = ctx.future
+  const mapper = future.pop()
+  return {
+    ...ctx,
+    past: mapper ? [...ctx.past, mapper] : ctx.past,
+    future
+  }
+}
+
 function wrapContext<T, O> (ctx: Context<T, O>): Entity<T, O> {
   return {
     update: (mutator, ...args) => wrapContext(updateContext(lockContext(ctx), mutator, args)),
     assign: object => wrapContext(assignContext(lockContext(ctx), object)),
     delete: () => wrapContext(deleteContext(lockContext(ctx))),
     commit: () => wrapContext(commitContext(lockContext(ctx))),
-    unwrap: options => unwrapContext(lockContext(ctx), options)
+    unwrap: options => unwrapContext(lockContext(ctx), options),
+    undo: () => wrapContext(undoContext(lockContext(ctx))),
+    redo: () => wrapContext(redoContext(lockContext(ctx)))
   }
 }
 

@@ -20,6 +20,8 @@ export interface Entities<T, O = any> {
   unwrap (options?: O): Promise<T[]>
   stream (options?: O): core.Readable
   reduce<R> (reducer: Reducer<T, R, O>, init: R, options?: O): Promise<R>
+  undo (): Entities<T, O>
+  redo (): Entities<T, O>
 }
 
 interface Context<T, O> {
@@ -76,16 +78,20 @@ function assignContext<S, T, E, O> (
   return mapContext(ctx, entity => entity.assign(object))
 }
 
-function deleteContext<T, O> (
-  ctx: Context<T, O>
-): Context<T, O> {
+function deleteContext<T, O> (ctx: Context<T, O>) {
   return mapContext(ctx, entity => entity.delete())
 }
 
-function commitContext<T, O> (
-  ctx: Context<T, O>
-): Context<T, O> {
+function commitContext<T, O> (ctx: Context<T, O>) {
   return mapContext(ctx, entity => entity.commit())
+}
+
+function undoContext<T, O> (ctx: Context<T, O>) {
+  return mapContext(ctx, entity => entity.undo())
+}
+
+function redoContext<T, O> (ctx: Context<T, O>) {
+  return mapContext(ctx, entity => entity.redo())
 }
 
 type Callback = (err?: any) => void
@@ -213,7 +219,9 @@ function wrapContext<T, O> (ctx: Context<T, O>): Entities<T, O> {
     commit: () => wrapContext(commitContext(lockContext(ctx))),
     unwrap: options => unwrapContext(lockContext(ctx), options),
     stream: options => streamContext(lockContext(ctx), options),
-    reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options)
+    reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options),
+    undo: () => wrapContext(undoContext(lockContext(ctx))),
+    redo: () => wrapContext(undoContext(redoContext(ctx)))
   }
 }
 
