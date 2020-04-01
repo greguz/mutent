@@ -1,21 +1,18 @@
 import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'readable-stream'
 
+import { isDeleted } from './deleted'
 import { insert, find } from './entities'
 
 interface CommitMode {
-  create: boolean
-  update: boolean
-  delete: boolean
+  create?: boolean
+  update?: boolean
+  delete?: boolean
 }
 
 function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
   return async (source: any, target: any, options: any) => {
-    if (
-      (source === null && target === null) ||
-      source === undefined ||
-      target === undefined
-    ) {
+    if (source === null && isDeleted(target)) {
       t.fail()
     } else if (source === null) {
       if (mode.create === true) {
@@ -23,7 +20,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       } else {
         t.fail()
       }
-    } else if (target === null) {
+    } else if (isDeleted(target)) {
       if (mode.delete === true) {
         t.pass()
       } else {
