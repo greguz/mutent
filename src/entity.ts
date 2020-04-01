@@ -30,14 +30,6 @@ function mapContext<T, O> (
   }
 }
 
-async function mapStatus<T> (
-  status: Status<T>,
-  mapper: (data: T) => T | Promise<T>
-): Promise<Status<T>> {
-  const target = await mapper(status.target)
-  return updateStatus(status, target)
-}
-
 function createContext<T, O> (
   one: One<T, O>,
   handle: Handler<T, O>
@@ -63,7 +55,10 @@ function updateContext<T, O, A extends any[]> (
 ): Context<T, O> {
   return mapContext(
     ctx,
-    status => mapStatus(status, data => mutator(data, ...args))
+    async status => {
+      const result = await mutator(status.target, ...args)
+      return updateStatus(status, result)
+    }
   )
 }
 
