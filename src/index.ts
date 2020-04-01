@@ -1,5 +1,4 @@
 export { Lazy, Many, One, Value, Values } from './data'
-export { deleteValue, isDeleted, restoreValue } from './deleted'
 export { Entities, Reducer, insert, find } from './entities'
 export { Entity, Mutator, create, read } from './entity'
-export { Commit, Driver, Plugin } from './handler'
+export { Driver } from './handler'

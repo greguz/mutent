@@ -1,8 +1,8 @@
 import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'readable-stream'
 
-import { isDeleted } from './deleted'
 import { insert, find } from './entities'
+import { Driver } from './handler'
 
 interface CommitMode {
   create?: boolean
@@ -10,30 +10,32 @@ interface CommitMode {
   delete?: boolean
 }
 
-function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
-  return async (source: any, target: any, options: any) => {
-    if (source === null && isDeleted(target)) {
-      t.fail()
-    } else if (source === null) {
+function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<any> {
+  return {
+    async create (target, options) {
       if (mode.create === true) {
         t.pass()
       } else {
         t.fail()
       }
-    } else if (isDeleted(target)) {
-      if (mode.delete === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-    } else {
+      t.deepEqual(options, { db: 'test' })
+    },
+    async update (source, target, options) {
       if (mode.update === true) {
         t.pass()
       } else {
         t.fail()
       }
+      t.deepEqual(options, { db: 'test' })
+    },
+    async delete (source, options) {
+      if (mode.delete === true) {
+        t.pass()
+      } else {
+        t.fail()
+      }
+      t.deepEqual(options, { db: 'test' })
     }
-    t.deepEqual(options, { db: 'test' })
   }
 }
 

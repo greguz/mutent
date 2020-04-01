@@ -1,21 +1,19 @@
 import { deleteValue, isDeleted } from './deleted'
 import { Status, commitStatus, updateStatus } from './status'
 
-export type Commit<T, O = any> = (
-  source: T | null,
-  target: T,
-  options?: O
-) => Promise<T | void>
-
-export interface Plugin<T, O = any> {
+export interface Driver<T, O = any> {
   create? (target: T, options?: O): Promise<T | void>
   update? (source: T, target: T, options?: O): Promise<T | void>
   delete? (source: T, options?: O): Promise<T | void>
 }
 
-export type Driver<T, O = any> = Commit<T, O> | Plugin<T, O>
-
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
+
+type Commit<T, O = any> = (
+  source: T | null,
+  target: T,
+  options?: O
+) => Promise<T | void>
 
 function shouldCommit<T> (status: Status<T>) {
   const source = status.source
@@ -44,12 +42,12 @@ function noop (): Promise<void> {
   return Promise.resolve()
 }
 
-function compilePlugin<T, O> (plugin: Plugin<T, O>): Commit<T, O> {
+function compileDriver<T, O> (plugin: Driver<T, O>): Commit<T, O> {
   const pCreate = plugin.create || noop
   const pUpdate = plugin.update || noop
   const pDelete = plugin.delete || noop
 
-  return function compiledPlugin (source, target, options) {
+  return function compiledDriver (source, target, options) {
     if (source === null) {
       return pCreate(target, options)
     } else if (isDeleted(target)) {
@@ -65,11 +63,7 @@ function bindCommit<T, O> (commit: Commit<T, O>): Handler<T, O> {
 }
 
 export function createHandler<T, O> (driver?: Driver<T, O>): Handler<T, O> {
-  if (typeof driver === 'function') {
-    return bindCommit(driver)
-  } else if (typeof driver === 'object') {
-    return bindCommit(compilePlugin(driver))
-  } else {
-    return status => Promise.resolve(commitStatus(status))
-  }
+  return driver
+    ? bindCommit(compileDriver(driver))
+    : status => Promise.resolve(commitStatus(status))
 }

@@ -10,30 +10,32 @@ interface CommitMode {
   delete?: boolean
 }
 
-function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
-  return async (source: any, target: any, options: any) => {
-    if (source === null && isDeleted(target)) {
-      t.fail()
-    } else if (source === null) {
+function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<any> {
+  return {
+    async create (target, options) {
       if (mode.create === true) {
         t.pass()
       } else {
         t.fail()
       }
-    } else if (isDeleted(target)) {
-      if (mode.delete === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-    } else {
+      t.deepEqual(options, { db: 'test' })
+    },
+    async update (source, target, options) {
       if (mode.update === true) {
         t.pass()
       } else {
         t.fail()
       }
+      t.deepEqual(options, { db: 'test' })
+    },
+    async delete (source, options) {
+      if (mode.delete === true) {
+        t.pass()
+      } else {
+        t.fail()
+      }
+      t.deepEqual(options, { db: 'test' })
     }
-    t.deepEqual(options, { db: 'test' })
   }
 }
 
@@ -146,21 +148,24 @@ test('assign', async t => {
 })
 
 test('commit and update', async t => {
-  // t.plan(3)
+  t.plan(9)
   const driver: Driver<any> = {
     async create (target, options) {
+      t.pass()
       return {
         ...target,
         createdAt: 'now'
       }
     },
     async update (source, target, options) {
+      t.pass()
       return {
         ...target,
         updatedAt: 'now'
       }
     },
     async delete (source, options) {
+      t.pass()
       return {
         ...source,
         deletedAt: 'now'
@@ -171,6 +176,7 @@ test('commit and update', async t => {
   const ctest = await create({ id: 0 }, driver)
     .commit()
     .unwrap()
+  t.false(isDeleted(ctest))
   t.deepEqual(ctest, {
     id: 0,
     createdAt: 'now'
@@ -180,6 +186,7 @@ test('commit and update', async t => {
     .update(data => ({ ...data }))
     .commit()
     .unwrap()
+  t.false(isDeleted(ctest))
   t.deepEqual(utest, {
     id: 1,
     updatedAt: 'now'
@@ -189,6 +196,7 @@ test('commit and update', async t => {
     .delete()
     .commit()
     .unwrap()
+  t.true(isDeleted(dtest))
   t.deepEqual(dtest, {
     id: 2,
     deletedAt: 'now',
