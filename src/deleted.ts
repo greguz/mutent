@@ -6,16 +6,24 @@ function isObjectLike (value: any) {
 
 export function deleteValue<T> (value: T): T {
   if (isObjectLike(value)) {
-    (value as any)[deleted] = true
+    return {
+      ...value,
+      [deleted]: true
+    }
+  } else {
+    return value
   }
-  return value
 }
 
 export function restoreValue<T> (value: T): T {
   if (isObjectLike(value)) {
-    (value as any)[deleted] = false
+    return {
+      ...value,
+      [deleted]: false
+    }
+  } else {
+    return value
   }
-  return value
 }
 
 export function isDeleted (value: any): boolean {
