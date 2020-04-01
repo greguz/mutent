@@ -203,3 +203,26 @@ test('commit and update', async t => {
     [Symbol.for('deleted')]: true
   })
 })
+
+test('undo', async t => {
+  const result = await read(42)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .undo()
+    .undo()
+    .undo()
+    .unwrap()
+  t.is(result, 42)
+})
+
+test('redo', async t => {
+  const result = await read(21)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .undo()
+    .undo()
+    .redo()
+    .unwrap()
+  t.is(result, 42)
+})
