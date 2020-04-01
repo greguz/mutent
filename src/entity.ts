@@ -111,6 +111,7 @@ function undoContext<T, O> (ctx: Context<T, O>): Context<T, O> {
   const mapper = past.pop()
   return {
     ...ctx,
+    locked: false,
     past,
     future: mapper ? [...ctx.future, mapper] : ctx.future
   }
@@ -121,6 +122,7 @@ function redoContext<T, O> (ctx: Context<T, O>): Context<T, O> {
   const mapper = future.pop()
   return {
     ...ctx,
+    locked: false,
     past: mapper ? [...ctx.past, mapper] : ctx.past,
     future
   }
