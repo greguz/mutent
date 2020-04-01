@@ -1,7 +1,7 @@
 import { One, getOne } from './data'
 import { deleteValue } from './deleted'
 import { Driver, Handler, createHandler } from './handler'
-import { Status, createStatus, commitStatus, updateStatus, unwrapStatus } from './status'
+import { Status, createStatus, commitStatus, updateStatus } from './status'
 
 export type Mutator<T, A extends any[]> = (data: T, ...args: A) => T | Promise<T>
 
@@ -13,31 +13,37 @@ export interface Entity<T, O = any> {
   unwrap (options?: O): Promise<T>
 }
 
-interface Context<T, O> {
-  locked: boolean
-  reduce: (options?: O) => Promise<Status<T>>
-  handle: Handler<T, O>
-}
+type Mapper<T, O> = (status: Status<T>, options?: O) => Status<T> | Promise<Status<T>>
 
-function mapContext<T, O> (
-  ctx: Context<T, O>,
-  mapper: (status: Status<T>) => Status<T> | Promise<Status<T>>
-): Context<T, O> {
-  return {
-    locked: false,
-    reduce: options => ctx.reduce(options).then(mapper),
-    handle: ctx.handle
-  }
+interface Context<T, O> {
+  handler: Handler<T, O>
+  locked: boolean
+  extract: (options?: O) => Promise<Status<T>>
+  past: Array<Mapper<T, O>>
+  future: Array<Mapper<T, O>>
 }
 
 function createContext<T, O> (
   one: One<T, O>,
-  handle: Handler<T, O>
+  handler: Handler<T, O>
 ): Context<T, O> {
   return {
+    handler,
     locked: false,
-    reduce: options => getOne(one, options).then(createStatus),
-    handle
+    extract: options => getOne(one, options).then(createStatus),
+    past: [],
+    future: []
+  }
+}
+
+function mapContext<T, O> (
+  ctx: Context<T, O>,
+  mapper: Mapper<T, O>
+): Context<T, O> {
+  return {
+    ...ctx,
+    locked: false,
+    past: [...ctx.past, mapper]
   }
 }
 
@@ -76,21 +82,19 @@ function deleteContext<T, O> (
   return updateContext(ctx, deleteValue, [])
 }
 
-function unwrapContext<T, O> (
+async function unwrapContext<T, O> (
   ctx: Context<T, O>,
   options?: O
 ): Promise<T> {
-  return ctx.reduce(options).then(unwrapStatus)
+  const { target } = await ctx.past.reduce(
+    (acc, mapper) => acc.then(status => mapper(status, options)),
+    ctx.extract(options)
+  )
+  return target
 }
 
-function commitContext<T, O> (
-  { handle, reduce }: Context<T, O>
-): Context<T, O> {
-  return {
-    locked: false,
-    reduce: options => reduce(options).then(status => handle(status, options)),
-    handle
-  }
+function commitContext<T, O> (ctx: Context<T, O>): Context<T, O> {
+  return mapContext(ctx, ctx.handler)
 }
 
 function lockContext<T, O> (ctx: Context<T, O>) {
