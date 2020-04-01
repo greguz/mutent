@@ -74,7 +74,7 @@ function collectValues<T, O> (
 }
 
 test('many array', async t => {
-  t.plan(5)
+  t.plan(3)
 
   const values = [{ value: 42 }, true, 'Pizza']
 
@@ -89,15 +89,6 @@ test('many array', async t => {
     { type: 'sync' }
   )
   t.deepEqual(b, values)
-
-  const c = await collectValues(
-    async options => {
-      t.is(options.type, 'async')
-      return values
-    },
-    { type: 'async' }
-  )
-  t.deepEqual(c, values)
 })
 
 function createReadableStream (values: any[]) {
@@ -113,7 +104,7 @@ function createReadableStream (values: any[]) {
 }
 
 test('many readable', async t => {
-  t.plan(5)
+  t.plan(3)
 
   const values: any[] = []
   for (let i = 0; i < 32; i++) {
@@ -131,27 +122,4 @@ test('many readable', async t => {
     { type: 'sync' }
   )
   t.deepEqual(b, values)
-
-  const c = await collectValues(
-    async options => {
-      t.is(options.type, 'async')
-      return createReadableStream(values)
-    },
-    { type: 'async' }
-  )
-  t.deepEqual(c, values)
-})
-
-test('many rejections', async t => {
-  const message = 'NOPE'
-
-  await t.throwsAsync(
-    () => collectValues(Promise.reject<any>(new Error(message))),
-    { message }
-  )
-
-  await t.throwsAsync(
-    () => collectValues(() => Promise.reject<any>(new Error(message))),
-    { message }
-  )
 })
