@@ -2,6 +2,7 @@ import test, { ExecutionContext } from 'ava'
 
 import { isDeleted } from './deleted'
 import { create, read } from './entity'
+import { Driver } from './handler'
 
 interface CommitMode {
   create?: boolean
@@ -142,4 +143,55 @@ test('assign', async t => {
     .commit()
     .unwrap({ db: 'test' })
   t.deepEqual(result, { a: 1, b: 2 })
+})
+
+test('commit and update', async t => {
+  // t.plan(3)
+  const driver: Driver<any> = {
+    async create (target, options) {
+      return {
+        ...target,
+        createdAt: 'now'
+      }
+    },
+    async update (source, target, options) {
+      return {
+        ...target,
+        updatedAt: 'now'
+      }
+    },
+    async delete (source, options) {
+      return {
+        ...source,
+        deletedAt: 'now'
+      }
+    }
+  }
+
+  const ctest = await create({ id: 0 }, driver)
+    .commit()
+    .unwrap()
+  t.deepEqual(ctest, {
+    id: 0,
+    createdAt: 'now'
+  })
+
+  const utest = await read({ id: 1 }, driver)
+    .update(data => ({ ...data }))
+    .commit()
+    .unwrap()
+  t.deepEqual(utest, {
+    id: 1,
+    updatedAt: 'now'
+  })
+
+  const dtest = await read({ id: 2 }, driver)
+    .delete()
+    .commit()
+    .unwrap()
+  t.deepEqual(dtest, {
+    id: 2,
+    deletedAt: 'now',
+    [Symbol.for('deleted')]: true
+  })
 })
