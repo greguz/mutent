@@ -1,4 +1,4 @@
-import { isDeleted } from './deleted'
+import { deleteValue, isDeleted } from './deleted'
 import { Status, commitStatus, updateStatus } from './status'
 
 export type Commit<T, O = any> = (
@@ -31,7 +31,10 @@ async function execCommit<T, O> (
   if (shouldCommit(status)) {
     const out = await commit(status.source, status.target, options)
     if (out !== undefined) {
-      status = updateStatus(status, out)
+      status = updateStatus(
+        status,
+        isDeleted(status.target) ? deleteValue(out) : out
+      )
     }
   }
   return commitStatus(status)
