@@ -118,30 +118,44 @@ async function commit (
   }
 }
 
-function bind (collection: Collection): mutent.Commit<Options> {
-  return (s, t, o) => commit(collection, s, t, o)
-}
-
-function insertOne<T> (collection: Collection<T>, data: T) {
-  return mutent.create<T, Options>(data, bind(collection))
+function createDriver (collection: Collection): mutent.Driver<any, Options> {
+  return {
+    async create (target, options = {}) {
+      await collection.insertOne(target, options)
+    },
+    async update (source, target, options = {}) {
+      await collection.updateOne(
+        { _id: source._id },
+        buildUpdateQuery(source, target),
+        options
+      )
+    },
+    async delete (source, options = {}) {
+      await collection.deleteOne({ _id: source._id }, options)
+    }
+  }
 }
 
 function findOne<T> (collection: Collection<T>, filter?: Filter<T>) {
   return mutent.read<T, Options>(
     options => collection.findOne(parseFilter(filter), options),
-    bind(collection)
+    createDriver(collection)
   )
-}
-
-function insertMany<T> (collection: Collection<T>, data: T[]) {
-  return mutent.insert<T, Options>(data, bind(collection))
 }
 
 function findMany<T> (collection: Collection<T>, filter?: Filter<T>) {
   return mutent.find<T, Options>(
     options => collection.find(parseFilter(filter), options),
-    bind(collection)
+    createDriver(collection)
   )
+}
+
+function insertOne<T> (collection: Collection<T>, data: T) {
+  return mutent.create<T, Options>(data, createDriver(collection))
+}
+
+function insertMany<T> (collection: Collection<T>, data: T[]) {
+  return mutent.insert<T, Options>(data, createDriver(collection))
 }
 
 export function wrapCollection<T> (
