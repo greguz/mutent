@@ -20,8 +20,8 @@ export interface Entities<T, O = any> {
   unwrap (options?: O): Promise<T[]>
   stream (options?: O): core.Readable
   reduce<R> (reducer: Reducer<T, R, O>, init: R, options?: O): Promise<R>
-  undo (): Entities<T, O>
-  redo (): Entities<T, O>
+  undo (steps?: number): Entities<T, O>
+  redo (steps?: number): Entities<T, O>
 }
 
 interface Context<T, O> {
@@ -86,12 +86,12 @@ function commitContext<T, O> (ctx: Context<T, O>) {
   return mapContext(ctx, entity => entity.commit())
 }
 
-function undoContext<T, O> (ctx: Context<T, O>) {
-  return mapContext(ctx, entity => entity.undo())
+function undoContext<T, O> (ctx: Context<T, O>, steps?: number) {
+  return mapContext(ctx, entity => entity.undo(steps))
 }
 
-function redoContext<T, O> (ctx: Context<T, O>) {
-  return mapContext(ctx, entity => entity.redo())
+function redoContext<T, O> (ctx: Context<T, O>, steps?: number) {
+  return mapContext(ctx, entity => entity.redo(steps))
 }
 
 type Callback = (err?: any) => void
@@ -220,8 +220,8 @@ function wrapContext<T, O> (ctx: Context<T, O>): Entities<T, O> {
     unwrap: options => unwrapContext(lockContext(ctx), options),
     stream: options => streamContext(lockContext(ctx), options),
     reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options),
-    undo: () => wrapContext(undoContext(lockContext(ctx))),
-    redo: () => wrapContext(redoContext(lockContext(ctx)))
+    undo: steps => wrapContext(undoContext(lockContext(ctx), steps)),
+    redo: steps => wrapContext(redoContext(lockContext(ctx), steps))
   }
 }
 
