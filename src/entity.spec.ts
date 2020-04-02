@@ -204,19 +204,33 @@ test('commit and update', async t => {
   })
 })
 
-test('undo', async t => {
-  const result = await read(42)
+test('undo entity', async t => {
+  const a = await read(42)
     .update(value => value * 2)
     .update(value => value * 2)
     .update(value => value * 2)
-    .undo()
-    .undo()
-    .undo()
+    .undo(2)
     .unwrap()
-  t.is(result, 42)
+  t.is(a, 84)
+
+  const b = await read(42)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .undo(Infinity)
+    .unwrap()
+  t.is(b, 42)
+
+  const c = await read(42)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .update(value => value * 2)
+    .undo(-1)
+    .unwrap()
+  t.is(c, 336)
 })
 
-test('redo', async t => {
+test('redo entity', async t => {
   const result = await read(21)
     .update(value => value * 2)
     .update(value => value * 2)

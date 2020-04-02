@@ -106,13 +106,13 @@ function lockContext<T, O> (ctx: Context<T, O>) {
   return ctx
 }
 
-function getIndex (length: number, index: any) {
-  if (index < 0) {
+function getIndex (limit: number, steps: number) {
+  if (steps < 0 || typeof steps !== 'number' || isNaN(steps)) {
     return 0
-  } else if (index >= length) {
-    return length - 1
+  } else if (steps > limit) {
+    return limit
   } else {
-    return index
+    return Math.floor(steps)
   }
 }
 

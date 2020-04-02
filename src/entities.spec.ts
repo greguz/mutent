@@ -4,13 +4,18 @@ import { pipeline, Readable, Writable } from 'readable-stream'
 import { insert, find } from './entities'
 import { Driver } from './handler'
 
+interface Item {
+  value: number
+  num?: number
+}
+
 interface CommitMode {
   create?: boolean
   update?: boolean
   delete?: boolean
 }
 
-function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<any> {
+function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<Item> {
   return {
     async create (target, options) {
       if (mode.create === true) {
@@ -37,10 +42,6 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<any>
       t.deepEqual(options, { db: 'test' })
     }
   }
-}
-
-interface Item {
-  value: number
 }
 
 function getItems (count: number = 16) {
@@ -213,4 +214,31 @@ test('reduce-error', async t => {
   await t.throwsAsync(async () => {
     await insert(getItems()).reduce(() => Promise.reject(new Error()), 0)
   })
+})
+
+test('undo entitites', async t => {
+  t.plan(3)
+  const results = await find(getItems())
+    .update(data => ({ value: data.value * -1 }))
+    .update(data => ({ value: data.value * 2 }))
+    .delete()
+    .undo(2)
+    .unwrap({ db: 'test' })
+  t.is(results.length, 16)
+  t.is(results[0].value, -0)
+  t.is(results[15].value, -30)
+})
+
+test('redo entitites', async t => {
+  t.plan(3)
+  const results = await find(getItems())
+    .update(data => ({ value: data.value * -1 }))
+    .update(data => ({ value: data.value * 2 }))
+    .update(data => ({ value: data.value * 10 }))
+    .undo(2)
+    .redo(2)
+    .unwrap()
+  t.is(results.length, 16)
+  t.is(results[0].value, -0)
+  t.is(results[15].value, -600)
 })
