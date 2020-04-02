@@ -106,7 +106,7 @@ function lockContext<T, O> (ctx: Context<T, O>) {
   return ctx
 }
 
-function getIndex (limit: number, steps: number) {
+function parseSteps (limit: number, steps: any = 1) {
   if (steps < 0 || typeof steps !== 'number' || isNaN(steps)) {
     return 0
   } else if (steps > limit) {
@@ -118,9 +118,9 @@ function getIndex (limit: number, steps: number) {
 
 function undoContext<T, O> (
   ctx: Context<T, O>,
-  steps: number = 1
+  steps?: number
 ): Context<T, O> {
-  const index = ctx.past.length - getIndex(ctx.past.length, steps)
+  const index = ctx.past.length - parseSteps(ctx.past.length, steps)
   const past = ctx.past.slice(0, index)
   const future = ctx.past.slice(index)
   return {
@@ -133,9 +133,9 @@ function undoContext<T, O> (
 
 function redoContext<T, O> (
   ctx: Context<T, O>,
-  steps: number = 1
+  steps?: number
 ): Context<T, O> {
-  const index = getIndex(ctx.future.length, steps)
+  const index = parseSteps(ctx.future.length, steps)
   const past = ctx.future.slice(0, index)
   const future = ctx.future.slice(index)
   return {
