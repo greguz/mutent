@@ -1,4 +1,3 @@
-import { deleteValue, isDeleted } from './deleted'
 import { Status, commitStatus, updateStatus } from './status'
 
 export interface Driver<T, O = any> {
@@ -9,16 +8,12 @@ export interface Driver<T, O = any> {
 
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
 
-type Commit<T, O = any> = (
-  source: T | null,
-  target: T,
-  options?: O
-) => Promise<T | void>
+type Commit<T, O> = (status: Status<T>, options?: O) => Promise<T | void>
 
 function shouldCommit<T> (status: Status<T>) {
   const source = status.source
-  const target = isDeleted(status.target) ? null : status.target
-  return source !== target
+  const target = status.deleted ? null : status.target
+  return !status.committed && source !== target
 }
 
 async function execCommit<T, O> (
@@ -27,12 +22,9 @@ async function execCommit<T, O> (
   options?: O
 ): Promise<Status<T>> {
   if (shouldCommit(status)) {
-    const out = await commit(status.source, status.target, options)
+    const out = await commit(status, options)
     if (out !== undefined) {
-      status = updateStatus(
-        status,
-        isDeleted(status.target) ? deleteValue(out) : out
-      )
+      status = updateStatus(status, out)
     }
   }
   return commitStatus(status)
@@ -47,10 +39,12 @@ function compileDriver<T, O> (plugin: Driver<T, O>): Commit<T, O> {
   const pUpdate = plugin.update || noop
   const pDelete = plugin.delete || noop
 
-  return function compiledDriver (source, target, options) {
+  return function compiledDriver (status, options) {
+    const { source, target } = status
+
     if (source === null) {
       return pCreate(target, options)
-    } else if (isDeleted(target)) {
+    } else if (status.deleted === true) {
       return pDelete(source, options)
     } else {
       return pUpdate(source, target, options)

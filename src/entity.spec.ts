@@ -1,6 +1,5 @@
 import test, { ExecutionContext } from 'ava'
 
-import { isDeleted } from './deleted'
 import { create, read } from './entity'
 import { Driver } from './handler'
 
@@ -86,7 +85,7 @@ test('update', async t => {
 })
 
 test('delete', async t => {
-  t.plan(5)
+  t.plan(4)
   const result = await read({ a: 1 }, bind(t, { delete: true }))
     .update(data => ({ ...data, b: 2 }))
     .delete()
@@ -94,11 +93,10 @@ test('delete', async t => {
     .unwrap({ db: 'test' })
   t.is(result.a, 1)
   t.is(result.b, 2)
-  t.true(isDeleted(result))
 })
 
 test('void', async t => {
-  t.plan(3)
+  t.plan(2)
   const result = await create({ a: 1 }, bind(t))
     .update(data => ({ ...data, b: 2 }))
     .delete()
@@ -106,7 +104,6 @@ test('void', async t => {
     .unwrap()
   t.is(result.a, 1)
   t.is(result.b, 2)
-  t.true(isDeleted(result))
 })
 
 test('read sync', async t => {
@@ -148,7 +145,7 @@ test('assign', async t => {
 })
 
 test('commit and update', async t => {
-  t.plan(9)
+  t.plan(6)
   const driver: Driver<any> = {
     async create (target, options) {
       t.pass()
@@ -176,7 +173,6 @@ test('commit and update', async t => {
   const ctest = await create({ id: 0 }, driver)
     .commit()
     .unwrap()
-  t.false(isDeleted(ctest))
   t.deepEqual(ctest, {
     id: 0,
     createdAt: 'now'
@@ -186,7 +182,6 @@ test('commit and update', async t => {
     .update(data => ({ ...data }))
     .commit()
     .unwrap()
-  t.false(isDeleted(ctest))
   t.deepEqual(utest, {
     id: 1,
     updatedAt: 'now'
@@ -196,11 +191,9 @@ test('commit and update', async t => {
     .delete()
     .commit()
     .unwrap()
-  t.true(isDeleted(dtest))
   t.deepEqual(dtest, {
     id: 2,
-    deletedAt: 'now',
-    [Symbol.for('deleted')]: true
+    deletedAt: 'now'
   })
 })
 

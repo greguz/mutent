@@ -1,7 +1,6 @@
 import { One, getOne } from './data'
-import { deleteValue } from './deleted'
 import { Driver, Handler, createHandler } from './handler'
-import { Status, createStatus, commitStatus, updateStatus } from './status'
+import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
@@ -89,10 +88,8 @@ function assignContext<T, O> (ctx: Context<T, O>, object: Partial<T>) {
   )
 }
 
-function deleteContext<T, O> (
-  ctx: Context<T, O>
-): Context<T, O> {
-  return updateContext(ctx, deleteValue, [])
+function deleteContext<T, O> (ctx: Context<T, O>): Context<T, O> {
+  return mapContext(ctx, deleteStatus)
 }
 
 function unwrapContext<T, O> (
