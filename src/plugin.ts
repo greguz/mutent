@@ -56,6 +56,6 @@ export function buildPlugin<T, Q, O> (
     find: query => find(options => plugin.find(query, options), plugin),
     create: value => create(value, plugin),
     insert: values => insert(values, plugin),
-    from: (data: T[] | T) => fromData(data, plugin),
+    from: (data: T[] | T) => fromData(data, plugin)
   }
 }
