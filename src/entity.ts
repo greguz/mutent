@@ -3,7 +3,10 @@ import { deleteValue } from './deleted'
 import { Driver, Handler, createHandler } from './handler'
 import { Status, createStatus, commitStatus, updateStatus } from './status'
 
-export type Mutator<T, A extends any[]> = (data: T, ...args: A) => T | Promise<T>
+export type Mutator<T, A extends any[]> = (
+  data: Exclude<T, null>,
+  ...args: A
+) => T | Promise<T>
 
 export interface Entity<T, O = any> {
   update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entity<T, O>
@@ -38,6 +41,14 @@ function createContext<T, O> (
   }
 }
 
+function skipNullMutations<T, O> (mapper: Mapper<T, O>): Mapper<T, O> {
+  return function wrappedMapper (status, options) {
+    return status.target === null
+      ? status
+      : mapper(status, options)
+  }
+}
+
 function mapContext<T, O> (
   ctx: Context<T, O>,
   mapper: Mapper<T, O>
@@ -45,7 +56,7 @@ function mapContext<T, O> (
   return {
     ...ctx,
     locked: false,
-    past: [...ctx.past, mapper]
+    past: [...ctx.past, skipNullMutations(mapper)]
   }
 }
 
@@ -63,7 +74,7 @@ function updateContext<T, O, A extends any[]> (
 ): Context<T, O> {
   return mapContext(
     ctx,
-    async status => {
+    async (status: Status<any>) => {
       const result = await mutator(status.target, ...args)
       return updateStatus(status, result)
     }
