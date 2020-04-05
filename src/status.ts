@@ -1,7 +1,7 @@
 export interface Status<T> {
-  committed: boolean
+  updated: boolean
   deleted: boolean
-  source: T | null,
+  source: T | null
   target: T
 }
 
@@ -14,7 +14,7 @@ function noUndef<T> (value: T): T {
 
 export function createStatus<T> (target: T): Status<T> {
   return {
-    committed: false,
+    updated: false,
     deleted: false,
     source: null,
     target: noUndef(target)
@@ -24,7 +24,7 @@ export function createStatus<T> (target: T): Status<T> {
 export function updateStatus<T> (status: Status<T>, target: T): Status<T> {
   return {
     ...status,
-    committed: false,
+    updated: true,
     target: noUndef(target)
   }
 }
@@ -32,7 +32,7 @@ export function updateStatus<T> (status: Status<T>, target: T): Status<T> {
 export function commitStatus<T> (status: Status<T>): Status<T> {
   return {
     ...status,
-    committed: true,
+    updated: false,
     source: status.target
   }
 }
@@ -40,7 +40,6 @@ export function commitStatus<T> (status: Status<T>): Status<T> {
 export function deleteStatus<T> (status: Status<T>): Status<T> {
   return {
     ...status,
-    committed: false,
     deleted: true
   }
 }

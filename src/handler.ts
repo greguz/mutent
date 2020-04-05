@@ -1,4 +1,4 @@
-import { Status, commitStatus, updateStatus } from './status'
+import { Status, commitStatus, updateStatus, createStatus } from './status'
 
 export interface Driver<T, O = any> {
   create? (target: T, options?: O): Promise<T | void>
@@ -8,56 +8,39 @@ export interface Driver<T, O = any> {
 
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
 
-type Commit<T, O> = (status: Status<T>, options?: O) => Promise<T | void>
-
-function shouldCommit<T> (status: Status<T>) {
-  const source = status.source
-  const target = status.deleted ? null : status.target
-  return !status.committed && source !== target
+function exec<T, A extends any[]> (
+  fn?: (...args: A) => Promise<T | void>,
+  ...args: A
+): Promise<T | void> {
+  return fn
+    ? fn(...args)
+    : Promise.resolve()
 }
 
-async function execCommit<T, O> (
-  commit: Commit<T, O>,
+async function handleDriver<T, O> (
+  driver: Driver<T, O> = {},
   status: Status<T>,
   options?: O
 ): Promise<Status<T>> {
-  if (shouldCommit(status)) {
-    const out = await commit(status, options)
-    if (out !== undefined) {
-      status = updateStatus(status, out)
-    }
+  let data: T | void
+  if (status.source === null) {
+    data = await exec(driver.create, status.target, options)
+  } else if (status.updated === true) {
+    data = await exec(driver.update, status.source, status.target, options)
   }
-  return commitStatus(status)
-}
-
-function noop (): Promise<void> {
-  return Promise.resolve()
-}
-
-function compileDriver<T, O> (plugin: Driver<T, O>): Commit<T, O> {
-  const pCreate = plugin.create || noop
-  const pUpdate = plugin.update || noop
-  const pDelete = plugin.delete || noop
-
-  return function compiledDriver (status, options) {
-    const { source, target } = status
-
-    if (source === null) {
-      return pCreate(target, options)
-    } else if (status.deleted === true) {
-      return pDelete(source, options)
-    } else {
-      return pUpdate(source, target, options)
-    }
+  if (data !== undefined) {
+    status = updateStatus(status, data)
   }
-}
+  status = commitStatus(status)
 
-function bindCommit<T, O> (commit: Commit<T, O>): Handler<T, O> {
-  return (status, options) => execCommit(commit, status, options)
+  if (status.deleted) {
+    data = await exec(driver.delete, status.target, options)
+    status = createStatus(data !== undefined ? data : status.target)
+  }
+
+  return status
 }
 
 export function createHandler<T, O> (driver?: Driver<T, O>): Handler<T, O> {
-  return driver
-    ? bindCommit(compileDriver(driver))
-    : status => Promise.resolve(commitStatus(status))
+  return (status, options) => handleDriver(driver, status, options)
 }

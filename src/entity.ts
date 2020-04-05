@@ -3,9 +3,9 @@ import { Driver, Handler, createHandler } from './handler'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
 
 export type Mutator<T, A extends any[]> = (
-  data: Exclude<T, null>,
+  data: T,
   ...args: A
-) => T | Promise<T>
+) => Promise<T> | T
 
 export interface Entity<T, O = any> {
   update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entity<T, O>

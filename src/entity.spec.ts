@@ -3,38 +3,15 @@ import test, { ExecutionContext } from 'ava'
 import { create, read } from './entity'
 import { Driver } from './handler'
 
-interface CommitMode {
-  create?: boolean
-  update?: boolean
-  delete?: boolean
+interface Item {
+  id: number
+  value?: any
 }
 
-function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<any> {
+function next (item: Item): Item {
   return {
-    async create (target, options) {
-      if (mode.create === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-      t.deepEqual(options, { db: 'test' })
-    },
-    async update (source, target, options) {
-      if (mode.update === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-      t.deepEqual(options, { db: 'test' })
-    },
-    async delete (source, options) {
-      if (mode.delete === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-      t.deepEqual(options, { db: 'test' })
-    }
+    ...item,
+    id: item.id + 1
   }
 }
 
@@ -64,172 +41,150 @@ test('lock', async t => {
     await entity.unwrap()
     await entity.unwrap()
   })
+  t.throws(() => {
+    const entity = create({})
+    entity.redo()
+    entity.redo()
+  })
+  t.throws(() => {
+    const entity = create({})
+    entity.undo()
+    entity.undo()
+  })
 })
 
 test('create', async t => {
   t.plan(3)
-  const result = await create({ a: 1 }, bind(t, { create: true }))
-    .update(data => ({ ...data, b: 2 }))
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
 
-test('update', async t => {
-  t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { update: true }))
-    .update(data => ({ ...data, b: 2 }))
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('delete', async t => {
-  t.plan(4)
-  const result = await read({ a: 1 }, bind(t, { delete: true }))
-    .update(data => ({ ...data, b: 2 }))
-    .delete()
-    .commit()
-    .unwrap({ db: 'test' })
-  t.is(result.a, 1)
-  t.is(result.b, 2)
-})
-
-test('void', async t => {
-  t.plan(2)
-  const result = await create({ a: 1 }, bind(t))
-    .update(data => ({ ...data, b: 2 }))
-    .delete()
-    .commit()
-    .unwrap()
-  t.is(result.a, 1)
-  t.is(result.b, 2)
-})
-
-test('read sync', async t => {
-  t.plan(3)
-  const fetch = () => ({ a: 1 })
-  const result = await read(fetch, bind(t, { update: true }))
-    .update(data => ({ ...data, b: 2 }))
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('read async', async t => {
-  t.plan(3)
-  const fetch = async () => ({ a: 1 })
-  const result = await read(fetch, bind(t, { update: true }))
-    .update(data => ({ ...data, b: 2 }))
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('mutator', async t => {
-  t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { update: true }))
-    .update((data, b: number) => ({ ...data, b }), 2)
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('assign', async t => {
-  t.plan(3)
-  const result = await read({ a: 1 }, bind(t, { update: true }))
-    .assign({ b: 2 })
-    .commit()
-    .unwrap({ db: 'test' })
-  t.deepEqual(result, { a: 1, b: 2 })
-})
-
-test('commit and update', async t => {
-  t.plan(6)
-  const driver: Driver<any> = {
+  const driver: Driver<Item> = {
     async create (target, options) {
-      t.pass()
-      return {
-        ...target,
-        createdAt: 'now'
-      }
+      t.deepEqual(target, {
+        id: 1,
+        value: 'CREATE'
+      })
+      t.deepEqual(options, {
+        hello: 'world'
+      })
     },
-    async update (source, target, options) {
-      t.pass()
-      return {
-        ...target,
-        updatedAt: 'now'
-      }
+    async update () {
+      t.fail()
     },
-    async delete (source, options) {
-      t.pass()
-      return {
-        ...source,
-        deletedAt: 'now'
-      }
+    async delete () {
+      t.fail()
     }
   }
 
-  const ctest = await create({ id: 0 }, driver)
+  const item = await create({ id: 0 }, driver)
+    .assign({ value: 'CREATE' })
+    .update(next)
     .commit()
-    .unwrap()
-  t.deepEqual(ctest, {
-    id: 0,
-    createdAt: 'now'
-  })
+    .unwrap({ hello: 'world' })
 
-  const utest = await read({ id: 1 }, driver)
-    .update(data => ({ ...data }))
-    .commit()
-    .unwrap()
-  t.deepEqual(utest, {
+  t.deepEqual(item, {
     id: 1,
-    updatedAt: 'now'
+    value: 'CREATE'
   })
+})
 
-  const dtest = await read({ id: 2 }, driver)
+test('update', async t => {
+  t.plan(4)
+
+  const driver: Driver<Item> = {
+    async create () {
+      t.fail()
+    },
+    async update (source, target, options) {
+      t.deepEqual(source, {
+        id: 0
+      })
+      t.deepEqual(target, {
+        id: 1,
+        value: 'UPDATE'
+      })
+      t.deepEqual(options, {
+        hello: 'world'
+      })
+    },
+    async delete () {
+      t.fail()
+    }
+  }
+
+  const item = await read({ id: 0 }, driver)
+    .assign({ value: 'UPDATE' })
+    .update(next)
+    .commit()
+    .unwrap({ hello: 'world' })
+
+  t.deepEqual(item, {
+    id: 1,
+    value: 'UPDATE'
+  })
+})
+
+test('delete', async t => {
+  t.plan(3)
+
+  const driver: Driver<Item> = {
+    async create () {
+      t.fail()
+    },
+    async update () {
+      t.fail()
+    },
+    async delete (source, options) {
+      t.deepEqual(source, {
+        id: 0
+      })
+      t.deepEqual(options, {
+        hello: 'world'
+      })
+    }
+  }
+
+  const item = await read({ id: 0 }, driver)
     .delete()
     .commit()
-    .unwrap()
-  t.deepEqual(dtest, {
-    id: 2,
-    deletedAt: 'now'
+    .unwrap({ hello: 'world' })
+
+  t.deepEqual(item, {
+    id: 0
   })
 })
 
 test('undo entity', async t => {
-  const a = await read(42)
+  const a = await read(2)
+    .update(value => value * -1)
     .update(value => value * 2)
-    .update(value => value * 2)
-    .update(value => value * 2)
+    .update(value => value * 10)
     .undo(2)
     .unwrap()
-  t.is(a, 84)
+  t.is(a, -2)
 
-  const b = await read(42)
+  const b = await read(2)
+    .update(value => value * -1)
     .update(value => value * 2)
-    .update(value => value * 2)
-    .update(value => value * 2)
+    .update(value => value * 10)
     .undo(Infinity)
     .unwrap()
-  t.is(b, 42)
+  t.is(b, 2)
 
-  const c = await read(42)
+  const c = await read(2)
+    .update(value => value * -1)
     .update(value => value * 2)
-    .update(value => value * 2)
-    .update(value => value * 2)
+    .update(value => value * 10)
     .undo(-1)
     .unwrap()
-  t.is(c, 336)
+  t.is(c, -40)
 })
 
 test('redo entity', async t => {
-  const result = await read(21)
+  const result = await read(2)
+    .update(value => value * -1)
     .update(value => value * 2)
-    .update(value => value * 2)
-    .undo()
-    .undo()
+    .update(value => value * 10)
+    .undo(2)
     .redo()
     .unwrap()
-  t.is(result, 42)
+  t.is(result, -4)
 })
