@@ -3,7 +3,7 @@ import { Driver, Handler, createHandler } from './handler'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
 
 export type Mutator<T, A extends any[]> = (
-  data: T,
+  data: Exclude<T, null>,
   ...args: A
 ) => Promise<T> | T
 
