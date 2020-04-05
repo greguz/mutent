@@ -1,4 +1,4 @@
-import test, { ExecutionContext } from 'ava'
+import test from 'ava'
 
 import { create, read } from './entity'
 import { Driver } from './handler'
@@ -187,4 +187,13 @@ test('redo entity', async t => {
     .redo()
     .unwrap()
   t.is(result, -4)
+})
+
+test('skip nulls', async t => {
+  const result = await read<number | null>(null)
+    .update(value => value * -1)
+    .update(value => value * 2)
+    .update(value => value * 10)
+    .unwrap()
+  t.is(result, null)
 })
