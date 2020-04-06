@@ -1,9 +1,19 @@
 import { Status, commitStatus, updateStatus, createStatus } from './status'
 
 export interface Driver<T, O = any> {
-  create? (target: T, options?: O): Promise<T | void>
-  update? (source: T, target: T, options?: O): Promise<T | void>
-  delete? (source: T, options?: O): Promise<T | void>
+  create? (
+    target: Exclude<T, null>,
+    options?: O
+  ): Promise<T | void>
+  update? (
+    source: Exclude<T, null>,
+    target: Exclude<T, null>,
+    options?: O
+  ): Promise<T | void>
+  delete? (
+    source: Exclude<T, null>,
+    options?: O
+  ): Promise<T | void>
 }
 
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
@@ -19,7 +29,7 @@ function exec<T, A extends any[]> (
 
 export async function handleDriver<T, O> (
   driver: Driver<T, O>,
-  status: Status<T>,
+  status: Status<any>,
   options?: O
 ): Promise<Status<T>> {
   let data: T | void
