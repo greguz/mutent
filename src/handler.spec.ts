@@ -41,7 +41,7 @@ function run (
 }
 
 test('sCreate', async t => {
-  t.plan(4)
+  t.plan(3)
 
   const driver: Driver<Item> = {
     async create (target, options) {
@@ -51,28 +51,29 @@ test('sCreate', async t => {
       t.deepEqual(options, {
         hello: 'world'
       })
-      return target
+      return {
+        ...target,
+        id: target.id + 1
+      }
     },
-    async update (source, target, options) {
+    async update () {
       t.fail()
     },
-    async delete (source, options) {
+    async delete () {
       t.fail()
     }
   }
 
   const status = await run(driver, sCreate(0), { hello: 'world' })
 
-  t.deepEqual(status, await run(undefined, sCreate(0)))
-
   t.deepEqual(status, {
     updated: false,
     deleted: false,
     source: {
-      id: 0
+      id: 1
     },
     target: {
-      id: 0
+      id: 1
     }
   })
 })
@@ -81,13 +82,13 @@ test('sVoid', async t => {
   t.plan(2)
 
   const driver: Driver<Item> = {
-    async create (target, options) {
+    async create () {
       t.fail()
     },
-    async update (source, target, options) {
+    async update () {
       t.fail()
     },
-    async delete (source, options) {
+    async delete () {
       t.fail()
     }
   }
@@ -109,10 +110,10 @@ test('sVoid', async t => {
 })
 
 test('sUpdate', async t => {
-  t.plan(5)
+  t.plan(4)
 
   const driver: Driver<Item> = {
-    async create (target, options) {
+    async create () {
       t.fail()
     },
     async update (source, target, options) {
@@ -126,39 +127,40 @@ test('sUpdate', async t => {
       t.deepEqual(options, {
         hello: 'world'
       })
-      return target
+      return {
+        ...target,
+        id: target.id + 1
+      }
     },
-    async delete (source, options) {
+    async delete () {
       t.fail()
     }
   }
 
   const status = await run(driver, sUpdate(0, 'UPDATE'), { hello: 'world' })
 
-  t.deepEqual(status, await run(undefined, sUpdate(0, 'UPDATE')))
-
   t.deepEqual(status, {
     updated: false,
     deleted: false,
     source: {
-      id: 0,
+      id: 1,
       value: 'UPDATE'
     },
     target: {
-      id: 0,
+      id: 1,
       value: 'UPDATE'
     }
   })
 })
 
 test('sDelete', async t => {
-  t.plan(4)
+  t.plan(3)
 
   const driver: Driver<Item> = {
-    async create (target, options) {
+    async create () {
       t.fail()
     },
-    async update (source, target, options) {
+    async update () {
       t.fail()
     },
     async delete (source, options) {
@@ -168,20 +170,21 @@ test('sDelete', async t => {
       t.deepEqual(options, {
         hello: 'world'
       })
-      return source
+      return {
+        ...source,
+        id: source.id + 1
+      }
     }
   }
 
   const status = await run(driver, sDelete(0), { hello: 'world' })
-
-  t.deepEqual(status, await run(undefined, sDelete(0)))
 
   t.deepEqual(status, {
     updated: false,
     deleted: false,
     source: null,
     target: {
-      id: 0
+      id: 1
     }
   })
 })
@@ -198,7 +201,7 @@ test('sCreateDelete', async t => {
         hello: 'world'
       })
     },
-    async update (source, target, options) {
+    async update () {
       t.fail()
     },
     async delete (source, options) {
@@ -208,7 +211,6 @@ test('sCreateDelete', async t => {
       t.deepEqual(options, {
         hello: 'world'
       })
-      return source
     }
   }
 
@@ -230,7 +232,7 @@ test('sUpdateDelete', async t => {
   t.plan(7)
 
   const driver: Driver<Item> = {
-    async create (target, options) {
+    async create () {
       t.fail()
     },
     async update (source, target, options) {
@@ -244,7 +246,6 @@ test('sUpdateDelete', async t => {
       t.deepEqual(options, {
         hello: 'world'
       })
-      return target
     },
     async delete (source, options) {
       t.deepEqual(source, {
@@ -254,7 +255,6 @@ test('sUpdateDelete', async t => {
       t.deepEqual(options, {
         hello: 'world'
       })
-      return source
     }
   }
 
