@@ -193,29 +193,6 @@ test('stream-error', async t => {
   })
 })
 
-test('reduce', async t => {
-  t.plan(49)
-  const result = await insert(getItems(), bind(t, { create: true }))
-    .reduce<number>(
-      async (accumulator, entity, index, options) => {
-        t.pass()
-        const data = await entity
-          .commit()
-          .unwrap(options)
-        return accumulator + (data.value / 2)
-      },
-      0,
-      { db: 'test' }
-    )
-  t.is(result, 120)
-})
-
-test('reduce-error', async t => {
-  await t.throwsAsync(async () => {
-    await insert(getItems()).reduce(() => Promise.reject(new Error()), 0)
-  })
-})
-
 test('undo entitites', async t => {
   t.plan(3)
   const results = await find(getItems())

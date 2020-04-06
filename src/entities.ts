@@ -5,13 +5,6 @@ import { Many, getMany } from './data'
 import { Entity, Mutator, create, read } from './entity'
 import { Driver } from './handler'
 
-export type Reducer<T, R, O = any> = (
-  accumulator: R,
-  entity: Entity<T, O>,
-  index: number,
-  options?: O
-) => Promise<R>
-
 export interface Entities<T, O = any> {
   update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entities<T, O>
   assign (object: Partial<T>): Entities<T, O>
@@ -19,7 +12,6 @@ export interface Entities<T, O = any> {
   commit (): Entities<T, O>,
   unwrap (options?: O): Promise<T[]>
   stream (options?: O): core.Readable
-  reduce<R> (reducer: Reducer<T, R, O>, init: R, options?: O): Promise<R>
   undo (steps?: number): Entities<T, O>
   redo (steps?: number): Entities<T, O>
 }
@@ -173,36 +165,6 @@ function streamContext<T, O> (
   })
 }
 
-function reduceContext<T, O, R> (
-  ctx: Context<T, O>,
-  reducer: Reducer<T, R, O>,
-  accumulator: R,
-  options?: O
-): Promise<R> {
-  return new Promise<R>((resolve, reject) => {
-    let index = 0
-    handleContext(
-      ctx,
-      options,
-      (entity, callback) => {
-        reducer(accumulator, entity, index++, options)
-          .then(result => {
-            accumulator = result
-            callback()
-          })
-          .catch(callback)
-      },
-      err => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(accumulator)
-        }
-      }
-    )
-  })
-}
-
 function lockContext<T, O> (ctx: Context<T, O>) {
   if (ctx.locked) {
     throw new Error('Those entities are immutable')
@@ -219,7 +181,6 @@ function wrapContext<T, O> (ctx: Context<T, O>): Entities<T, O> {
     commit: () => wrapContext(commitContext(lockContext(ctx))),
     unwrap: options => unwrapContext(lockContext(ctx), options),
     stream: options => streamContext(lockContext(ctx), options),
-    reduce: (reducer, init, options) => reduceContext(lockContext(ctx), reducer, init, options),
     undo: steps => wrapContext(undoContext(lockContext(ctx), steps)),
     redo: steps => wrapContext(redoContext(lockContext(ctx), steps))
   }
