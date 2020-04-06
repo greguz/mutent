@@ -17,8 +17,8 @@ function exec<T, A extends any[]> (
     : Promise.resolve()
 }
 
-async function handleDriver<T, O> (
-  driver: Driver<T, O> = {},
+export async function handleDriver<T, O> (
+  driver: Driver<T, O>,
   status: Status<T>,
   options?: O
 ): Promise<Status<T>> {
@@ -41,6 +41,8 @@ async function handleDriver<T, O> (
   return status
 }
 
-export function createHandler<T, O> (driver?: Driver<T, O>): Handler<T, O> {
+export function createHandler<T, O> (
+  driver: Driver<T, O> = {}
+): Handler<T, O> {
   return (status, options) => handleDriver(driver, status, options)
 }
