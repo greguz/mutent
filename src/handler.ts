@@ -1,19 +1,9 @@
 import { Status, commitStatus, updateStatus, createStatus } from './status'
 
 export interface Driver<T, O = any> {
-  create? (
-    target: Exclude<T, null>,
-    options?: O
-  ): Promise<T | void>
-  update? (
-    source: Exclude<T, null>,
-    target: Exclude<T, null>,
-    options?: O
-  ): Promise<T | void>
-  delete? (
-    source: Exclude<T, null>,
-    options?: O
-  ): Promise<T | void>
+  create? (target: T, options?: O): Promise<T | void>
+  update? (source: T, target: T, options?: O): Promise<T | void>
+  delete? (source: T, options?: O): Promise<T | void>
 }
 
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>

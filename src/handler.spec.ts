@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { Driver, createHandler } from './handler'
+import { Driver, handleDriver } from './handler'
 import { Status, commitStatus, createStatus, deleteStatus, updateStatus } from './status'
 
 interface Item {
@@ -32,14 +32,6 @@ function sUpdateDelete (id: number, value: any): Status<Item> {
   return deleteStatus(sUpdate(id, value))
 }
 
-function run (
-  driver: Driver<Item, any> | undefined,
-  status: Status<Item>,
-  options?: any
-) {
-  return createHandler(driver)(status, options)
-}
-
 test('sCreate', async t => {
   t.plan(3)
 
@@ -64,7 +56,7 @@ test('sCreate', async t => {
     }
   }
 
-  const status = await run(driver, sCreate(0), { hello: 'world' })
+  const status = await handleDriver(driver, sCreate(0), { hello: 'world' })
 
   t.deepEqual(status, {
     updated: false,
@@ -93,9 +85,9 @@ test('sVoid', async t => {
     }
   }
 
-  const status = await run(driver, sVoid(0), { hello: 'world' })
+  const status = await handleDriver(driver, sVoid(0), { hello: 'world' })
 
-  t.deepEqual(status, await run(undefined, sVoid(0)))
+  t.deepEqual(status, await handleDriver({}, sVoid(0)))
 
   t.deepEqual(status, {
     updated: false,
@@ -137,7 +129,7 @@ test('sUpdate', async t => {
     }
   }
 
-  const status = await run(driver, sUpdate(0, 'UPDATE'), { hello: 'world' })
+  const status = await handleDriver(driver, sUpdate(0, 'UPDATE'), { hello: 'world' })
 
   t.deepEqual(status, {
     updated: false,
@@ -177,7 +169,7 @@ test('sDelete', async t => {
     }
   }
 
-  const status = await run(driver, sDelete(0), { hello: 'world' })
+  const status = await handleDriver(driver, sDelete(0), { hello: 'world' })
 
   t.deepEqual(status, {
     updated: false,
@@ -214,9 +206,9 @@ test('sCreateDelete', async t => {
     }
   }
 
-  const status = await run(driver, sCreateDelete(0), { hello: 'world' })
+  const status = await handleDriver(driver, sCreateDelete(0), { hello: 'world' })
 
-  t.deepEqual(status, await run(undefined, sCreateDelete(0)))
+  t.deepEqual(status, await handleDriver({}, sCreateDelete(0)))
 
   t.deepEqual(status, {
     updated: false,
@@ -258,9 +250,9 @@ test('sUpdateDelete', async t => {
     }
   }
 
-  const status = await run(driver, sUpdateDelete(0, 'UPDATE'), { hello: 'world' })
+  const status = await handleDriver(driver, sUpdateDelete(0, 'UPDATE'), { hello: 'world' })
 
-  t.deepEqual(status, await run(undefined, sUpdateDelete(0, 'UPDATE')))
+  t.deepEqual(status, await handleDriver({}, sUpdateDelete(0, 'UPDATE')))
 
   t.deepEqual(status, {
     updated: false,

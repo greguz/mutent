@@ -3,17 +3,16 @@ import { Entities, find, insert } from './entities'
 import { Entity, create, read } from './entity'
 import { Driver } from './handler'
 
-export interface PluginInstance<T, Q = any, O = any> {
+export interface Plugin<T, Q = any, O = any> {
   get (query: Q): Entity<T | null, O>
   read (query: Q): Entity<T, O>
   find (query: Q): Entities<T, O>
   create (data: T): Entity<T, O>
   insert (data: T[]): Entities<T, O>
-  from (data: T[]): Entities<T, O>
-  from (data: T): Entity<T, O>
+  from<F> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
 }
 
-export interface Plugin<T, Q = any, O = any> {
+export interface Definition<T, Q = any, O = any> {
   get (query: Q, options?: O): Value<T | null>
   find (query: Q, options?: O): Values<T>
   create (target: T, options?: O): Promise<T | void>
@@ -27,35 +26,35 @@ function defaultMissing () {
 }
 
 async function readEntity<T, Q, O> (
-  plugin: Plugin<T, Q, O>,
+  definition: Definition<T, Q, O>,
   query: Q,
   options?: O
 ): Promise<T> {
-  const data = await plugin.get(query, options)
+  const data = await definition.get(query, options)
   if (data === null) {
-    throw (plugin.missing || defaultMissing)(query, options)
+    throw (definition.missing || defaultMissing)(query, options)
   }
   return data
 }
 
-function fromData<T, O> (
-  data: T[] | T,
-  driver: Driver<T, O>
+function fromData (
+  data: any,
+  driver: Driver<any, any>
 ): any {
   return Array.isArray(data)
     ? find(data, driver)
     : read(data, driver)
 }
 
-export function buildPlugin<T, Q, O> (
-  plugin: Plugin<T, Q, O>
-): PluginInstance<T, Q, O> {
+export function createPlugin<T, Q, O> (
+  definition: Definition<T, Q, O>
+): Plugin<T, Q, O> {
   return {
-    get: query => read(options => plugin.get(query, options), plugin),
-    read: query => read(options => readEntity(plugin, query, options)),
-    find: query => find(options => plugin.find(query, options), plugin),
-    create: value => create(value, plugin),
-    insert: values => insert(values, plugin),
-    from: (data: T[] | T) => fromData(data, plugin)
+    get: query => read(options => definition.get(query, options), definition),
+    read: query => read(options => readEntity(definition, query, options), definition),
+    find: query => find(options => definition.find(query, options), definition),
+    create: value => create(value, definition),
+    insert: values => insert(values, definition),
+    from: data => fromData(data, definition)
   }
 }
