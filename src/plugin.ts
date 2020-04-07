@@ -12,12 +12,9 @@ export interface Plugin<T, Q = any, O = any> {
   from<F> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
 }
 
-export interface Definition<T, Q = any, O = any> {
+export interface Definition<T, Q = any, O = any> extends Required<Driver<T, O>> {
   get (query: Q, options?: O): Value<T | null>
   find (query: Q, options?: O): Values<T>
-  create (target: T, options?: O): Promise<T | void>
-  update (source: T, target: T, options?: O): Promise<T | void>
-  delete (source: T, options?: O): Promise<T | void>
   missing? (query: Q, options?: O): any
 }
 

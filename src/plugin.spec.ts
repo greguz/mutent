@@ -74,6 +74,12 @@ test('plugin', async t => {
     { id: 4, value: 'YES' }
   ])
 
-  t.true(plugin.from(b)['stream'] === undefined)
-  t.true(typeof plugin.from(c).stream === 'function')
+  const d = await plugin.from(b).unwrap()
+  t.deepEqual(d, { id: 42 })
+
+  const e = await plugin.from(c).unwrap()
+  t.deepEqual(e, [
+    { id: 0, value: 'YES' },
+    { id: 4, value: 'YES' }
+  ])
 })
