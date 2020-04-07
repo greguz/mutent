@@ -91,15 +91,24 @@ type Callback = (err?: any) => void
 function handleContext<T, O> (
   ctx: Context<T, O>,
   options: O | undefined,
-  write: (entity: Entity<T, O>, callback: Callback) => void,
+  write: (data: T, callback: Callback) => void,
   end: Callback
-): void {
-  pipeline(
+) {
+  return pipeline(
     ctx.extract(options),
     new Writable({
       objectMode: true,
       write (data: T, encoding, callback) {
-        write(ctx.mapper(data), callback)
+        ctx.mapper(data)
+          .unwrap(options)
+          .then(data => {
+            if (data === null) {
+              callback()
+            } else {
+              write(data, callback)
+            }
+          })
+          .catch(callback)
       }
     }),
     end
@@ -115,13 +124,9 @@ function unwrapContext<T, O> (
     handleContext(
       ctx,
       options,
-      (entity, callback) => {
-        entity.unwrap(options)
-          .then(result => {
-            results.push(result)
-            callback()
-          })
-          .catch(callback)
+      (data, callback) => {
+        results.push(data)
+        callback()
       },
       err => {
         if (err) {
@@ -139,19 +144,31 @@ function streamContext<T, O> (
   options?: O
 ): core.Readable {
   let reading = false
+  let next: Callback | undefined
+  let tail: Writable | undefined
   return new Readable({
     objectMode: true,
     read () {
+      if (next) {
+        const callback = next
+        next = undefined
+        callback()
+      }
+
       if (reading) {
         return
       }
       reading = true
-      handleContext(
+
+      tail = handleContext(
         ctx,
         options,
-        (entity, callback) => {
-          this.push({ entity, options })
-          callback()
+        (data, callback) => {
+          if (this.push(data)) {
+            callback()
+          } else {
+            next = callback
+          }
         },
         err => {
           if (err) {
@@ -161,6 +178,12 @@ function streamContext<T, O> (
           }
         }
       )
+    },
+    destroy (err, callback) {
+      if (tail) {
+        tail.destroy(err as any)
+      }
+      callback(err)
     }
   })
 }

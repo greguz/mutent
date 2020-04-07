@@ -143,12 +143,9 @@ test('stream', async t => {
         .stream({ db: 'test' }),
       new Writable({
         objectMode: true,
-        write ({ entity, options }, encoding, callback) {
-          entity
-            .unwrap(options)
-            .then(result => t.is(result.value, index++ * 2))
-            .then(() => callback())
-            .catch(callback)
+        write (data: Item, encoding, callback) {
+          t.is(data.value, index++ * 2)
+          callback()
         }
       }),
       err => {
