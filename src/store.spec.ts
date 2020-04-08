@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { Definition, createPlugin } from './plugin'
+import { Plugin, createStore } from './store'
 
 interface Item {
   id: number
@@ -13,49 +13,49 @@ function match (item: Item, value: number | string) {
     : item.value === value
 }
 
-function definePlugin (): Definition<Item, number | string> {
-  const store: Item[] = []
+function createPlugin (): Plugin<Item, number | string> {
+  const items: Item[] = []
 
   return {
-    get: query => store.find(item => match(item, query)) || null,
-    find: query => store.filter(item => match(item, query)),
+    get: query => items.find(item => match(item, query)) || null,
+    find: query => items.filter(item => match(item, query)),
     async create (target) {
-      store.push(target)
+      items.push(target)
     },
     async update (source, target) {
-      const index = store.findIndex(item => item.id === source.id)
+      const index = items.findIndex(item => item.id === source.id)
       if (index < 0) {
         throw new Error()
       }
-      store.splice(index, 1, target)
+      items.splice(index, 1, target)
     },
     async delete (source) {
-      const index = store.findIndex(item => item.id === source.id)
+      const index = items.findIndex(item => item.id === source.id)
       if (index < 0) {
         throw new Error()
       }
-      store.splice(index, 1)
+      items.splice(index, 1)
     }
   }
 }
 
 test('plugin', async t => {
-  const plugin = createPlugin(definePlugin())
+  const store = createStore(createPlugin())
 
-  const a = await plugin.get(0).unwrap()
+  const a = await store.get(0).unwrap()
   t.is(a, null)
 
-  await t.throwsAsync(() => plugin.read(0).unwrap())
+  await t.throwsAsync(() => store.read(0).unwrap())
 
-  await plugin
+  await store
     .create({ id: 42 })
     .commit()
     .unwrap()
 
-  const b = await plugin.read(42).unwrap()
+  const b = await store.read(42).unwrap()
   t.deepEqual(b, { id: 42 })
 
-  await plugin
+  await store
     .insert([
       { id: 0, value: 'YES' },
       { id: 1, value: 'NO' },
@@ -66,7 +66,7 @@ test('plugin', async t => {
     .commit()
     .unwrap()
 
-  const c = await plugin
+  const c = await store
     .find('YES')
     .unwrap()
   t.deepEqual(c, [
@@ -74,10 +74,10 @@ test('plugin', async t => {
     { id: 4, value: 'YES' }
   ])
 
-  const d = await plugin.from(b).unwrap()
+  const d = await store.from(b).unwrap()
   t.deepEqual(d, { id: 42 })
 
-  const e = await plugin.from(c).unwrap()
+  const e = await store.from(c).unwrap()
   t.deepEqual(e, [
     { id: 0, value: 'YES' },
     { id: 4, value: 'YES' }
