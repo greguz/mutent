@@ -2,7 +2,7 @@ import core from 'stream'
 import { Readable, Writable, pipeline } from 'readable-stream'
 
 import { Many, getMany } from './data'
-import { Entity, Mutator, create, read } from './entity'
+import { Entity, Mutator, createEntity, readEntity } from './entity'
 import { Driver } from './handler'
 
 export interface Entities<T, O = any> {
@@ -29,7 +29,7 @@ function createContext<T, O> (
   return {
     locked: false,
     extract: options => getMany(many, options),
-    mapper: data => create(data, driver)
+    mapper: data => createEntity(data, driver)
   }
 }
 
@@ -40,7 +40,7 @@ function readContext<T, O> (
   return {
     locked: false,
     extract: options => getMany(many, options),
-    mapper: data => read(data, driver)
+    mapper: data => readEntity(data, driver)
   }
 }
 
@@ -63,7 +63,7 @@ function updateContext<T, O, A extends any[]> (
   return mapContext(ctx, entity => entity.update(mutator, ...args))
 }
 
-function assignContext<S, T, E, O> (
+function assignContext<T, O> (
   ctx: Context<T, O>,
   object: Partial<T>
 ): Context<T, O> {
@@ -209,14 +209,14 @@ function wrapContext<T, O> (ctx: Context<T, O>): Entities<T, O> {
   }
 }
 
-export function insert<T, O = any> (
+export function insertEntities<T, O = any> (
   many: Many<T, O>,
   driver?: Driver<T, O>
 ): Entities<T, O> {
   return wrapContext(createContext(many, driver))
 }
 
-export function find<T, O = any> (
+export function findEntities<T, O = any> (
   many: Many<T, O>,
   driver?: Driver<T, O>
 ): Entities<T, O> {

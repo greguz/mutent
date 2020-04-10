@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'readable-stream'
 
-import { insert, find } from './entities'
+import { findEntities, insertEntities } from './entities'
 import { Driver } from './handler'
 
 interface Item {
@@ -54,27 +54,27 @@ function getItems (count: number = 16) {
 
 test('lock', async t => {
   t.throws(() => {
-    const entities = insert([])
+    const entities = insertEntities([])
     entities.update(data => data)
     entities.update(data => data)
   })
   t.throws(() => {
-    const entities = insert([])
+    const entities = insertEntities([])
     entities.assign({})
     entities.assign({})
   })
   t.throws(() => {
-    const entities = insert([])
+    const entities = insertEntities([])
     entities.delete()
     entities.delete()
   })
   t.throws(() => {
-    const entities = insert([])
+    const entities = insertEntities([])
     entities.commit()
     entities.commit()
   })
   await t.throwsAsync(async () => {
-    const entities = insert([])
+    const entities = insertEntities([])
     await entities.unwrap()
     await entities.unwrap()
   })
@@ -82,7 +82,7 @@ test('lock', async t => {
 
 test('create', async t => {
   t.plan(35)
-  const results = await insert(getItems(), bind(t, { create: true }))
+  const results = await insertEntities(getItems(), bind(t, { create: true }))
     .commit()
     .unwrap({ db: 'test' })
   t.is(results.length, 16)
@@ -92,7 +92,7 @@ test('create', async t => {
 
 test('update', async t => {
   t.plan(35)
-  const results = await find(getItems(), bind(t, { update: true }))
+  const results = await findEntities(getItems(), bind(t, { update: true }))
     .update(data => ({ value: data.value / 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -103,7 +103,7 @@ test('update', async t => {
 
 test('assign', async t => {
   t.plan(37)
-  const results = await find(getItems(), bind(t, { update: true }))
+  const results = await findEntities(getItems(), bind(t, { update: true }))
     .assign({ num: 42 })
     .commit()
     .unwrap({ db: 'test' })
@@ -116,7 +116,7 @@ test('assign', async t => {
 
 test('delete', async t => {
   t.plan(35)
-  const results = await find(getItems(), bind(t, { delete: true }))
+  const results = await findEntities(getItems(), bind(t, { delete: true }))
     .delete()
     .commit()
     .unwrap({ db: 'test' })
@@ -127,7 +127,7 @@ test('delete', async t => {
 
 test('insert-error', async t => {
   await t.throwsAsync(async () => {
-    await insert([1])
+    await insertEntities([1])
       .update(async () => { throw new Error('TEST') })
       .unwrap()
   })
@@ -138,7 +138,7 @@ test('stream', async t => {
   await new Promise((resolve, reject) => {
     let index = 0
     pipeline(
-      insert(getItems(), bind(t, { create: true }))
+      insertEntities(getItems(), bind(t, { create: true }))
         .commit()
         .stream({ db: 'test' }),
       new Writable({
@@ -171,7 +171,7 @@ test('stream-error', async t => {
   await t.throwsAsync(async () => {
     await new Promise((resolve, reject) => {
       pipeline(
-        insert(getErroredStream(new Error())).stream(),
+        insertEntities(getErroredStream(new Error())).stream(),
         new Writable({
           objectMode: true,
           write (chunk, encoding, callback) {
@@ -192,7 +192,7 @@ test('stream-error', async t => {
 
 test('undo entitites', async t => {
   t.plan(3)
-  const results = await find(getItems())
+  const results = await findEntities(getItems())
     .update(data => ({ value: data.value * -1 }))
     .update(data => ({ value: data.value * 2 }))
     .delete()
@@ -205,7 +205,7 @@ test('undo entitites', async t => {
 
 test('redo entitites', async t => {
   t.plan(3)
-  const results = await find(getItems())
+  const results = await findEntities(getItems())
     .update(data => ({ value: data.value * -1 }))
     .update(data => ({ value: data.value * 2 }))
     .update(data => ({ value: data.value * 10 }))

@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { create, read } from './entity'
+import { createEntity, readEntity } from './entity'
 import { Driver } from './handler'
 
 interface Item {
@@ -17,37 +17,37 @@ function next (item: Item): Item {
 
 test('lock', async t => {
   t.throws(() => {
-    const entity = create({})
+    const entity = createEntity({})
     entity.update(data => data)
     entity.update(data => data)
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createEntity({})
     entity.assign({})
     entity.assign({})
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createEntity({})
     entity.delete()
     entity.delete()
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createEntity({})
     entity.commit()
     entity.commit()
   })
   await t.throwsAsync(async () => {
-    const entity = create({})
+    const entity = createEntity({})
     await entity.unwrap()
     await entity.unwrap()
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createEntity({})
     entity.redo()
     entity.redo()
   })
   t.throws(() => {
-    const entity = create({})
+    const entity = createEntity({})
     entity.undo()
     entity.undo()
   })
@@ -74,7 +74,7 @@ test('create', async t => {
     }
   }
 
-  const item = await create({ id: 0 }, driver)
+  const item = await createEntity({ id: 0 }, driver)
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -110,7 +110,7 @@ test('update', async t => {
     }
   }
 
-  const item = await read({ id: 0 }, driver)
+  const item = await readEntity({ id: 0 }, driver)
     .assign({ value: 'UPDATE' })
     .update(next)
     .commit()
@@ -142,7 +142,7 @@ test('delete', async t => {
     }
   }
 
-  const item = await read({ id: 0 }, driver)
+  const item = await readEntity({ id: 0 }, driver)
     .delete()
     .commit()
     .unwrap({ hello: 'world' })
@@ -153,7 +153,7 @@ test('delete', async t => {
 })
 
 test('undo entity', async t => {
-  const a = await read(2)
+  const a = await readEntity(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -161,7 +161,7 @@ test('undo entity', async t => {
     .unwrap()
   t.is(a, -2)
 
-  const b = await read(2)
+  const b = await readEntity(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -169,7 +169,7 @@ test('undo entity', async t => {
     .unwrap()
   t.is(b, 2)
 
-  const c = await read(2)
+  const c = await readEntity(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -179,7 +179,7 @@ test('undo entity', async t => {
 })
 
 test('redo entity', async t => {
-  const result = await read(2)
+  const result = await readEntity(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -190,7 +190,7 @@ test('redo entity', async t => {
 })
 
 test('skip nulls', async t => {
-  const result = await read<number | null>(null)
+  const result = await readEntity<number | null>(null)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)

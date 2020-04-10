@@ -1,6 +1,6 @@
 import { Value, Values } from './data'
-import { Entities, find, insert } from './entities'
-import { Entity, create, read } from './entity'
+import { Entities, findEntities, insertEntities } from './entities'
+import { Entity, createEntity, readEntity } from './entity'
 import { Driver } from './handler'
 import { assignOptions } from './options'
 
@@ -19,7 +19,7 @@ export interface Store<T, Q = any, O = any> {
   from<F> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
 }
 
-async function readEntity<T, Q, O> (
+async function readData<T, Q, O> (
   plugin: Plugin<T, Q, O>,
   query: Q,
   options?: O
@@ -40,29 +40,29 @@ function fromData (
   data: any
 ): any {
   return Array.isArray(data)
-    ? find(data, plugin)
-    : read(data, plugin)
+    ? findEntities(data, plugin)
+    : readEntity(data, plugin)
 }
 
 export function createStore<T, Q, O> (
   plugin: Plugin<T, Q, O>
 ): Store<T, Q, O> {
-  const fnFind = plugin.find || (() => [])
+  const findData = plugin.find || (() => [])
   return {
-    get: query => read(
+    get: query => readEntity(
       options => plugin.get(query, assignOptions(plugin.options, options)),
       plugin
     ),
-    read: query => read(
-      options => readEntity(plugin, query, assignOptions(plugin.options, options)),
+    read: query => readEntity(
+      options => readData(plugin, query, assignOptions(plugin.options, options)),
       plugin
     ),
-    find: query => find(
-      options => fnFind(query, assignOptions(plugin.options, options)),
+    find: query => findEntities(
+      options => findData(query, assignOptions(plugin.options, options)),
       plugin
     ),
-    create: value => create(value, plugin),
-    insert: values => insert(values, plugin),
+    create: value => createEntity(value, plugin),
+    insert: values => insertEntities(values, plugin),
     from: data => fromData(plugin, data)
   }
 }

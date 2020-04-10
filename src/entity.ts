@@ -166,14 +166,14 @@ function wrapContext<T, O> (ctx: Context<T, O>): Entity<T, O> {
   }
 }
 
-export function create<T, O = any> (
+export function createEntity<T, O = any> (
   one: One<T, O>,
   driver?: Driver<T, O>
 ): Entity<T, O> {
   return wrapContext(createContext(one, driver))
 }
 
-export function read<T, O = any> (
+export function readEntity<T, O = any> (
   one: One<T, O>,
   driver?: Driver<T, O>
 ): Entity<T, O> {
