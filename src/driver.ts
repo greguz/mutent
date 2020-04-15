@@ -5,7 +5,7 @@ export interface Driver<T, O = any> {
   create? (target: T, options?: O): Promise<T | void>
   update? (source: T, target: T, options?: O): Promise<T | void>
   delete? (source: T, options?: O): Promise<T | void>
-  options?: O
+  defaults?: O
 }
 
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
@@ -24,7 +24,7 @@ export async function handleDriver<T, O> (
   status: Status<any>,
   options?: O
 ): Promise<Status<T>> {
-  options = assignOptions(driver.options, options)
+  options = assignOptions(driver.defaults, options)
 
   let data: T | void
   if (status.source === null) {

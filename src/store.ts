@@ -49,15 +49,15 @@ export function createStore<T, Q, O> (
   const findData = plugin.find || (() => [])
   return {
     get: query => readEntity(
-      options => plugin.get(query, assignOptions(plugin.options, options)),
+      options => plugin.get(query, assignOptions(plugin.defaults, options)),
       plugin
     ),
     read: query => readEntity(
-      options => readData(plugin, query, assignOptions(plugin.options, options)),
+      options => readData(plugin, query, assignOptions(plugin.defaults, options)),
       plugin
     ),
     find: query => findEntities(
-      options => findData(query, assignOptions(plugin.options, options)),
+      options => findData(query, assignOptions(plugin.defaults, options)),
       plugin
     ),
     create: value => createEntity(value, plugin),
