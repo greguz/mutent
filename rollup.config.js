@@ -4,5 +4,9 @@ export default {
     file: 'mutent.js',
     format: 'cjs'
   },
-  external: ['readable-stream', 'stream']
+  external: [
+    'fluente',
+    'readable-stream',
+    'stream'
+  ]
 }
