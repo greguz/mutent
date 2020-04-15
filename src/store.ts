@@ -1,10 +1,9 @@
 import { Value, Values } from './data'
 import { Entities, findEntities, insertEntities } from './entities'
-import { Entity, createEntity, readEntity } from './entity'
-import { Driver } from './handler'
+import { Entity, Settings, createEntity, readEntity } from './entity'
 import { assignOptions } from './options'
 
-export interface Plugin<T, Q = any, O = any> extends Driver<T, O> {
+export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
   get (query: Q, options?: O): Value<T | null>
   find? (query: Q, options?: O): Values<T>
   missing? (query: Q, options?: O): any
