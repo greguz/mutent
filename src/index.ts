@@ -1,5 +1,5 @@
 export { Lazy, Many, One, Value, Values } from './data'
 export { Entities, findEntities, insertEntities } from './entities'
-export { Entity, Mutator, createEntity, readEntity } from './entity'
+export { Entity, Mutator, Settings, createEntity, readEntity } from './entity'
 export { Driver } from './handler'
 export { Plugin, Store, createStore } from './store'
