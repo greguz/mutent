@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'readable-stream'
 
 import { findEntities, insertEntities } from './entities'
-import { Driver } from './handler'
+import { Driver } from './driver'
 
 interface Item {
   value: number

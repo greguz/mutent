@@ -1,5 +1,5 @@
 export { Lazy, Many, One, Value, Values } from './data'
+export { Driver } from './driver'
 export { Entities, findEntities, insertEntities } from './entities'
 export { Entity, Mutator, Settings, createEntity, readEntity } from './entity'
-export { Driver } from './handler'
 export { Plugin, Store, createStore } from './store'

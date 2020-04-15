@@ -1,7 +1,7 @@
 import fluente from 'fluente'
 
 import { One, getOne } from './data'
-import { Driver, Handler, createHandler } from './handler'
+import { Driver, Handler, createHandler } from './driver'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
 
 export type Mutator<T, A extends any[]> = (

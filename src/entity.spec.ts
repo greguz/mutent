@@ -1,7 +1,7 @@
 import test from 'ava'
 
+import { Driver } from './driver'
 import { createEntity, readEntity } from './entity'
-import { Driver } from './handler'
 
 interface Item {
   id: number

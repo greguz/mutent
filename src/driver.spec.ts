@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { Driver, handleDriver } from './handler'
+import { Driver, handleDriver } from './driver'
 import { Status, commitStatus, createStatus, deleteStatus, updateStatus } from './status'
 
 interface Item {
