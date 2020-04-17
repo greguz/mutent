@@ -1,17 +1,21 @@
 import { assignOptions } from './options'
 import { Status, commitStatus, updateStatus, createStatus } from './status'
 
+export type MaybePromise<T> = Promise<T> | T
+
+export type DriverOutput<T> = MaybePromise<T | undefined | void>
+
 export interface Driver<T, O = any> {
-  create? (target: T, options?: O): Promise<T | void>
-  update? (source: T, target: T, options?: O): Promise<T | void>
-  delete? (source: T, options?: O): Promise<T | void>
+  create? (data: T, options?: O): DriverOutput<T>
+  update? (source: T, target: T, options?: O): DriverOutput<T>
+  delete? (data: T, options?: O): DriverOutput<T>
   defaults?: O
 }
 
 export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
 
-function exec<T, A extends any[]> (
-  fn?: (...args: A) => Promise<T | void>,
+async function exec<T, A extends any[]> (
+  fn?: (...args: A) => DriverOutput<T>,
   ...args: A
 ): Promise<T | void> {
   return fn
