@@ -1,6 +1,6 @@
 # createStore(plugin)
 
-TODO
+A plugin defines how Mutent has to interact with a specific data source. Its purpose is to be used to create a [store](store.md).
 
 - `plugin` `<Object>`
   - `get` `<Function>`
@@ -9,20 +9,20 @@ TODO
   - `create` `<Function>`
   - `update` `<Function>`
   - `delete` `<Function>`
-  - `defaults` `<Object>`
-  - `historySize` `<Number>`
+  - `defaults` `<Object>` Default options.
+  - `historySize` `<Number>` Will effect undo/redo mutations history.
 
 ## get(query, options)
 
-TODO
+Retrieves an entity's data. May return `null` or `undefined` if there's no result. Promises are also supported.
 
 - `query` `<*>`
 - `options` `<Object>`
-- Returns: `<Promise>` | `<Object>` | `<null>`
+- Returns: `<Promise>` | `<Object>` | `<null>` | `<undefined>`
 
 ## find(query, options)
 
-TODO
+Fetches multiple entities' data. Arrays, async iterables, and [Readable](https://nodejs.org/api/stream.html#stream_implementing_a_readable_stream) streams are supported.
 
 - `query` `<*>`
 - `options` `<Object>`
@@ -30,39 +30,65 @@ TODO
 
 ## missing(query, options)
 
-TODO
+Constructs the thrown error used while [reading](store.md#readquery) a required entity.
 
 - `query` `<*>`
 - `options` `<Object>`
 - Returns: `<*>`
 
-## create(target, options)
+## create(data, options)
 
-TODO
+Creates the entity against its data source. During this procedure, the entity's data may be changed and then returned. Promises are also supported.
 
-- `target` `<Object>`
+- `data` `<Object>`
 - `options` `<Object>`
-- Returns: `<Promise>`
+- Returns: `<Promise>` | `<Object>` | `<undefined>`
 
 ## update(source, target, options)
 
-TODO
+Updates the entity against its data source. The `source` variable represents the entity's data just after its retrieving from its data source.  The `target` variable represents the resulting data after all configured mutations are applied. During this procedure, the entity's data may be changed and then returned. Promises are also supported.
 
 - `source` `<Object>`
 - `target` `<Object>`
 - `options` `<Object>`
-- Returns: `<Promise>`
+- Returns: `<Promise>` | `<Object>` | `<undefined>`
 
-## delete(source, options)
+## delete(data, options)
 
-TODO
+It deletes the entity against its data source. During this procedure, the entity's data may be changed and then returned. Promises are also supported.
 
-- `source` `<Object>`
+- `data` `<Object>`
 - `options` `<Object>`
-- Returns: `<Promise>`
+- Returns: `<Promise>` | `<Object>` | `<undefined>`
 
 ## Example
 
 ```javascript
-// TODO
+function match (query) {
+  return typeof query === 'number'
+    ? item => item.id === query
+    : item => item.name === query
+}
+
+function createArrayPlugin () {
+  const items = []
+  return {
+    get: query => items.find(match(query)),
+    find: query => items.filter(match(query)),
+    missing: query => new Error(`Item "${query}" not found`),
+    create: data => {
+      items.push(data)
+    },
+    update: (source, target) => {
+      items.splice(
+        items.findIndex(match(source.id)),
+        1,
+        target
+      )
+    },
+    delete: data => {
+      items.splice(items.findIndex(match(data.id)), 1)
+    }
+  }
+}
 ```
