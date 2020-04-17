@@ -29,7 +29,7 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "dependencies": {
-    "fluente": "^0.3.1",
+    "fluente": "^0.3.3",
     "readable-stream": "^3.6.0"
   },
   "devDependencies": {
