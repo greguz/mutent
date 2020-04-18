@@ -15,7 +15,7 @@ export interface Store<T, Q = any, O = any> {
   create (data: T): Entity<T, O>
   find (query: Q): Entities<T, O>
   insert (data: T[]): Entities<T, O>
-  from<F> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
+  from<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
 }
 
 async function getData<T, Q, O> (
@@ -43,9 +43,9 @@ async function readData<T, Q, O> (
   return data
 }
 
-function fromData (
-  plugin: Plugin<any, any, any>,
-  data: any
+function fromData<T, Q, O> (
+  plugin: Plugin<T, Q, O>,
+  data: T[] | T
 ): any {
   return Array.isArray(data)
     ? findEntities(data, plugin)
