@@ -1,7 +1,9 @@
 import core from 'stream'
 import { Readable, Stream } from 'readable-stream'
 
-export type Lazy<T, O = any> = ((options?: O) => T) | T
+import { objectify } from './options'
+
+export type Lazy<T, O = any> = ((options: Partial<O>) => T) | T
 
 export type Value<T> =
   | Promise<T>
@@ -19,10 +21,10 @@ export type Many<T, O = any> = Lazy<Values<T>, O>
 
 export function getMany<T, O> (
   many: Many<T, O>,
-  options?: O
+  options: Partial<O> = {}
 ): core.Readable {
   if (typeof many === 'function') {
-    return getMany(many.call(null, options))
+    return getMany(many(objectify(options)), options)
   } else if (many instanceof Stream) {
     return many
   } else {
@@ -32,10 +34,10 @@ export function getMany<T, O> (
 
 export function getOne<T, O> (
   one: One<T, O>,
-  options?: O
+  options: Partial<O> = {}
 ): Promise<T> {
   if (typeof one === 'function') {
-    return getOne((one as any).call(null, options))
+    return getOne((one as any).call(null, objectify(options)), options)
   } else {
     return Promise.resolve(one)
   }

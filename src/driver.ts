@@ -1,4 +1,4 @@
-import { assignOptions } from './options'
+import { defaults } from './options'
 import { Status, commitStatus, updateStatus, createStatus } from './status'
 
 export type MaybePromise<T> = Promise<T> | T
@@ -6,13 +6,16 @@ export type MaybePromise<T> = Promise<T> | T
 export type DriverOutput<T> = MaybePromise<T | undefined | void>
 
 export interface Driver<T, O = any> {
-  create? (data: T, options?: O): DriverOutput<T>
-  update? (source: T, target: T, options?: O): DriverOutput<T>
-  delete? (data: T, options?: O): DriverOutput<T>
-  defaults?: O
+  create? (data: T, options: Partial<O>): DriverOutput<T>
+  update? (source: T, target: T, options: Partial<O>): DriverOutput<T>
+  delete? (data: T, options: Partial<O>): DriverOutput<T>
+  defaults?: Partial<O>
 }
 
-export type Handler<T, O> = (status: Status<T>, options?: O) => Promise<Status<T>>
+export type Handler<T, O> = (
+  status: Status<T>,
+  options: Partial<O>
+) => Promise<Status<T>>
 
 async function exec<T, A extends any[]> (
   fn?: (...args: A) => DriverOutput<T>,
@@ -26,9 +29,9 @@ async function exec<T, A extends any[]> (
 export async function handleDriver<T, O> (
   driver: Driver<T, O>,
   status: Status<any>,
-  options?: O
+  options: Partial<O> = {}
 ): Promise<Status<T>> {
-  options = assignOptions(driver.defaults, options)
+  options = defaults(options, driver.defaults)
 
   let data: T | void
   if (status.source === null) {

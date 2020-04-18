@@ -2,13 +2,18 @@ function isObjectLike (value: any): value is object {
   return typeof value === 'object' && value !== null
 }
 
-export function assignOptions (
-  defaultOptions: any = {},
-  currentOptions: any = {}
-): any {
-  if (isObjectLike(defaultOptions) && isObjectLike(currentOptions)) {
-    return { ...defaultOptions, ...currentOptions }
-  } else {
-    return currentOptions
+export function objectify<O> (value?: O): Partial<O> {
+  return isObjectLike(value)
+    ? value
+    : {}
+}
+
+export function defaults<O> (
+  target: Partial<O>,
+  source?: O
+): Partial<O> {
+  return {
+    ...objectify(source),
+    ...target
   }
 }

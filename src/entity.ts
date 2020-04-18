@@ -2,6 +2,7 @@ import fluente from 'fluente'
 
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './driver'
+import { objectify } from './options'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
 
 export type Mutator<T, A extends any[]> = (
@@ -25,12 +26,15 @@ export interface Settings<T, O = any> extends Driver<T, O> {
 }
 
 interface State<T, O> {
-  extract: (options?: O) => Promise<Status<T>>
+  extract: (options: Partial<O>) => Promise<Status<T>>
   handler: Handler<T, O>
   mappers: Array<Mapper<T, O>>
 }
 
-type Mapper<T, O> = (status: Status<T>, options?: O) => Status<T> | Promise<Status<T>>
+type Mapper<T, O> = (
+  status: Status<T>,
+  options: Partial<O>
+) => Status<T> | Promise<Status<T>>
 
 function createState<T, O> (
   one: One<T, O>,
@@ -97,9 +101,10 @@ function unwrapState<T, O> (
   state: State<T, O>,
   options?: O
 ): Promise<T> {
+  const obj = objectify(options)
   return state.mappers.reduce(
-    (acc, mapper) => acc.then(status => mapper(status, options)),
-    state.extract(options)
+    (acc, mapper) => acc.then(status => mapper(status, obj)),
+    state.extract(obj)
   ).then(status => status.target)
 }
 

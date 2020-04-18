@@ -1,12 +1,12 @@
 import { Value, Values } from './data'
 import { Entities, findEntities, insertEntities } from './entities'
 import { Entity, Settings, createEntity, readEntity } from './entity'
-import { assignOptions } from './options'
+import { defaults } from './options'
 
 export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
-  get (query: Q, options?: O): Value<T | null | undefined>
-  find? (query: Q, options?: O): Values<T>
-  missing? (query: Q, options?: O): any
+  get (query: Q, options: Partial<O>): Value<T | null | undefined>
+  find? (query: Q, options: Partial<O>): Values<T>
+  missing? (query: Q, options: Partial<O>): any
 }
 
 export interface Store<T, Q = any, O = any> {
@@ -21,16 +21,16 @@ export interface Store<T, Q = any, O = any> {
 async function getData<T, Q, O> (
   plugin: Plugin<T, Q, O>,
   query: Q,
-  options?: O
+  options: Partial<O>
 ): Promise<T | null> {
-  const data = await plugin.get(query, assignOptions(plugin.defaults, options))
+  const data = await plugin.get(query, options)
   return data === undefined ? null : data
 }
 
 async function readData<T, Q, O> (
   plugin: Plugin<T, Q, O>,
   query: Q,
-  options?: O
+  options: Partial<O>
 ): Promise<T> {
   const data = await getData(plugin, query, options)
   if (data === null) {
@@ -58,15 +58,15 @@ export function createStore<T, Q, O> (
   const findData = plugin.find || (() => [])
   return {
     get: query => readEntity(
-      options => getData(plugin, query, options),
+      options => getData(plugin, query, defaults(options, plugin.defaults)),
       plugin
     ),
     read: query => readEntity(
-      options => readData(plugin, query, options),
+      options => readData(plugin, query, defaults(options, plugin.defaults)),
       plugin
     ),
     find: query => findEntities(
-      options => findData(query, assignOptions(plugin.defaults, options)),
+      options => findData(query, defaults(options, plugin.defaults)),
       plugin
     ),
     create: value => createEntity(value, plugin),

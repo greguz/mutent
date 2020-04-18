@@ -4,6 +4,7 @@ import fluente from 'fluente'
 
 import { Many, getMany } from './data'
 import { Entity, Mutator, Settings, createEntity, readEntity } from './entity'
+import { objectify } from './options'
 
 export interface Entities<T, O = any> {
   areEntities: boolean
@@ -18,7 +19,7 @@ export interface Entities<T, O = any> {
 }
 
 interface State<T, O> {
-  extract: (options?: O) => core.Readable
+  extract: (options: Partial<O>) => core.Readable
   mapper: (data: T) => Entity<T, O>
 }
 
@@ -84,7 +85,7 @@ function handleState<T, O> (
   end: Callback
 ) {
   return pipeline(
-    state.extract(options),
+    state.extract(objectify(options)),
     new Writable({
       objectMode: true,
       write (data: T, encoding, callback) {
