@@ -6,8 +6,11 @@ A plugin defines how Mutent has to interact with a specific data source. Its pur
   - `get` `<Function>`
   - `find` `<Function>`
   - `missing` `<Function>`
+  - `preCreate` `<Function>`
   - `create` `<Function>`
+  - `preUpdate` `<Function>`
   - `update` `<Function>`
+  - `preDelete` `<Function>`
   - `delete` `<Function>`
   - `defaults` `<Object>` Default options.
   - `historySize` `<Number>` Will effect undo/redo mutations history.
@@ -36,30 +39,51 @@ Constructs the thrown error used while [reading](store.md#readquery) a required 
 - `options` `<Object>`
 - Returns: `<*>`
 
+## preCreate(data)
+
+TODO
+
+- `data` `<Object>`
+- Returns: `<Promise>` | `<Object>`
+
 ## create(data, options)
 
-Creates the entity against its data source. During this procedure, the entity's data may be changed and then returned. Promises are also supported.
+Creates the entity against its data source.
 
 - `data` `<Object>`
 - `options` `<Object>`
-- Returns: `<Promise>` | `<Object>` | `<undefined>`
+- Returns: `<*>`
+
+## preUpdate(data)
+
+TODO
+
+- `data` `<Object>`
+- Returns: `<Promise>` | `<Object>`
 
 ## update(source, target, options)
 
-Updates the entity against its data source. The `source` variable represents the entity's data just after its retrieving from its data source.  The `target` variable represents the resulting data after all configured mutations are applied. During this procedure, the entity's data may be changed and then returned. Promises are also supported.
+Updates the entity against its data source. The `source` variable represents the entity's data just after its retrieving from its data source.  The `target` variable represents the resulting data after all configured mutations are applied.
 
 - `source` `<Object>`
 - `target` `<Object>`
 - `options` `<Object>`
-- Returns: `<Promise>` | `<Object>` | `<undefined>`
+- Returns: `<*>`
+
+## preDelete(data)
+
+TODO
+
+- `data` `<Object>`
+- Returns: `<Promise>` | `<Object>`
 
 ## delete(data, options)
 
-It deletes the entity against its data source. During this procedure, the entity's data may be changed and then returned. Promises are also supported.
+It deletes the entity against its data source.
 
 - `data` `<Object>`
 - `options` `<Object>`
-- Returns: `<Promise>` | `<Object>` | `<undefined>`
+- Returns: `<*>`
 
 ## Example
 
