@@ -2,8 +2,8 @@ import fluente from 'fluente'
 
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './driver'
-import { objectify } from './options'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
+import { isNull, objectify } from './utils'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
@@ -49,7 +49,7 @@ function createState<T, O> (
 
 function skipNullMutations<T, O> (mapper: Mapper<T, O>): Mapper<T, O> {
   return function wrappedMapper (status, options) {
-    return status.target === null
+    return isNull(status.target)
       ? status
       : mapper(status, options)
   }

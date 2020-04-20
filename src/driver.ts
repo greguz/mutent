@@ -1,5 +1,5 @@
-import { defaults } from './options'
 import { Status, commitStatus, updateStatus, createStatus } from './status'
+import { isNull } from './utils'
 
 export type MaybePromise<T> = Promise<T> | T
 
@@ -10,7 +10,6 @@ export interface Driver<T, O = any> {
   update? (source: T, target: T, options: Partial<O>): any
   preDelete? (data: T): MaybePromise<T>
   delete? (data: T, options: Partial<O>): any
-  defaults?: Partial<O>
 }
 
 export type Handler<T, O> = (
@@ -30,9 +29,7 @@ export async function handleDriver<T, O> (
   status: Status<any>,
   options: Partial<O> = {}
 ): Promise<Status<T>> {
-  options = defaults(options, driver.defaults)
-
-  if (status.source === null) {
+  if (isNull(status.source)) {
     if (driver.preCreate) {
       status = updateStatus(
         status,

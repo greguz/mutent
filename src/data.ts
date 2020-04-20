@@ -1,7 +1,7 @@
 import core from 'stream'
 import { Readable, Stream } from 'readable-stream'
 
-import { objectify } from './options'
+import { objectify } from './utils'
 
 export type Lazy<T, O = any> = ((options: Partial<O>) => T) | T
 

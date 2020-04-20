@@ -4,7 +4,7 @@ import fluente from 'fluente'
 
 import { Many, getMany } from './data'
 import { Entity, Mutator, Settings, createEntity, readEntity } from './entity'
-import { objectify } from './options'
+import { isNull, objectify } from './utils'
 
 export interface Entities<T, O = any> {
   areEntities: boolean
@@ -92,7 +92,7 @@ function handleState<T, O> (
         state.mapper(data)
           .unwrap(options)
           .then(data => {
-            if (data === null) {
+            if (isNull(data)) {
               callback()
             } else {
               write(data, callback)

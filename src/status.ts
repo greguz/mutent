@@ -1,3 +1,5 @@
+import { isUndefined } from './utils'
+
 export interface Status<T> {
   updated: boolean
   deleted: boolean
@@ -6,7 +8,7 @@ export interface Status<T> {
 }
 
 function noUndef<T> (value: T): T {
-  if (value === undefined) {
+  if (isUndefined(value)) {
     throw new Error('An entity cannot be undefined')
   }
   return value

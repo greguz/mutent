@@ -12,7 +12,6 @@ A plugin defines how Mutent has to interact with a specific data source. Its pur
   - `update` `<Function>`
   - `preDelete` `<Function>`
   - `delete` `<Function>`
-  - `defaults` `<Object>` Default options.
   - `historySize` `<Number>` Will effect undo/redo mutations history.
 
 ## get(query, options)
