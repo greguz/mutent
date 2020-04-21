@@ -1,48 +1,48 @@
 # Store
 
-TODO
+It handles inputted queries and data, returning the corresponding entities.
 
 ## get(query)
 
-TODO
+Retrieves a single entity that may be `null`.
 
 - `query` `<*>`
-- Returns: `<Entity>`
+- Returns: [`<Entity>`](entity.md)
 
 ## read(query)
 
-TODO
+Retrieves a single existent entity.
 
 - `query` `<*>`
-- Returns: `<Entity>`
+- Returns: [`<Entity>`](entity.md)
 
 ## create(data)
 
-TODO
+Defines a not yet created entity.
 
 - `data` `<Object>`
-- Returns: `<Entity>`
+- Returns: [`<Entity>`](entity.md)
 
 ## find(query)
 
-TODO
+Retrieves multiple entities at the same time.
 
 - `query` `<*>`
-- Returns: `<Entities>`
+- Returns: [`<Entities>`](entities.md)
 
 ## insert(data)
 
-TODO
+Defines many not yet created entities.
 
 - `data` `<Array>`
-- Returns: `<Entities>`
+- Returns: [`<Entities>`](entities.md)
 
 ## from(data)
 
-TODO
+Defines entities by inputted raw data. Resulting entities are defined as already persisted on their data source.
 
 - `data` `<Object>` | `<Object[]>`
-- Returns: `<Entity>` | `<Entities>`
+- Returns: [`<Entity>`](entity.md) | [`<Entities>`](entities.md)
 
 ## Example
 
