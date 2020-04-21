@@ -38,11 +38,12 @@ Constructs the thrown error used while [reading](store.md#readquery) a required 
 - `options` `<Object>`
 - Returns: `<*>`
 
-## preCreate(data)
+## preCreate(data, options)
 
-TODO
+Performs a mutation just before creating the entity against its data source.
 
 - `data` `<Object>`
+- `options` `<Object>`
 - Returns: `<Promise>` | `<Object>`
 
 ## create(data, options)
@@ -53,11 +54,12 @@ Creates the entity against its data source.
 - `options` `<Object>`
 - Returns: `<*>`
 
-## preUpdate(data)
+## preUpdate(data, options)
 
-TODO
+Performs a mutation just before updating the entity against its data source.
 
 - `data` `<Object>`
+- `options` `<Object>`
 - Returns: `<Promise>` | `<Object>`
 
 ## update(source, target, options)
@@ -69,11 +71,12 @@ Updates the entity against its data source. The `source` variable represents the
 - `options` `<Object>`
 - Returns: `<*>`
 
-## preDelete(data)
+## preDelete(data, options)
 
-TODO
+Performs a mutation just before deleting the entity against its data source.
 
 - `data` `<Object>`
+- `options` `<Object>`
 - Returns: `<Promise>` | `<Object>`
 
 ## delete(data, options)

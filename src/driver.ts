@@ -4,11 +4,11 @@ import { isNull } from './utils'
 export type MaybePromise<T> = Promise<T> | T
 
 export interface Driver<T, O = any> {
-  preCreate? (data: T): MaybePromise<T>
+  preCreate? (data: T, options: Partial<O>): MaybePromise<T>
   create? (data: T, options: Partial<O>): any
-  preUpdate? (data: T): MaybePromise<T>
+  preUpdate? (data: T, options: Partial<O>): MaybePromise<T>
   update? (source: T, target: T, options: Partial<O>): any
-  preDelete? (data: T): MaybePromise<T>
+  preDelete? (data: T, options: Partial<O>): MaybePromise<T>
   delete? (data: T, options: Partial<O>): any
 }
 
@@ -33,7 +33,7 @@ export async function handleDriver<T, O> (
     if (driver.preCreate) {
       status = updateStatus(
         status,
-        await exec(driver.preCreate, status.target)
+        await exec(driver.preCreate, status.target, options)
       )
     }
     if (driver.create) {
@@ -43,7 +43,7 @@ export async function handleDriver<T, O> (
     if (driver.preUpdate) {
       status = updateStatus(
         status,
-        await exec(driver.preUpdate, status.target)
+        await exec(driver.preUpdate, status.target, options)
       )
     }
     if (driver.update) {
@@ -56,7 +56,7 @@ export async function handleDriver<T, O> (
     if (driver.preDelete) {
       status = updateStatus(
         status,
-        await exec(driver.preDelete, status.target)
+        await exec(driver.preDelete, status.target, options)
       )
     }
     if (driver.delete) {
