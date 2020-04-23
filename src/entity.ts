@@ -128,10 +128,17 @@ function wrapState<T, O> (
       unwrap: unwrapState
     },
     constants: {
+      [Symbol.for('mutent')]: true,
       isEntity: true
     },
     historySize
   })
+}
+
+export function isEntity (value: any): value is Entity<any, any> {
+  return typeof value === 'object' && value !== null
+    ? value[Symbol.for('mutent')] === true && value.isEntity === true
+    : false
 }
 
 export function createEntity<T, O = any> (

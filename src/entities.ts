@@ -195,10 +195,17 @@ function wrapState<T, O> (
       stream: streamState
     },
     constants: {
+      [Symbol.for('mutent')]: true,
       areEntities: true
     },
     historySize
   })
+}
+
+export function areEntities (value: any): value is Entities<any, any> {
+  return typeof value === 'object' && value !== null
+    ? value[Symbol.for('mutent')] === true && value.areEntities === true
+    : false
 }
 
 export function insertEntities<T, O = any> (

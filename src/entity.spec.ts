@@ -1,7 +1,7 @@
 import test from 'ava'
 
 import { Driver } from './driver'
-import { createEntity, readEntity } from './entity'
+import { createEntity, isEntity, readEntity } from './entity'
 
 interface Item {
   id: number
@@ -196,4 +196,12 @@ test('skip nulls', async t => {
     .update(value => value * 10)
     .unwrap()
   t.is(result, null)
+})
+
+test('isEntity', t => {
+  t.false(isEntity(undefined))
+  t.false(isEntity(null))
+  t.false(isEntity({}))
+  t.false(isEntity([]))
+  t.true(isEntity(createEntity({})))
 })

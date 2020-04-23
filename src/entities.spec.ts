@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'readable-stream'
 
-import { findEntities, insertEntities } from './entities'
+import { areEntities, findEntities, insertEntities } from './entities'
 import { Driver } from './driver'
 
 interface Item {
@@ -215,4 +215,12 @@ test('redo entitites', async t => {
   t.is(results.length, 16)
   t.is(results[0].value, -0)
   t.is(results[15].value, -600)
+})
+
+test('areEntities', t => {
+  t.false(areEntities(undefined))
+  t.false(areEntities(null))
+  t.false(areEntities({}))
+  t.false(areEntities([]))
+  t.true(areEntities(insertEntities([])))
 })
