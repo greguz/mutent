@@ -205,3 +205,16 @@ test('isEntity', t => {
   t.false(isEntity([]))
   t.true(isEntity(createEntity({})))
 })
+
+test('mutable entity', async t => {
+  const entity = createEntity<Item>(
+    { id: 0 },
+    { mutable: true }
+  )
+  entity.update(next)
+  entity.update(next)
+  entity.update(next)
+  const result = await entity.unwrap()
+  t.deepEqual(result, { id: 3 })
+  t.throws(entity.unwrap)
+})

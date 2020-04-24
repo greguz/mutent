@@ -23,6 +23,7 @@ export interface Entity<T, O = any> {
 
 export interface Settings<T, O = any> extends Driver<T, O> {
   historySize?: number
+  mutable?: boolean
 }
 
 interface State<T, O> {
@@ -114,7 +115,7 @@ function commitState<T, O> (state: State<T, O>): State<T, O> {
 
 function wrapState<T, O> (
   state: State<T, O>,
-  historySize?: number
+  settings: Settings<T, O>
 ): Entity<T, O> {
   return fluente({
     state,
@@ -131,7 +132,8 @@ function wrapState<T, O> (
       [Symbol.for('mutent')]: true,
       isEntity: true
     },
-    historySize
+    historySize: settings.historySize,
+    sharedState: settings.mutable === true
   })
 }
 
@@ -145,18 +147,12 @@ export function createEntity<T, O = any> (
   one: One<T, O>,
   settings: Settings<T, O> = {}
 ): Entity<T, O> {
-  return wrapState(
-    createState(one, settings),
-    settings.historySize
-  )
+  return wrapState(createState(one, settings), settings)
 }
 
 export function readEntity<T, O = any> (
   one: One<T, O>,
   settings: Settings<T, O> = {}
 ): Entity<T, O> {
-  return wrapState(
-    readState(one, settings),
-    settings.historySize
-  )
+  return wrapState(readState(one, settings), settings)
 }

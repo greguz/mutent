@@ -180,7 +180,7 @@ function streamState<T, O> (
 
 function wrapState<T, O> (
   state: State<T, O>,
-  historySize?: number
+  settings: Settings<T, O>
 ): Entities<T, O> {
   return fluente({
     state,
@@ -198,7 +198,8 @@ function wrapState<T, O> (
       [Symbol.for('mutent')]: true,
       areEntities: true
     },
-    historySize
+    historySize: settings.historySize,
+    sharedState: settings.mutable === true
   })
 }
 
@@ -212,18 +213,12 @@ export function insertEntities<T, O = any> (
   many: Many<T, O>,
   settings: Settings<T, O> = {}
 ): Entities<T, O> {
-  return wrapState(
-    createState(many, settings),
-    settings.historySize
-  )
+  return wrapState(createState(many, settings), settings)
 }
 
 export function findEntities<T, O = any> (
   many: Many<T, O>,
   settings: Settings<T, O> = {}
 ): Entities<T, O> {
-  return wrapState(
-    readState(many, settings),
-    settings.historySize
-  )
+  return wrapState(readState(many, settings), settings)
 }
