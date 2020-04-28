@@ -1,12 +1,12 @@
 import { Value, Values } from './data'
 import { Entities, findEntities, insertEntities } from './entities'
 import { Entity, Settings, createEntity, readEntity } from './entity'
+import { UnknownEntityError } from './errors'
 import { isNull, isUndefined } from './utils'
 
 export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
   get (query: Q, options: Partial<O>): Value<T | null | undefined>
   find? (query: Q, options: Partial<O>): Values<T>
-  missing? (query: Q, options: Partial<O>): any
 }
 
 export interface Store<T, Q = any, O = any> {
@@ -34,11 +34,7 @@ async function readData<T, Q, O> (
 ): Promise<T> {
   const data = await getData(plugin, query, options)
   if (isNull(data)) {
-    if (plugin.missing) {
-      throw plugin.missing(query, options)
-    } else {
-      throw new Error('Not found')
-    }
+    throw new UnknownEntityError()
   }
   return data
 }

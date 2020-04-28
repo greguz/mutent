@@ -206,10 +206,10 @@ test('isEntity', t => {
   t.true(isEntity(createEntity({})))
 })
 
-test('mutable entity', async t => {
+test('classy entity', async t => {
   const entity = createEntity<Item>(
     { id: 0 },
-    { mutable: true }
+    { classy: true }
   )
   entity.update(next)
   entity.update(next)
@@ -217,4 +217,19 @@ test('mutable entity', async t => {
   const result = await entity.unwrap()
   t.deepEqual(result, { id: 3 })
   t.throws(entity.unwrap)
+})
+
+test('safe entity', async t => {
+  await t.throwsAsync(
+    () => createEntity({ id: 0 }, { safe: true }).unwrap()
+  )
+  await createEntity({ id: 0 }, { safe: true }).unwrap({ safe: false })
+  await t.throwsAsync(
+    () => readEntity({ id: 0 }, { safe: true }).update(next).unwrap()
+  )
+  await readEntity({ id: 0 }, { safe: true }).update(next).unwrap({ safe: false })
+  await t.throwsAsync(
+    () => readEntity({ id: 0 }, { safe: true }).delete().unwrap()
+  )
+  await readEntity({ id: 0 }, { safe: true }).delete().unwrap({ safe: false })
 })

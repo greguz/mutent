@@ -2,13 +2,16 @@ import fluente from 'fluente'
 
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './driver'
+import { ExpectedCommitError } from './errors'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
-import { isNull, mutentSymbol, objectify } from './utils'
+import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
   ...args: A
 ) => Promise<T> | T
+
+export type UnwrapOptions<O = any> = O & { safe?: boolean }
 
 export interface Entity<T, O = any> {
   isEntity: boolean
@@ -16,20 +19,22 @@ export interface Entity<T, O = any> {
   assign (object: Partial<T>): Entity<T, O>
   delete (): Entity<T, O>
   commit (): Entity<T, O>
-  unwrap (options?: O): Promise<T>
+  unwrap (options?: UnwrapOptions<O>): Promise<T>
   undo (steps?: number): Entity<T, O>
   redo (steps?: number): Entity<T, O>
 }
 
 export interface Settings<T, O = any> extends Driver<T, O> {
+  classy?: boolean
   historySize?: number
-  classify?: boolean
+  safe?: boolean
 }
 
 interface State<T, O> {
   extract: (options: Partial<O>) => Promise<Status<T>>
-  handler: Handler<T, O>
+  handle: Handler<T, O>
   mappers: Array<Mapper<T, O>>
+  safe: boolean
 }
 
 type Mapper<T, O> = (
@@ -43,8 +48,9 @@ function createState<T, O> (
 ): State<T, O> {
   return {
     extract: options => getOne(one, options).then(createStatus),
-    handler: createHandler(settings),
-    mappers: []
+    handle: createHandler(settings),
+    mappers: [],
+    safe: settings.safe === true
   }
 }
 
@@ -98,19 +104,24 @@ function deleteState<T, O> (state: State<T, O>): State<T, O> {
   return mapState(state, deleteStatus)
 }
 
-function unwrapState<T, O> (
+async function unwrapState<T, O> (
   state: State<T, O>,
-  options?: O
+  options?: UnwrapOptions<O>
 ): Promise<T> {
   const obj = objectify(options)
-  return state.mappers.reduce(
+  const res = await state.mappers.reduce(
     (acc, mapper) => acc.then(status => mapper(status, obj)),
     state.extract(obj)
-  ).then(status => status.target)
+  )
+  const safe = isUndefined(obj.safe) ? state.safe : !!obj.safe
+  if (safe && (res.source === null || res.updated || res.deleted)) {
+    throw new ExpectedCommitError(res)
+  }
+  return res.target
 }
 
 function commitState<T, O> (state: State<T, O>): State<T, O> {
-  return mapState(state, state.handler)
+  return mapState(state, state.handle)
 }
 
 function wrapState<T, O> (
@@ -133,7 +144,7 @@ function wrapState<T, O> (
       isEntity: true
     },
     historySize: settings.historySize,
-    sharedState: settings.classify === true
+    sharedState: settings.classy === true
   })
 }
 

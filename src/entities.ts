@@ -199,7 +199,7 @@ function wrapState<T, O> (
       areEntities: true
     },
     historySize: settings.historySize,
-    sharedState: settings.classify === true
+    sharedState: settings.classy === true
   })
 }
 
