@@ -34,7 +34,7 @@ async function readData<T, Q, O> (
 ): Promise<T> {
   const data = await getData(plugin, query, options)
   if (isNull(data)) {
-    throw new UnknownEntityError()
+    throw new UnknownEntityError(query, options)
   }
   return data
 }

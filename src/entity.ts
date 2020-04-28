@@ -115,7 +115,7 @@ async function unwrapState<T, O> (
   )
   const safe = isUndefined(obj.safe) ? state.safe : !!obj.safe
   if (safe && (res.source === null || res.updated || res.deleted)) {
-    throw new ExpectedCommitError(res)
+    throw new ExpectedCommitError(res.source, res.target, obj)
   }
   return res.target
 }
