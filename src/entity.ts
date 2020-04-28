@@ -3,7 +3,7 @@ import fluente from 'fluente'
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './driver'
 import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
-import { isNull, objectify } from './utils'
+import { isNull, mutentSymbol, objectify } from './utils'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
@@ -23,7 +23,7 @@ export interface Entity<T, O = any> {
 
 export interface Settings<T, O = any> extends Driver<T, O> {
   historySize?: number
-  mutable?: boolean
+  classify?: boolean
 }
 
 interface State<T, O> {
@@ -129,17 +129,17 @@ function wrapState<T, O> (
       unwrap: unwrapState
     },
     constants: {
-      [Symbol.for('mutent')]: true,
+      [mutentSymbol]: true,
       isEntity: true
     },
     historySize: settings.historySize,
-    sharedState: settings.mutable === true
+    sharedState: settings.classify === true
   })
 }
 
 export function isEntity (value: any): value is Entity<any, any> {
   return typeof value === 'object' && value !== null
-    ? value[Symbol.for('mutent')] === true && value.isEntity === true
+    ? value[mutentSymbol] === true && value.isEntity === true
     : false
 }
 

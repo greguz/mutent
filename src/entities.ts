@@ -4,7 +4,7 @@ import fluente from 'fluente'
 
 import { Many, getMany } from './data'
 import { Entity, Mutator, Settings, createEntity, readEntity } from './entity'
-import { isNull, objectify } from './utils'
+import { isNull, mutentSymbol, objectify } from './utils'
 
 export interface Entities<T, O = any> {
   areEntities: boolean
@@ -195,17 +195,17 @@ function wrapState<T, O> (
       stream: streamState
     },
     constants: {
-      [Symbol.for('mutent')]: true,
+      [mutentSymbol]: true,
       areEntities: true
     },
     historySize: settings.historySize,
-    sharedState: settings.mutable === true
+    sharedState: settings.classify === true
   })
 }
 
 export function areEntities (value: any): value is Entities<any, any> {
   return typeof value === 'object' && value !== null
-    ? value[Symbol.for('mutent')] === true && value.areEntities === true
+    ? value[mutentSymbol] === true && value.areEntities === true
     : false
 }
 
