@@ -13,7 +13,7 @@ export type Mutator<T, A extends any[]> = (
 
 export type Safe = true | false | 'auto'
 
-export type UnwrapOptions<O = any> = O & { safe?: Safe }
+export type UnwrapOptions<O = {}> = O & { safe?: Safe }
 
 export interface Entity<T, O = any> {
   isEntity: boolean
