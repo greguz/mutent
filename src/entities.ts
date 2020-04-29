@@ -3,8 +3,10 @@ import { Readable, Writable, pipeline } from 'readable-stream'
 import fluente from 'fluente'
 
 import { Many, getMany } from './data'
-import { Entity, Mutator, Settings, createEntity, readEntity } from './entity'
+import { Entity, Mutator, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
 import { isNull, mutentSymbol, objectify } from './utils'
+
+export type StreamOptions<O = {}> = UnwrapOptions<O> & { highWaterMark?: number }
 
 export interface Entities<T, O = any> {
   areEntities: boolean
@@ -12,8 +14,8 @@ export interface Entities<T, O = any> {
   assign (object: Partial<T>): Entities<T, O>
   delete (): Entities<T, O>
   commit (): Entities<T, O>,
-  unwrap (options?: O): Promise<T[]>
-  stream (options?: O): core.Readable
+  unwrap (options?: UnwrapOptions<O>): Promise<T[]>
+  stream (options?: StreamOptions<O>): core.Readable
   undo (steps?: number): Entities<T, O>
   redo (steps?: number): Entities<T, O>
 }
@@ -80,12 +82,12 @@ type Callback = (err?: any) => void
 
 function handleState<T, O> (
   state: State<T, O>,
-  options: O | undefined,
+  options: any,
   write: (data: T, callback: Callback) => void,
   end: Callback
 ) {
   return pipeline(
-    state.extract(objectify(options)),
+    state.extract(options),
     new Writable({
       objectMode: true,
       write (data: T, encoding, callback) {
@@ -107,13 +109,13 @@ function handleState<T, O> (
 
 function unwrapState<T, O> (
   state: State<T, O>,
-  options?: O
+  options?: UnwrapOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
     handleState(
       state,
-      options,
+      objectify(options),
       (data, callback) => {
         results.push(data)
         callback()
@@ -131,13 +133,15 @@ function unwrapState<T, O> (
 
 function streamState<T, O> (
   state: State<T, O>,
-  options?: O
+  options?: StreamOptions<O>
 ): core.Readable {
+  const obj = objectify(options)
   let reading = false
   let next: Callback | undefined
   let tail: Writable | undefined
   return new Readable({
     objectMode: true,
+    highWaterMark: obj.highWaterMark,
     read () {
       if (next) {
         const callback = next
@@ -152,7 +156,7 @@ function streamState<T, O> (
 
       tail = handleState(
         state,
-        options,
+        obj,
         (data, callback) => {
           if (this.push(data)) {
             callback()
