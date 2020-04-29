@@ -13,6 +13,8 @@ A plugin defines how Mutent has to interact with a specific data source. Its pur
   - `preDelete` `<Function>`
   - `delete` `<Function>`
   - `historySize` `<Number>` Will effect undo/redo mutations history.
+  - `classy` `<Boolean>` Set `true` to emulate classic `class` behaviour.
+  - `safe` `<Boolean>` | `<String>` Set `true` to enforce committing before any `unwrap`. Set `'auto'` to automatically commit if necessary just before any `unwrap`.
 
 ## get(query, options)
 
@@ -88,33 +90,42 @@ It deletes the entity against its data source.
 - Returns: `<*>`
 
 ## Example
-
 ```javascript
 function match (query) {
-  return typeof query === 'number'
-    ? item => item.id === query
-    : item => item.name === query
+  return item => item.name === query
 }
 
-function createArrayPlugin () {
+function createPlugin () {
+  // Data source
   const items = []
+
   return {
-    get: query => items.find(match(query)),
-    find: query => items.filter(match(query)),
-    missing: query => new Error(`Item "${query}" not found`),
+    // Get single entity
+    get: query => {
+      return items.find(match(query))
+    },
+    // Get multiple entities
+    find: query => {
+      return items.filter(match(query))
+    },
+    // Create entity
     create: data => {
       items.push(data)
     },
+    // Update entity
     update: (source, target) => {
       items.splice(
-        items.findIndex(match(source.id)),
+        items.findIndex(match(source.name)),
         1,
         target
       )
     },
+    // Delete entity
     delete: data => {
-      items.splice(items.findIndex(match(data.id)), 1)
+      items.splice(
+        items.findIndex(match(data.name)),
+        1
+      )
     }
   }
 }
-```
