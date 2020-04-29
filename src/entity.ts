@@ -52,7 +52,7 @@ function createState<T, O> (
     extract: options => getOne(one, options).then(createStatus),
     handle: createHandler(settings),
     mappers: [],
-    safe: settings.safe === 'auto' ? 'auto' : !!settings.safe
+    safe: settings.safe === 'auto' ? 'auto' : settings.safe === true
   }
 }
 
