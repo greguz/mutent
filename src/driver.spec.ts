@@ -61,6 +61,7 @@ test('sCreate', async t => {
   const status = await handleDriver(driver, sCreate(0), { hello: 'world' })
 
   t.deepEqual(status, {
+    created: false,
     updated: false,
     deleted: false,
     source: {
@@ -92,6 +93,7 @@ test('sVoid', async t => {
   t.deepEqual(status, await handleDriver({}, sVoid(0)))
 
   t.deepEqual(status, {
+    created: false,
     updated: false,
     deleted: false,
     source: {
@@ -136,6 +138,7 @@ test('sUpdate', async t => {
   const status = await handleDriver(driver, sUpdate(0, 'UPDATE'), { hello: 'world' })
 
   t.deepEqual(status, {
+    created: false,
     updated: false,
     deleted: false,
     source: {
@@ -178,6 +181,7 @@ test('sDelete', async t => {
   const status = await handleDriver(driver, sDelete(0), { hello: 'world' })
 
   t.deepEqual(status, {
+    created: false,
     updated: false,
     deleted: false,
     source: null,
@@ -217,6 +221,7 @@ test('sCreateDelete', async t => {
   t.deepEqual(status, await handleDriver({}, sCreateDelete(0)))
 
   t.deepEqual(status, {
+    created: false,
     updated: false,
     deleted: false,
     source: null,
@@ -261,6 +266,7 @@ test('sUpdateDelete', async t => {
   t.deepEqual(status, await handleDriver({}, sUpdateDelete(0, 'UPDATE')))
 
   t.deepEqual(status, {
+    created: false,
     updated: false,
     deleted: false,
     source: null,

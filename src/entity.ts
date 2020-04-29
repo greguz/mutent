@@ -3,7 +3,7 @@ import fluente from 'fluente'
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './driver'
 import { ExpectedCommitError } from './errors'
-import { Status, createStatus, commitStatus, updateStatus, deleteStatus } from './status'
+import { Status, commitStatus, createStatus, deleteStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
 
 export type Mutator<T, A extends any[]> = (
@@ -11,7 +11,9 @@ export type Mutator<T, A extends any[]> = (
   ...args: A
 ) => Promise<T> | T
 
-export type UnwrapOptions<O = any> = O & { safe?: boolean }
+export type Safe = true | false | 'auto'
+
+export type UnwrapOptions<O = any> = O & { safe?: Safe }
 
 export interface Entity<T, O = any> {
   isEntity: boolean
@@ -27,14 +29,14 @@ export interface Entity<T, O = any> {
 export interface Settings<T, O = any> extends Driver<T, O> {
   classy?: boolean
   historySize?: number
-  safe?: boolean
+  safe?: Safe
 }
 
 interface State<T, O> {
   extract: (options: Partial<O>) => Promise<Status<T>>
   handle: Handler<T, O>
   mappers: Array<Mapper<T, O>>
-  safe: boolean
+  safe: Safe
 }
 
 type Mapper<T, O> = (
@@ -50,7 +52,7 @@ function createState<T, O> (
     extract: options => getOne(one, options).then(createStatus),
     handle: createHandler(settings),
     mappers: [],
-    safe: settings.safe === true
+    safe: settings.safe === 'auto' ? 'auto' : !!settings.safe
   }
 }
 
@@ -109,13 +111,17 @@ async function unwrapState<T, O> (
   options?: UnwrapOptions<O>
 ): Promise<T> {
   const obj = objectify(options)
-  const res = await state.mappers.reduce(
+  let res = await state.mappers.reduce(
     (acc, mapper) => acc.then(status => mapper(status, obj)),
     state.extract(obj)
   )
-  const safe = isUndefined(obj.safe) ? state.safe : !!obj.safe
-  if (safe && (res.source === null || res.updated || res.deleted)) {
-    throw new ExpectedCommitError(res.source, res.target, obj)
+  const safe = isUndefined(obj.safe) ? state.safe : obj.safe
+  if (shouldCommit(res)) {
+    if (safe === 'auto') {
+      res = await state.handle(res, obj)
+    } else if (safe === true) {
+      throw new ExpectedCommitError(res.source, res.target, obj)
+    }
   }
   return res.target
 }

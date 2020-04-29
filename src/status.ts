@@ -2,6 +2,7 @@ import { UndefinedEntityError } from './errors'
 import { isUndefined } from './utils'
 
 export interface Status<T> {
+  created: boolean
   updated: boolean
   deleted: boolean
   source: T | null
@@ -17,6 +18,7 @@ function noUndef<T> (value: T): T {
 
 export function createStatus<T> (target: T): Status<T> {
   return {
+    created: true,
     updated: false,
     deleted: false,
     source: null,
@@ -32,17 +34,23 @@ export function updateStatus<T> (status: Status<T>, target: T): Status<T> {
   }
 }
 
-export function commitStatus<T> (status: Status<T>): Status<T> {
-  return {
-    ...status,
-    updated: false,
-    source: status.target
-  }
-}
-
 export function deleteStatus<T> (status: Status<T>): Status<T> {
   return {
     ...status,
     deleted: true
   }
+}
+
+export function commitStatus<T> (status: Status<T>): Status<T> {
+  return {
+    ...status,
+    created: false,
+    updated: false,
+    deleted: false,
+    source: status.deleted ? null : status.target
+  }
+}
+
+export function shouldCommit (status: Status<any>) {
+  return status.created || status.updated || status.deleted
 }

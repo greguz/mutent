@@ -7,6 +7,7 @@ test('create status', t => {
   t.deepEqual(
     createStatus('CREATE'),
     {
+      created: true,
       updated: false,
       deleted: false,
       source: null,
@@ -19,6 +20,7 @@ test('commit status', t => {
   t.deepEqual(
     commitStatus(createStatus('COMMIT')),
     {
+      created: false,
       updated: false,
       deleted: false,
       source: 'COMMIT',
@@ -32,6 +34,7 @@ test('update status', t => {
   t.deepEqual(
     updateStatus(createStatus('CREATE'), 'UPDATE'),
     {
+      created: true,
       updated: true,
       deleted: false,
       source: null,
@@ -44,6 +47,7 @@ test('delete status', t => {
   t.deepEqual(
     deleteStatus(createStatus('DELETE')),
     {
+      created: true,
       updated: false,
       deleted: true,
       source: null,

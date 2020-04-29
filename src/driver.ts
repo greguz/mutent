@@ -1,4 +1,4 @@
-import { Status, commitStatus, updateStatus, createStatus } from './status'
+import { Status, commitStatus, updateStatus } from './status'
 import { isNull } from './utils'
 
 export type MaybePromise<T> = Promise<T> | T
@@ -50,7 +50,6 @@ export async function handleDriver<T, O> (
       await exec(driver.update, status.source, status.target, options)
     }
   }
-  status = commitStatus(status)
 
   if (status.deleted) {
     if (driver.preDelete) {
@@ -62,10 +61,9 @@ export async function handleDriver<T, O> (
     if (driver.delete) {
       await exec(driver.delete, status.target, options)
     }
-    status = createStatus(status.target)
   }
 
-  return status
+  return commitStatus(status)
 }
 
 export function createHandler<T, O> (
