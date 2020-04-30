@@ -1,10 +1,10 @@
 import fluente from 'fluente'
 
 import { One, getOne } from './data'
-import { Driver, Handler, createHandler } from './driver'
 import { ExpectedCommitError } from './errors'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
+import { Handler, Writer, createHandler } from './writer'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
@@ -30,9 +30,9 @@ export interface Entity<T, O = any> {
 export interface Settings<T, O = any> {
   autoCommit?: boolean
   classy?: boolean
-  driver?: Driver<T, O>
   historySize?: number
   safe?: boolean
+  writer?: Writer<T, O>
 }
 
 interface State<T, O> {
@@ -56,7 +56,7 @@ function createState<T, O> (
   return {
     autoCommit: settings.autoCommit !== false,
     extract: options => getOne(one, options).then(buildStatus),
-    handle: createHandler(settings.driver),
+    handle: createHandler(settings.writer),
     mappers: [],
     safe: settings.safe !== false
   }

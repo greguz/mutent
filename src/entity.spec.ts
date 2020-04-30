@@ -1,7 +1,7 @@
 import test from 'ava'
 
-import { Driver } from './driver'
 import { createEntity, isEntity, readEntity } from './entity'
+import { Writer } from './writer'
 
 interface Item {
   id: number
@@ -56,7 +56,7 @@ test('lock', async t => {
 test('create', async t => {
   t.plan(3)
 
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     async create (target, options) {
       t.deepEqual(target, {
         id: 1,
@@ -74,7 +74,7 @@ test('create', async t => {
     }
   }
 
-  const item = await createEntity({ id: 0 }, { driver })
+  const item = await createEntity({ id: 0 }, { writer })
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -89,7 +89,7 @@ test('create', async t => {
 test('update', async t => {
   t.plan(4)
 
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     async create () {
       t.fail()
     },
@@ -110,7 +110,7 @@ test('update', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { driver })
+  const item = await readEntity({ id: 0 }, { writer })
     .assign({ value: 'UPDATE' })
     .update(next)
     .commit()
@@ -125,7 +125,7 @@ test('update', async t => {
 test('delete', async t => {
   t.plan(3)
 
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     async create () {
       t.fail()
     },
@@ -142,7 +142,7 @@ test('delete', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { driver })
+  const item = await readEntity({ id: 0 }, { writer })
     .delete()
     .commit()
     .unwrap({ hello: 'world' })
@@ -222,7 +222,7 @@ test('classy entity', async t => {
 test('safe create', async t => {
   t.plan(4)
 
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     create () {
       t.pass()
     }
@@ -231,7 +231,7 @@ test('safe create', async t => {
   function entity (autoCommit?: boolean, safe?: boolean) {
     return createEntity<Item>(
       { id: 0 },
-      { autoCommit, driver, safe }
+      { autoCommit, writer, safe }
     )
   }
 
@@ -245,7 +245,7 @@ test('safe create', async t => {
 test('safe update', async t => {
   t.plan(4)
 
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     update () {
       t.pass()
     }
@@ -254,7 +254,7 @@ test('safe update', async t => {
   function entity (autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
-      { autoCommit, driver, safe }
+      { autoCommit, writer, safe }
     ).update(next)
   }
 
@@ -268,7 +268,7 @@ test('safe update', async t => {
 test('safe delete', async t => {
   t.plan(4)
 
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     delete () {
       t.pass()
     }
@@ -277,7 +277,7 @@ test('safe delete', async t => {
   function entity (autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
-      { autoCommit, driver, safe }
+      { autoCommit, writer, safe }
     ).delete()
   }
 

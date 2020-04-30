@@ -3,7 +3,7 @@ import { isNull } from './utils'
 
 export type MaybePromise<T> = Promise<T> | T
 
-export interface Driver<T, O = any> {
+export interface Writer<T, O = any> {
   preCreate? (data: T, options: Partial<O>): MaybePromise<T>
   create? (data: T, options: Partial<O>): any
   preUpdate? (data: T, options: Partial<O>): MaybePromise<T>
@@ -24,42 +24,42 @@ function exec<T, A extends any[]> (
   return Promise.resolve(fn(...args))
 }
 
-export async function handleDriver<T, O> (
-  driver: Driver<T, O>,
+export async function handleWriter<T, O> (
+  writer: Writer<T, O>,
   status: Status<any>,
   options: Partial<O> = {}
 ): Promise<Status<T>> {
   if (isNull(status.source)) {
-    if (driver.preCreate) {
+    if (writer.preCreate) {
       status = updateStatus(
         status,
-        await exec(driver.preCreate, status.target, options)
+        await exec(writer.preCreate, status.target, options)
       )
     }
-    if (driver.create) {
-      await exec(driver.create, status.target, options)
+    if (writer.create) {
+      await exec(writer.create, status.target, options)
     }
   } else if (status.updated === true) {
-    if (driver.preUpdate) {
+    if (writer.preUpdate) {
       status = updateStatus(
         status,
-        await exec(driver.preUpdate, status.target, options)
+        await exec(writer.preUpdate, status.target, options)
       )
     }
-    if (driver.update) {
-      await exec(driver.update, status.source, status.target, options)
+    if (writer.update) {
+      await exec(writer.update, status.source, status.target, options)
     }
   }
 
   if (status.deleted) {
-    if (driver.preDelete) {
+    if (writer.preDelete) {
       status = updateStatus(
         status,
-        await exec(driver.preDelete, status.target, options)
+        await exec(writer.preDelete, status.target, options)
       )
     }
-    if (driver.delete) {
-      await exec(driver.delete, status.target, options)
+    if (writer.delete) {
+      await exec(writer.delete, status.target, options)
     }
   }
 
@@ -67,7 +67,7 @@ export async function handleDriver<T, O> (
 }
 
 export function createHandler<T, O> (
-  driver: Driver<T, O> = {}
+  writer: Writer<T, O> = {}
 ): Handler<T, O> {
-  return (status, options) => handleDriver(driver, status, options)
+  return (status, options) => handleWriter(writer, status, options)
 }

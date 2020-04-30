@@ -19,7 +19,7 @@ function createPlugin (): Plugin<Item, number | string> {
   return {
     get: query => items.find(item => match(item, query)) || null,
     find: query => items.filter(item => match(item, query)),
-    driver: {
+    writer: {
       create (target) {
         items.push(target)
       },

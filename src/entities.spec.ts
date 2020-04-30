@@ -2,7 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'readable-stream'
 
 import { areEntities, findEntities, insertEntities } from './entities'
-import { Driver } from './driver'
+import { Writer } from './writer'
 
 interface Item {
   value: number
@@ -16,7 +16,7 @@ interface CommitMode {
 }
 
 function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
-  const driver: Driver<Item> = {
+  const writer: Writer<Item> = {
     async create (target, options) {
       if (mode.create === true) {
         t.pass()
@@ -42,7 +42,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       t.deepEqual(options, { db: 'test' })
     }
   }
-  return { driver }
+  return { writer }
 }
 
 function getItems (count: number = 16) {
