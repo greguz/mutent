@@ -17,8 +17,14 @@ function createPlugin (): Plugin<Item, number | string> {
   const items: Item[] = []
 
   return {
-    get: query => items.find(item => match(item, query)) || null,
-    find: query => items.filter(item => match(item, query)),
+    reader: {
+      get (query) {
+        return items.find(item => match(item, query))
+      },
+      find (query) {
+        return items.filter(item => match(item, query))
+      }
+    },
     writer: {
       create (target) {
         items.push(target)

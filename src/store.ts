@@ -4,10 +4,14 @@ import { Entity, Settings, createEntity, readEntity } from './entity'
 import { UnknownEntityError } from './errors'
 import { isNull, isUndefined } from './utils'
 
-export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
-  get (query: Q, options: Partial<O>): Value<T | null | undefined>
+export interface Reader<T, Q = any, O = any> {
+  get? (query: Q, options: Partial<O>): Value<T | null | undefined>
   find? (query: Q, options: Partial<O>): Values<T>
   missing? (query: Q, options: Partial<O>): any
+}
+
+export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
+  reader?: Reader<T, Q, O>
 }
 
 export interface Store<T, Q = any, O = any> {
@@ -20,26 +24,39 @@ export interface Store<T, Q = any, O = any> {
 }
 
 async function getData<T, Q, O> (
-  plugin: Plugin<T, Q, O>,
+  reader: Reader<T, Q, O>,
   query: Q,
   options: Partial<O>
 ): Promise<T | null> {
-  const data = await plugin.get(query, options)
+  if (!reader.get) {
+    return null
+  }
+  const data = await reader.get(query, options)
   return isUndefined(data) ? null : data
 }
 
 async function readData<T, Q, O> (
-  plugin: Plugin<T, Q, O>,
+  reader: Reader<T, Q, O>,
   query: Q,
   options: Partial<O>
 ): Promise<T> {
-  const data = await getData(plugin, query, options)
+  const data = await getData(reader, query, options)
   if (isNull(data)) {
-    throw plugin.missing
-      ? plugin.missing(query, options)
+    throw reader.missing
+      ? reader.missing(query, options)
       : new UnknownEntityError(query, options)
   }
   return data
+}
+
+function findData<T, Q, O> (
+  reader: Reader<T, Q, O>,
+  query: Q,
+  options: Partial<O>
+) {
+  return !reader.find
+    ? []
+    : reader.find(query, options)
 }
 
 function fromData<T, Q, O> (
@@ -54,18 +71,18 @@ function fromData<T, Q, O> (
 export function createStore<T, Q, O> (
   plugin: Plugin<T, Q, O>
 ): Store<T, Q, O> {
-  const findData = plugin.find || (() => [])
+  const reader = plugin.reader || {}
   return {
     get: query => readEntity(
-      options => getData(plugin, query, options),
+      options => getData(reader, query, options),
       plugin
     ),
     read: query => readEntity(
-      options => readData(plugin, query, options),
+      options => readData(reader, query, options),
       plugin
     ),
     find: query => findEntities(
-      options => findData(query, options),
+      options => findData(reader, query, options),
       plugin
     ),
     create: value => createEntity(value, plugin),
