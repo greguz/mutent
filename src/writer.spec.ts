@@ -24,12 +24,20 @@ function sDelete (id: number): Status<Item> {
   return deleteStatus(sVoid(id))
 }
 
+function sCreateUpdate (id: number, value: any): Status<Item> {
+  return updateStatus(sCreate(id), { id, value })
+}
+
 function sCreateDelete (id: number): Status<Item> {
   return deleteStatus(sCreate(id))
 }
 
 function sUpdateDelete (id: number, value: any): Status<Item> {
   return deleteStatus(sUpdate(id, value))
+}
+
+function sCreateUpdateDelete (id: number, value: any): Status<Item> {
+  return deleteStatus(sCreateUpdate(id, value))
 }
 
 test('sCreate', async t => {
@@ -191,13 +199,14 @@ test('sDelete', async t => {
   })
 })
 
-test('sCreateDelete', async t => {
-  t.plan(6)
+test('sCreateUpdate', async t => {
+  t.plan(4)
 
   const driver: Writer<Item> = {
     create (data, options) {
       t.deepEqual(data, {
-        id: 0
+        id: 0,
+        value: 'UPDATE'
       })
       t.deepEqual(options, {
         hello: 'world'
@@ -206,13 +215,42 @@ test('sCreateDelete', async t => {
     update () {
       t.fail()
     },
-    delete (data, options) {
-      t.deepEqual(data, {
-        id: 0
-      })
-      t.deepEqual(options, {
-        hello: 'world'
-      })
+    delete () {
+      t.fail()
+    }
+  }
+
+  const status = await handleWriter(driver, sCreateUpdate(0, 'UPDATE'), { hello: 'world' })
+
+  t.deepEqual(status, await handleWriter({}, sCreateUpdate(0, 'UPDATE')))
+
+  t.deepEqual(status, {
+    created: false,
+    updated: false,
+    deleted: false,
+    source: {
+      id: 0,
+      value: 'UPDATE'
+    },
+    target: {
+      id: 0,
+      value: 'UPDATE'
+    }
+  })
+})
+
+test('sCreateDelete', async t => {
+  t.plan(2)
+
+  const driver: Writer<Item> = {
+    create () {
+      t.fail()
+    },
+    update () {
+      t.fail()
+    },
+    delete () {
+      t.fail()
     }
   }
 
@@ -232,23 +270,14 @@ test('sCreateDelete', async t => {
 })
 
 test('sUpdateDelete', async t => {
-  t.plan(7)
+  t.plan(4)
 
   const driver: Writer<Item> = {
     create () {
       t.fail()
     },
-    update (source, target, options) {
-      t.deepEqual(source, {
-        id: 0
-      })
-      t.deepEqual(target, {
-        id: 0,
-        value: 'UPDATE'
-      })
-      t.deepEqual(options, {
-        hello: 'world'
-      })
+    update () {
+      t.fail()
     },
     delete (source, options) {
       t.deepEqual(source, {
@@ -264,6 +293,37 @@ test('sUpdateDelete', async t => {
   const status = await handleWriter(driver, sUpdateDelete(0, 'UPDATE'), { hello: 'world' })
 
   t.deepEqual(status, await handleWriter({}, sUpdateDelete(0, 'UPDATE')))
+
+  t.deepEqual(status, {
+    created: false,
+    updated: false,
+    deleted: false,
+    source: null,
+    target: {
+      id: 0,
+      value: 'UPDATE'
+    }
+  })
+})
+
+test('sCreateUpdateDelete', async t => {
+  t.plan(2)
+
+  const driver: Writer<Item> = {
+    create () {
+      t.fail()
+    },
+    update () {
+      t.fail()
+    },
+    delete () {
+      t.fail()
+    }
+  }
+
+  const status = await handleWriter(driver, sCreateUpdateDelete(0, 'UPDATE'), { hello: 'world' })
+
+  t.deepEqual(status, await handleWriter({}, sCreateUpdateDelete(0, 'UPDATE')))
 
   t.deepEqual(status, {
     created: false,

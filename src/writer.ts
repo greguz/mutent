@@ -29,7 +29,7 @@ export async function handleWriter<T, O> (
   status: Status<any>,
   options: Partial<O> = {}
 ): Promise<Status<T>> {
-  if (isNull(status.source)) {
+  if (isNull(status.source) && !status.deleted) {
     if (writer.preCreate) {
       status = updateStatus(
         status,
@@ -39,7 +39,7 @@ export async function handleWriter<T, O> (
     if (writer.create) {
       await exec(writer.create, status.target, options)
     }
-  } else if (status.updated === true) {
+  } else if (!isNull(status.source) && status.updated && !status.deleted) {
     if (writer.preUpdate) {
       status = updateStatus(
         status,
@@ -49,9 +49,7 @@ export async function handleWriter<T, O> (
     if (writer.update) {
       await exec(writer.update, status.source, status.target, options)
     }
-  }
-
-  if (status.deleted) {
+  } else if (!isNull(status.source) && status.deleted) {
     if (writer.preDelete) {
       status = updateStatus(
         status,
