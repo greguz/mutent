@@ -3,7 +3,7 @@ import fluente from 'fluente'
 import { One, getOne } from './data'
 import { Driver, Handler, createHandler } from './driver'
 import { ExpectedCommitError } from './errors'
-import { Status, commitStatus, createStatus, deleteStatus, shouldCommit, updateStatus } from './status'
+import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
 
 export type Mutator<T, A extends any[]> = (
@@ -50,11 +50,12 @@ type Mapper<T, O> = (
 
 function createState<T, O> (
   one: One<T, O>,
+  buildStatus: (data: T) => Status<T>,
   settings: Settings<T, O>
 ): State<T, O> {
   return {
     autoCommit: settings.autoCommit !== false,
-    extract: options => getOne(one, options).then(createStatus),
+    extract: options => getOne(one, options).then(buildStatus),
     handle: createHandler(settings.driver),
     mappers: [],
     safe: settings.safe !== false
@@ -77,13 +78,6 @@ function mapState<T, O> (
     ...state,
     mappers: [...state.mappers, skipNullMutations(mapper)]
   }
-}
-
-function readState<T, O> (
-  one: One<T, O>,
-  settings: Settings<T, O>
-): State<T, O> {
-  return mapState(createState(one, settings), commitStatus)
 }
 
 function updateState<T, O, A extends any[]> (
@@ -179,12 +173,18 @@ export function createEntity<T, O = any> (
   one: One<T, O>,
   settings: Settings<T, O> = {}
 ): Entity<T, O> {
-  return wrapState(createState(one, settings), settings)
+  return wrapState(
+    createState(one, createStatus, settings),
+    settings
+  )
 }
 
 export function readEntity<T, O = any> (
   one: One<T, O>,
   settings: Settings<T, O> = {}
 ): Entity<T, O> {
-  return wrapState(readState(one, settings), settings)
+  return wrapState(
+    createState(one, readStatus, settings),
+    settings
+  )
 }

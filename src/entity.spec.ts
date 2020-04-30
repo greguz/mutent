@@ -220,7 +220,7 @@ test('classy entity', async t => {
 })
 
 test('safe create', async t => {
-  t.plan(6)
+  t.plan(4)
 
   const driver: Driver<Item> = {
     create () {
@@ -228,27 +228,22 @@ test('safe create', async t => {
     }
   }
 
-  function entity (safe: boolean | 'auto') {
+  function entity (autoCommit?: boolean, safe?: boolean) {
     return createEntity<Item>(
       { id: 0 },
-      { driver, safe }
+      { autoCommit, driver, safe }
     )
   }
 
-  await t.throwsAsync(() => entity(true).unwrap())
-  await entity('auto').unwrap()
-  await entity(false).unwrap()
-
-  await entity(true).unwrap({ safe: false })
-  await entity(true).unwrap({ safe: 'auto' })
-  await t.throwsAsync(() => entity('auto').unwrap({ safe: true }))
-  await entity('auto').unwrap({ safe: false })
-  await t.throwsAsync(() => entity(false).unwrap({ safe: true }))
-  await entity(false).unwrap({ safe: 'auto' })
+  await entity().unwrap()
+  await entity(true, true).unwrap()
+  await entity(true, false).unwrap()
+  await t.throwsAsync(() => entity(false, true).unwrap())
+  await entity(false, false).unwrap()
 })
 
 test('safe update', async t => {
-  t.plan(6)
+  t.plan(4)
 
   const driver: Driver<Item> = {
     update () {
@@ -256,27 +251,22 @@ test('safe update', async t => {
     }
   }
 
-  function entity (safe: boolean | 'auto') {
+  function entity (autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
-      { driver, safe }
+      { autoCommit, driver, safe }
     ).update(next)
   }
 
-  await t.throwsAsync(() => entity(true).unwrap())
-  await entity('auto').unwrap()
-  await entity(false).unwrap()
-
-  await entity(true).unwrap({ safe: false })
-  await entity(true).unwrap({ safe: 'auto' })
-  await t.throwsAsync(() => entity('auto').unwrap({ safe: true }))
-  await entity('auto').unwrap({ safe: false })
-  await t.throwsAsync(() => entity(false).unwrap({ safe: true }))
-  await entity(false).unwrap({ safe: 'auto' })
+  await entity().unwrap()
+  await entity(true, true).unwrap()
+  await entity(true, false).unwrap()
+  await t.throwsAsync(() => entity(false, true).unwrap())
+  await entity(false, false).unwrap()
 })
 
 test('safe delete', async t => {
-  t.plan(6)
+  t.plan(4)
 
   const driver: Driver<Item> = {
     delete () {
@@ -284,21 +274,16 @@ test('safe delete', async t => {
     }
   }
 
-  function entity (safe: boolean | 'auto') {
+  function entity (autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
-      { driver, safe }
+      { autoCommit, driver, safe }
     ).delete()
   }
 
-  await t.throwsAsync(() => entity(true).unwrap())
-  await entity('auto').unwrap()
-  await entity(false).unwrap()
-
-  await entity(true).unwrap({ safe: false })
-  await entity(true).unwrap({ safe: 'auto' })
-  await t.throwsAsync(() => entity('auto').unwrap({ safe: true }))
-  await entity('auto').unwrap({ safe: false })
-  await t.throwsAsync(() => entity(false).unwrap({ safe: true }))
-  await entity(false).unwrap({ safe: 'auto' })
+  await entity().unwrap()
+  await entity(true, true).unwrap()
+  await entity(true, false).unwrap()
+  await t.throwsAsync(() => entity(false, true).unwrap())
+  await entity(false, false).unwrap()
 })

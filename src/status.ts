@@ -31,21 +31,31 @@ function noUndef<T> (value: T): T {
   return value
 }
 
-export function createStatus<T> (target: T): Status<T> {
+export function createStatus<T> (data: T): Status<T> {
   return {
     created: true,
     updated: false,
     deleted: false,
     source: null,
-    target: noUndef(target)
+    target: noUndef(data)
   }
 }
 
-export function updateStatus<T> (status: Status<T>, target: T): Status<T> {
+export function readStatus<T> (data: T): Status<T> {
+  return {
+    created: false,
+    updated: false,
+    deleted: false,
+    source: data,
+    target: noUndef(data)
+  }
+}
+
+export function updateStatus<T> (status: Status<T>, data: T): Status<T> {
   return {
     ...status,
     updated: true,
-    target: noUndef(target)
+    target: noUndef(data)
   }
 }
 
