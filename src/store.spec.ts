@@ -19,22 +19,24 @@ function createPlugin (): Plugin<Item, number | string> {
   return {
     get: query => items.find(item => match(item, query)) || null,
     find: query => items.filter(item => match(item, query)),
-    async create (target) {
-      items.push(target)
-    },
-    async update (source, target) {
-      const index = items.findIndex(item => item.id === source.id)
-      if (index < 0) {
-        throw new Error()
+    driver: {
+      create (target) {
+        items.push(target)
+      },
+      update (source, target) {
+        const index = items.findIndex(item => item.id === source.id)
+        if (index < 0) {
+          throw new Error()
+        }
+        items.splice(index, 1, target)
+      },
+      delete (source) {
+        const index = items.findIndex(item => item.id === source.id)
+        if (index < 0) {
+          throw new Error()
+        }
+        items.splice(index, 1)
       }
-      items.splice(index, 1, target)
-    },
-    async delete (source) {
-      const index = items.findIndex(item => item.id === source.id)
-      if (index < 0) {
-        throw new Error()
-      }
-      items.splice(index, 1)
     }
   }
 }

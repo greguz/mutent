@@ -74,7 +74,7 @@ test('create', async t => {
     }
   }
 
-  const item = await createEntity({ id: 0 }, driver)
+  const item = await createEntity({ id: 0 }, { driver })
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -110,7 +110,7 @@ test('update', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, driver)
+  const item = await readEntity({ id: 0 }, { driver })
     .assign({ value: 'UPDATE' })
     .update(next)
     .commit()
@@ -142,7 +142,7 @@ test('delete', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, driver)
+  const item = await readEntity({ id: 0 }, { driver })
     .delete()
     .commit()
     .unwrap({ hello: 'world' })
@@ -231,7 +231,7 @@ test('safe create', async t => {
   function entity (safe: boolean | 'auto') {
     return createEntity<Item>(
       { id: 0 },
-      { ...driver, safe }
+      { driver, safe }
     )
   }
 
@@ -259,7 +259,7 @@ test('safe update', async t => {
   function entity (safe: boolean | 'auto') {
     return readEntity<Item>(
       { id: 0 },
-      { ...driver, safe }
+      { driver, safe }
     ).update(next)
   }
 
@@ -287,7 +287,7 @@ test('safe delete', async t => {
   function entity (safe: boolean | 'auto') {
     return readEntity<Item>(
       { id: 0 },
-      { ...driver, safe }
+      { driver, safe }
     ).delete()
   }
 

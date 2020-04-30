@@ -26,8 +26,9 @@ export interface Entity<T, O = any> {
   redo (steps?: number): Entity<T, O>
 }
 
-export interface Settings<T, O = any> extends Driver<T, O> {
+export interface Settings<T, O = any> {
   classy?: boolean
+  driver?: Driver<T, O>
   historySize?: number
   safe?: Safe
 }
@@ -50,7 +51,7 @@ function createState<T, O> (
 ): State<T, O> {
   return {
     extract: options => getOne(one, options).then(createStatus),
-    handle: createHandler(settings),
+    handle: createHandler(settings.driver),
     mappers: [],
     safe: settings.safe === 'auto' ? 'auto' : settings.safe === true
   }

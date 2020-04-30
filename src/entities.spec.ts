@@ -15,8 +15,8 @@ interface CommitMode {
   delete?: boolean
 }
 
-function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<Item> {
-  return {
+function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
+  const driver: Driver<Item> = {
     async create (target, options) {
       if (mode.create === true) {
         t.pass()
@@ -42,6 +42,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}): Driver<Item
       t.deepEqual(options, { db: 'test' })
     }
   }
+  return { driver }
 }
 
 function getItems (count: number = 16) {
