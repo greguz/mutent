@@ -11,9 +11,10 @@ export type Mutator<T, A extends any[]> = (
   ...args: A
 ) => Promise<T> | T
 
-export type Safe = true | false | 'auto'
-
-export type UnwrapOptions<O = {}> = O & { safe?: Safe }
+export type UnwrapOptions<O = {}> = O & {
+  autoCommit?: boolean
+  safe?: boolean
+}
 
 export interface Entity<T, O = any> {
   isEntity: boolean
@@ -27,17 +28,19 @@ export interface Entity<T, O = any> {
 }
 
 export interface Settings<T, O = any> {
+  autoCommit?: boolean
   classy?: boolean
   driver?: Driver<T, O>
   historySize?: number
-  safe?: Safe
+  safe?: boolean
 }
 
 interface State<T, O> {
+  autoCommit: boolean
   extract: (options: Partial<O>) => Promise<Status<T>>
   handle: Handler<T, O>
   mappers: Array<Mapper<T, O>>
-  safe: Safe
+  safe: boolean
 }
 
 type Mapper<T, O> = (
@@ -50,10 +53,11 @@ function createState<T, O> (
   settings: Settings<T, O>
 ): State<T, O> {
   return {
+    autoCommit: settings.autoCommit !== false,
     extract: options => getOne(one, options).then(createStatus),
     handle: createHandler(settings.driver),
     mappers: [],
-    safe: settings.safe === 'auto' ? 'auto' : settings.safe === true
+    safe: settings.safe !== false
   }
 }
 
@@ -112,18 +116,28 @@ async function unwrapState<T, O> (
   options?: UnwrapOptions<O>
 ): Promise<T> {
   const obj = objectify(options)
+
   let res = await state.mappers.reduce(
     (acc, mapper) => acc.then(status => mapper(status, obj)),
     state.extract(obj)
   )
-  const safe = isUndefined(obj.safe) ? state.safe : obj.safe
+
+  const autoCommit = isUndefined(obj.autoCommit)
+    ? state.autoCommit
+    : obj.autoCommit !== false
+
+  const safe = isUndefined(obj.safe)
+    ? state.safe
+    : obj.safe !== false
+
   if (shouldCommit(res)) {
-    if (safe === 'auto') {
+    if (autoCommit) {
       res = await state.handle(res, obj)
-    } else if (safe === true) {
+    } else if (safe) {
       throw new ExpectedCommitError(res.source, res.target, obj)
     }
   }
+
   return res.target
 }
 
