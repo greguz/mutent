@@ -91,3 +91,31 @@ test('plugin', async t => {
     { id: 4, value: 'YES' }
   ])
 })
+
+test('default store', async t => {
+  const store = createStore({})
+
+  const entity = await store.get({}).unwrap()
+  t.is(entity, null)
+
+  await t.throwsAsync(() => store.read({}).unwrap())
+
+  const entities = await store.find({}).unwrap()
+  t.deepEqual(entities, [])
+})
+
+test('store missing', async t => {
+  const store = createStore({
+    reader: {
+      Error
+    }
+  })
+  await t.throwsAsync(
+    () => store.read('STOP').unwrap(),
+    { message: 'STOP' }
+  )
+  await t.throwsAsync(
+    () => createStore({}).read({}).unwrap(),
+    { code: 'EMUT_NOENT' }
+  )
+})

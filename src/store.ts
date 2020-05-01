@@ -7,7 +7,7 @@ import { isNull, isUndefined } from './utils'
 export interface Reader<T, Q = any, O = any> {
   get? (query: Q, options: Partial<O>): Value<T | null | undefined>
   find? (query: Q, options: Partial<O>): Values<T>
-  missing? (query: Q, options: Partial<O>): any
+  Error?: new (query: Q, options: Partial<O>) => Error
 }
 
 export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
@@ -42,8 +42,8 @@ async function readData<T, Q, O> (
 ): Promise<T> {
   const data = await getData(reader, query, options)
   if (isNull(data)) {
-    throw reader.missing
-      ? reader.missing(query, options)
+    throw reader.Error
+      ? new reader.Error(query, options)
       : new UnknownEntityError(query, options)
   }
   return data
