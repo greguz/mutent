@@ -1,5 +1,5 @@
 export { Lazy, Many, One, Value, Values } from './data'
-export { Entities, StreamOptions, areEntities, findEntities, insertEntities } from './entities'
+export { Entities, StreamOptions, areEntities, createEntities, readEntities } from './entities'
 export { Entity, Mutator, Settings, createEntity, isEntity, readEntity } from './entity'
 export * from './errors'
 export { Plugin, Store, createStore } from './store'

@@ -172,14 +172,14 @@ export function areEntities (value: any): value is Entities<any, any> {
     : false
 }
 
-export function insertEntities<T, O = any> (
+export function createEntities<T, O = any> (
   many: Many<T, O>,
   settings: Settings<T, O> = {}
 ): Entities<T, O> {
   return wrapState(createState(many, settings), settings)
 }
 
-export function findEntities<T, O = any> (
+export function readEntities<T, O = any> (
   many: Many<T, O>,
   settings: Settings<T, O> = {}
 ): Entities<T, O> {

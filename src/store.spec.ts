@@ -18,10 +18,10 @@ function createPlugin (): Plugin<Item, number | string> {
 
   return {
     reader: {
-      get (query) {
+      find (query) {
         return items.find(item => match(item, query))
       },
-      find (query) {
+      filter (query) {
         return items.filter(item => match(item, query))
       }
     },
@@ -50,7 +50,7 @@ function createPlugin (): Plugin<Item, number | string> {
 test('plugin', async t => {
   const store = createStore(createPlugin())
 
-  const a = await store.get(0).unwrap()
+  const a = await store.find(0).unwrap()
   t.is(a, null)
 
   await t.throwsAsync(() => store.read(0).unwrap())
@@ -64,7 +64,7 @@ test('plugin', async t => {
   t.deepEqual(b, { id: 42 })
 
   await store
-    .insert([
+    .create([
       { id: 0, value: 'YES' },
       { id: 1, value: 'NO' },
       { id: 2 },
@@ -75,7 +75,7 @@ test('plugin', async t => {
     .unwrap()
 
   const c = await store
-    .find('YES')
+    .filter('YES')
     .unwrap()
   t.deepEqual(c, [
     { id: 0, value: 'YES' },
@@ -95,12 +95,12 @@ test('plugin', async t => {
 test('default store', async t => {
   const store = createStore({})
 
-  const entity = await store.get({}).unwrap()
+  const entity = await store.find({}).unwrap()
   t.is(entity, null)
 
   await t.throwsAsync(() => store.read({}).unwrap())
 
-  const entities = await store.find({}).unwrap()
+  const entities = await store.filter({}).unwrap()
   t.deepEqual(entities, [])
 })
 
