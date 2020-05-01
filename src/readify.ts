@@ -4,7 +4,7 @@ import { Readable, Writable, pipeline, ReadableOptions } from 'readable-stream'
 export default function readify (
   head: core.Readable,
   body: core.Transform,
-  options?: ReadableOptions
+  options: ReadableOptions = {}
 ) {
   let tail: Writable | undefined
   let next: any
@@ -24,7 +24,8 @@ export default function readify (
       const self = this
 
       tail = new Writable({
-        objectMode: true,
+        highWaterMark: options.highWaterMark || options.readableHighWaterMark,
+        objectMode: options.objectMode || options.readableObjectMode,
         write (chunk, encoding, callback) {
           if (self.push(chunk)) {
             callback()
