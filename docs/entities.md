@@ -48,6 +48,8 @@ TODO
 TODO
 
 - `options` `<Object>`
+  - `autoCommit` `<Boolean>`
+  - `safe` `<Boolean>`
 - Returns: `<Promise>`
 
 ## stream([options])
@@ -55,6 +57,9 @@ TODO
 TODO
 
 - `options` `<Object>`
+  - `autoCommit` `<Boolean>`
+  - `highWaterMark` `<Number>`
+  - `safe` `<Boolean>`
 - Returns: `<Readable>`
 
 ## Example

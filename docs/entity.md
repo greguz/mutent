@@ -48,6 +48,8 @@ In the case of undid actions, this method reapplies the last reverted actions by
 It runs all described actions and exposes the resulting entity's data through a `Promise`.
 
 - `options` `<Object>`
+  - `autoCommit` `<Boolean>`
+  - `safe` `<Boolean>`
 - Returns: `<Promise>`
 
 ## Example
