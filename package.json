@@ -40,7 +40,7 @@
     "husky": "^4.2.5",
     "nyc": "^15.0.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.7.3",
+    "rollup": "^2.7.6",
     "ts-node": "^8.9.1",
     "tslint": "^6.1.2",
     "tslint-config-standard": "^9.0.0",
