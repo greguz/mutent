@@ -1,9 +1,10 @@
 import core from 'stream'
-import { Readable, Writable, pipeline } from 'readable-stream'
+import { Transform, Writable, pipeline } from 'readable-stream'
 import fluente from 'fluente'
 
 import { Many, getMany } from './data'
 import { Entity, Mutator, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
+import readify from './readify'
 import { isNull, mutentSymbol, objectify } from './utils'
 
 export type StreamOptions<O = {}> = UnwrapOptions<O> & { highWaterMark?: number }
@@ -78,48 +79,28 @@ function commitState<T, O> (state: State<T, O>) {
   return mapState(state, entity => entity.commit())
 }
 
-type Callback = (err?: any) => void
-
-function handleState<T, O> (
-  state: State<T, O>,
-  options: any,
-  write: (data: T, callback: Callback) => void,
-  end: Callback
-) {
-  return pipeline(
-    state.extract(options),
-    new Writable({
-      objectMode: true,
-      write (data: T, encoding, callback) {
-        state.mapper(data)
-          .unwrap(options)
-          .then(data => {
-            if (isNull(data)) {
-              callback()
-            } else {
-              write(data, callback)
-            }
-          })
-          .catch(callback)
-      }
-    }),
-    end
-  )
-}
-
 function unwrapState<T, O> (
   state: State<T, O>,
   options?: UnwrapOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
-    handleState(
-      state,
-      objectify(options),
-      (data, callback) => {
-        results.push(data)
-        callback()
-      },
+    pipeline(
+      state.extract(objectify(options)),
+      new Writable({
+        objectMode: true,
+        write (chunk, encoding, callback) {
+          state.mapper(chunk)
+            .unwrap(options)
+            .then(data => {
+              if (!isNull(data)) {
+                results.push(data)
+              }
+              callback()
+            })
+            .catch(callback)
+        }
+      }),
       err => {
         if (err) {
           reject(err)
@@ -136,50 +117,28 @@ function streamState<T, O> (
   options?: StreamOptions<O>
 ): core.Readable {
   const obj = objectify(options)
-  let reading = false
-  let next: Callback | undefined
-  let tail: Writable | undefined
-  return new Readable({
+  const streamOptions = {
     objectMode: true,
-    highWaterMark: obj.highWaterMark,
-    read () {
-      if (next) {
-        const callback = next
-        next = undefined
-        callback()
-      }
-
-      if (reading) {
-        return
-      }
-      reading = true
-
-      tail = handleState(
-        state,
-        obj,
-        (data, callback) => {
-          if (this.push(data)) {
+    highWaterMark: obj.highWaterMark
+  }
+  return readify(
+    state.extract(obj),
+    new Transform({
+      ...streamOptions,
+      transform (chunk, encoding, callback) {
+        state.mapper(chunk)
+          .unwrap(options)
+          .then(data => {
+            if (!isNull(data)) {
+              this.push(data)
+            }
             callback()
-          } else {
-            next = callback
-          }
-        },
-        err => {
-          if (err) {
-            this.emit('error', err)
-          } else {
-            this.push(null)
-          }
-        }
-      )
-    },
-    destroy (err, callback) {
-      if (tail) {
-        tail.destroy(err as any)
+          })
+          .catch(callback)
       }
-      callback(err)
-    }
-  })
+    }),
+    streamOptions
+  )
 }
 
 function wrapState<T, O> (
