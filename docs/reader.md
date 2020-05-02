@@ -1,6 +1,6 @@
 # Reader
 
-TODO
+How to retrieve entities' data from an external service is defined by the Reader.
 
 ## find(query, options)
 
@@ -29,17 +29,13 @@ Constructs the thrown error used while [reading](store.md#readquery) a required 
 ## Example
 
 ```javascript
-function match (property, query) {
-  return item => item[property] === query
-}
-
-function createArrayReader (array, property) {
+function createArrayReader (array, matcher) {
   return {
-    find (query) {
-      return array.find(match(property, query))
+    find (query, options) {
+      return array.find(item => matcher(item, query, options))
     },
-    filter (query) {
-      return array.filter(match(property, query))
+    filter (query, options) {
+      return array.filter(item => matcher(item, query, options))
     }
   }
 }
