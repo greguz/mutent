@@ -27,7 +27,7 @@ export default function readify (
         highWaterMark: options.highWaterMark || options.readableHighWaterMark,
         objectMode: options.objectMode || options.readableObjectMode,
         write (chunk, encoding, callback) {
-          if (self.push(chunk)) {
+          if (self.push(chunk, encoding)) {
             callback()
           } else {
             next = callback
