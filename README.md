@@ -65,19 +65,17 @@ function setAge (entityData, age) {
   }
 }
 
-function toRegExp (value) {
-  return typeof value === 'string'
-    ? new RegExp(value)
-    : value
-}
-
 async function foo () {
   const database = []
 
   const store = createStore(
     createPlugin(
       database,
-      (item, query) => toRegExp(query).test(item.name)
+      (item, query) => {
+        return query instanceof RegExp
+          ? query.test(item.name)
+          : item.name === query
+      }
     )
   )
 
