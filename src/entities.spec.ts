@@ -1,5 +1,5 @@
 import test, { ExecutionContext } from 'ava'
-import { pipeline, Readable, Writable } from 'readable-stream'
+import { pipeline, Readable, Writable } from 'fluido'
 
 import { areEntities, createEntities, readEntities } from './entities'
 import { Writer } from './writer'

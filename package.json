@@ -30,16 +30,15 @@
   "license": "MIT",
   "dependencies": {
     "fluente": "^1.0.0",
-    "readable-stream": "^3.6.0"
+    "fluido": "^1.0.0"
   },
   "devDependencies": {
-    "@types/node": "^13.13.4",
-    "@types/readable-stream": "^2.3.5",
-    "@typescript-eslint/eslint-plugin": "^2.30.0",
-    "@typescript-eslint/parser": "^2.30.0",
-    "ava": "^3.8.1",
+    "@types/node": "^14.0.1",
+    "@typescript-eslint/eslint-plugin": "^2.34.0",
+    "@typescript-eslint/parser": "^2.34.0",
+    "ava": "^3.8.2",
     "coveralls": "^3.1.0",
-    "eslint": "^6.8.0",
+    "eslint": "^7.0.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
@@ -47,9 +46,9 @@
     "eslint-plugin-standard": "^4.0.1",
     "nyc": "^15.0.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.7.6",
+    "rollup": "^2.10.4",
     "ts-node": "^8.10.1",
-    "typescript": "^3.8.3"
+    "typescript": "^3.9.2"
   },
   "repository": {
     "type": "git",

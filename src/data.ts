@@ -1,5 +1,5 @@
 import core from 'stream'
-import { Readable, Stream } from 'readable-stream'
+import { Readable, Stream } from 'fluido'
 
 import { objectify } from './utils'
 

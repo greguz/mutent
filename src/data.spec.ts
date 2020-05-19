@@ -1,5 +1,5 @@
 import test from 'ava'
-import { Readable, Writable, pipeline } from 'readable-stream'
+import { Readable, Writable, pipeline } from 'fluido'
 
 import { Many, getMany, getOne } from './data'
 

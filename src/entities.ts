@@ -1,10 +1,9 @@
 import core from 'stream'
-import { Transform, Writable, pipeline } from 'readable-stream'
+import { Transform, Writable, pipeline, readify } from 'fluido'
 import fluente from 'fluente'
 
 import { Many, getMany } from './data'
 import { Entity, Mutator, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
-import readify from './readify'
 import { isNull, mutentSymbol, objectify } from './utils'
 
 export type StreamOptions<O = {}> = UnwrapOptions<O> & { highWaterMark?: number }
@@ -122,6 +121,7 @@ function streamState<T, O> (
     highWaterMark: obj.highWaterMark
   }
   return readify(
+    streamOptions,
     state.extract(obj),
     new Transform({
       ...streamOptions,
@@ -136,8 +136,7 @@ function streamState<T, O> (
           })
           .catch(callback)
       }
-    }),
-    streamOptions
+    })
   )
 }
 
