@@ -1,5 +1,5 @@
-import core from 'stream'
-import { Readable, Stream } from 'fluido'
+import stream from 'stream'
+import { Readable, isReadable } from 'fluido'
 
 import { objectify } from './utils'
 
@@ -10,10 +10,9 @@ export type Value<T> =
   | T
 
 export type Values<T> =
-  | core.Readable
-  | T[]
   | Iterable<T>
   | AsyncIterable<T>
+  | stream.Readable
 
 export type One<T, O = any> = Lazy<Value<T>, O>
 
@@ -30,9 +29,7 @@ function getValue<T> (value: Value<T>) {
 }
 
 function getValues<T> (values: Values<T>) {
-  return values instanceof Stream
-    ? values
-    : Readable.from(values)
+  return isReadable(values) ? values : Readable.from(values)
 }
 
 export function getOne<T, O> (
@@ -45,6 +42,6 @@ export function getOne<T, O> (
 export function getMany<T, O> (
   many: Many<T, O>,
   options: Partial<O> = {}
-): core.Readable {
+): stream.Readable {
   return getValues(unlazy(many, options))
 }

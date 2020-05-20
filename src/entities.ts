@@ -1,4 +1,4 @@
-import core from 'stream'
+import stream from 'stream'
 import { Transform, Writable, pipeline, readify } from 'fluido'
 import fluente from 'fluente'
 
@@ -15,14 +15,14 @@ export interface Entities<T, O = any> {
   delete (): Entities<T, O>
   commit (): Entities<T, O>,
   unwrap (options?: UnwrapOptions<O>): Promise<T[]>
-  stream (options?: StreamOptions<O>): core.Readable
+  stream (options?: StreamOptions<O>): stream.Readable
   undo (steps?: number): Entities<T, O>
   redo (steps?: number): Entities<T, O>
 }
 
 interface State<T, O> {
-  extract: (options: Partial<O>) => core.Readable
-  mapper: (data: T) => Entity<T, O>
+  extract (options: Partial<O>): stream.Readable
+  mapper (data: T): Entity<T, O>
 }
 
 function createState<T, O> (
@@ -114,7 +114,7 @@ function unwrapState<T, O> (
 function streamState<T, O> (
   state: State<T, O>,
   options?: StreamOptions<O>
-): core.Readable {
+): stream.Readable {
   const obj = objectify(options)
   const streamOptions = {
     objectMode: true,
