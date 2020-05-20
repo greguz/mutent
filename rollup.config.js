@@ -6,7 +6,6 @@ export default {
   },
   external: [
     'fluente',
-    'readable-stream',
-    'stream'
+    'fluido'
   ]
 }
