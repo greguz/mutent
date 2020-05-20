@@ -13,11 +13,11 @@ While writing large projects, It's common to find the need to manipulate data fr
 npm install --save mutent
 ```
 
-## Example
+## Reader
+
+A [Reader](docs/reader.md) defines how read actions need to be performed against a particular data source.
 
 ```javascript
-const { createStore } = require('mutent')
-
 function createReader (array, matcher) {
   return {
     find (query) {
@@ -28,7 +28,13 @@ function createReader (array, matcher) {
     }
   }
 }
+```
 
+## Writer
+
+A [Writer](docs/writer.md) defines how write actions need to be performed against a particular data source.
+
+```javascript
 function createWriter (array) {
   return {
     create (data) {
@@ -49,99 +55,184 @@ function createWriter (array) {
     }
   }
 }
+```
 
-function createPlugin (array, matcher) {
-  return {
-    reader: createReader(array, matcher),
-    writer: createWriter(array)
-  }
+## Store
+
+A [Store](docs/store.md) uses both Reader and Writer to work with the defined data source.
+
+```javascript
+const { createStore } = require('mutent')
+
+const database = []
+
+function matcher (item, query) {
+  return query instanceof RegExp
+    ? query.test(item.name)
+    : item.name === query
 }
 
-// Simple mutation
-function setAge (entityData, age) {
+const store = createStore({
+  autoCommit: true,
+  classy: false,
+  historySize: 10,
+  safe: true,
+  reader: createReader(database, matcher),
+  writer: createWriter(database)
+})
+```
+
+## Entity
+
+An [Entity](docs/entity.md) represents a meaningful set of information. It can optimally administrate its data source's status using a declarative syntax.
+
+<!-- Any described operation will be executed during the entity's unwrapping. Before that moment, no actions are performed. -->
+
+### Create
+
+Calling `store.create` function will declare an entity that's **not** currently persisted inside any data source.
+
+```javascript
+const newEntity = store.create({ name: 'steven' })
+```
+
+At this point, no operations are performed. The entity describes the _intent_ to create something. To effectively perform the creation, the `entity.unwrap` method must be called. It returns a `Promise` that will resolve to the created data.
+
+```javascript
+newEntity.unwrap()
+  .then(data => console.log(data)) // Logs "{ name: 'steven' }"
+  .catch(err => console.error(err))
+```
+
+### Read
+
+The `store.find` method declares an entity that **may** exist inside the configured data source. Unwrapping the entity this time **may** resolve to a `null` value if the requested entity does not exist.
+
+```javascript
+store
+  .find('steven')
+  .unwrap()
+  .then(data => console.log(data)) // Logs "{ name: 'steven' }"
+  .catch(err => console.error(err))
+
+store
+  .find('tyrone')
+  .unwrap()
+  .then(data => console.log(data)) // Logs "null"
+  .catch(err => console.error(err))
+```
+
+The `store.read` method declares an entity that **must** exist. The unwrap request is rejected if It's not possible to retrieve the requested entity.
+
+```javascript
+store
+  .read('tyrone')
+  .unwrap()
+  .then(data => console.log(data))
+  .catch(err => console.error(err)) // Logs "Error: Unknown entity"
+```
+
+### Update
+
+Updates are done via mutators. A mutator function defines how the current entity's data needs to change. It accepts the entity's data as the first argument and outputs the mutated one. This time the unwrap will perform two different actions: read the entity and write the difference.
+
+```javascript
+function setAge (entity, age) {
   return {
-    ...entityData,
+    ...entity,
     age
   }
 }
 
-async function foo () {
-  const database = []
+store
+  .read('steven')
+  .update(setAge, 42)
+  .unwrap()
+  .then(data => console.log(data)) // Logs "{ name: 'steven', age: 42 }"
+  .catch(err => console.error(err))
+```
 
-  const store = createStore(
-    createPlugin(
-      database,
-      (item, query) => {
-        return query instanceof RegExp
-          ? query.test(item.name)
-          : item.name === query
-      }
-    )
-  )
+**WARNING**: Inside a mutator, It's **not** safe to direct update the entity's data. You should always return a new object as a mutation result.
 
-  // Create new entity
-  const steven = await store
-    .create({ name: 'steven', age: 16 })
-    .unwrap()
-  // Logs "{ name: 'steven', age: 16 }"
-  console.log(steven)
+### Delete
 
-  // Read and update entity
-  const newSteven = await store
-    .read('steven')
-    .update(setAge, 24)
-    .unwrap()
-  // Logs "{ name: 'steven', age: 24 }"
-  console.log(newSteven)
+Similar to update, a delete is performed by calling `entity.delete` method. Here the unwrap will firstly perform a read action, and then a delete action.
 
-  // Try to read and update an entity
-  const noOne = await store
-    .find('phteven')
-    .update(setAge, Infinity)
-    .unwrap()
-  // Logs "null"
-  console.log(noOne)
+```javascript
+store
+  .read('steven')
+  .delete()
+  .unwrap()
+  .then(data => console.log(data)) // Logs "{ name: 'steven', age: 42 }"
+  .catch(err => console.error(err))
+```
 
-  // Read entity from variable and delete
-  const deadSteven = await store
-    .from(newSteven)
-    .delete()
-    .unwrap()
+## Entities
 
-  // Create multiple entities
-  const newPeople = await store
-    .create([
-      { name: 'alice', age: 18 },
-      { name: 'bob', age: 19 },
-      { name: 'charlie', age: 25 },
-      { name: 'dave', age: 22 },
-      { name: 'jennifer', age: 30 },
-      { name: 'robert', age: 33 }
-    ])
-    .unwrap()
+Represents a collection of [Entities](docs/entities.md). By sharing the same API surface of its single counterpart, this collection will let you manipulate multiple entities easily.
 
-  // Multiple read and update
-  const updatedPeople = await store
-    .filter(/li/)
-    .update(setAge, 42)
-    .unwrap()
-  // Logs "[ { name: 'alice', age: 42 }, { name: 'charlie', age: 42 } ]"
-  console.log(updatedPeople)
+### Create
 
-  // Multiple read and delete
-  const deadPeople = await store
-    .filter(/ob/)
-    .delete()
-    .unwrap()
+If the `store.create` method receives an array, It will automatically return an entity's collection. The unwrap method this time will return all created entities.
 
-  console.log(database)
-  // [
-  //   { name: 'alice', age: 42 },
-  //   { name: 'charlie', age: 42 },
-  //   { name: 'dave', age: 22 },
-  //   { name: 'jennifer', age: 30 }
-  // ]
-}
+```javascript
+store
+  .create([
+    { name: 'alice' },
+    { name: 'bob' },
+    { name: 'charlie' }
+  ])
+  .unwrap()
+  .then(data => console.log(data)) // Logs the created entities
+  .catch(err => console.error(err))
+```
 
-foo().catch(err => console.error(err))
+### Read
+
+The `store.filter` method declares a collection of entities that match the defined query.
+
+```javascript
+store
+  .filter(/e$/)
+  .unwrap()
+  .then(data => console.log(data)) // Logs alice and charlie
+  .catch(err => console.error(err))
+```
+
+### Update
+
+Multiple update.
+
+```javascript
+store
+  .filter(/e$/)
+  .update(setAge, 42)
+  .unwrap()
+  .then(data => console.log(data))
+  .catch(err => console.error(err))
+```
+
+### Delete
+
+Multiple delete.
+
+```javascript
+store
+  .filter(/e$/)
+  .delete()
+  .unwrap()
+  .then(data => console.log(data))
+  .catch(err => console.error(err))
+```
+
+### Stream
+
+Alternatively, an entity collection may be unwrapped with the `entities.stream` method. It returns a Node.js Readable stream that emits the resulting entities.
+
+```javascript
+store
+  .read(readEntities)
+  .stream()
+  .on('data', data => console.log(data))
+  .on('error', err => console.error(err))
 ```

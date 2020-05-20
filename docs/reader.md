@@ -1,29 +1,29 @@
 # Reader
 
-How to retrieve entities' data from an external service is defined by the Reader.
+A Reader defines how read actions need to be performed against a particular data source.
 
 ## find(query, options)
 
-Retrieves an entity's data. May return `null` or `undefined` if there's no result. Promises are also supported.
+Retrieves a single entity's data.
 
 - `query` `<*>`
-- `options` `<Object>`
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<Object>` | `<null>` | `<undefined>`
 
 ## filter(query, options)
 
-Fetches multiple entities' data. Arrays, async iterables, and [Readable](https://nodejs.org/api/stream.html#stream_implementing_a_readable_stream) streams are supported.
+Retrieves multiple entities' data.
 
 - `query` `<*>`
-- `options` `<Object>`
-- Returns: `<Array>` | `<Readable>` | `<Iterable>` | `<AsyncIterable>` | `<Function>`
+- `options` `<Object>` Unwrap options.
+- Returns: `<Iterable>` | `<AsyncIterable>` | `<Readable>`
 
 ## Error(query, options)
 
-Constructs the thrown error used while [reading](store.md#readquery) a required entity.
+Constructs the thrown error used while [reading](store.md#storereadquery) a required entity.
 
 - `query` `<*>`
-- `options` `<Object>`
+- `options` `<Object>` Unwrap options.
 - Returns: `<Error>`
 
 ## Example

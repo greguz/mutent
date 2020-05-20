@@ -1,38 +1,51 @@
 # Store
 
-It handles inputted queries and data, returning the corresponding entities.
+Represents a data source.
 
-## find(query)
+## createStore(plugin)
 
-Defines an entity the may exist.
+Creates a [Store](store.md). All optional.
+
+- `plugin` `<Object>`
+  - `autoCommit` `<Boolean>` If `true`, any pending mutation is automatically committed while unwrapping. Default `true`.
+  - `classy` `<Boolean>`
+  - `historySize` `<Number>` Defines the size of mutation history. Defaults `10`.
+  - `safe` `<Boolean>` If `true`, enforces that all updated entities must be committed before unwrapping. Default `true`.
+  - `reader` `<Reader>` See [here](reader.md).
+  - `writer` `<writer>` See [here](writer.md).
+- Returns: `<Store>`
+
+## store.find(query)
+
+Defines an entity that **may** exist.
 
 - `query` `<*>`
 - Returns: [`<Entity>`](entity.md)
 
-## read(query)
+## store.read(query)
 
-Defines a required entity.
+Defines a **required** entity.
 
 - `query` `<*>`
 - Returns: [`<Entity>`](entity.md)
 
-## filter(query)
+## store.filter(query)
 
 Defines a collection of entities.
 
 - `query` `<*>`
 - Returns: [`<Entities>`](entities.md)
 
-## create(data)
+## store.create(data)
 
 Defines one or more not-yet-created entities.
 
 - `data` `<Object>` | `<Array>`
 - Returns: [`<Entity>`](entity.md) | [`<Entities>`](entities.md)
 
-## from(data)
+## store.from(data)
 
-Defines entities by inputted raw data. Resulting entities are defined as already persisted on their service.
+Defines one or more entities by raw data.
 
 - `data` `<Object>` | `<Array>`
 - Returns: [`<Entity>`](entity.md) | [`<Entities>`](entities.md)

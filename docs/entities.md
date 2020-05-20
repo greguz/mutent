@@ -1,6 +1,6 @@
 # Entities
 
-TODO
+Represents a collection of entities.
 
 ## update(mutator, ...arguments)
 
@@ -61,9 +61,3 @@ TODO
   - `highWaterMark` `<Number>`
   - `safe` `<Boolean>`
 - Returns: `<Readable>`
-
-## Example
-
-```javascript
-// TODO
-```

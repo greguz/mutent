@@ -1,13 +1,13 @@
 # Writer
 
-How to execute write operations against an external service is defined by the Writer.
+A Writer defines how write actions need to be performed against a particular data source.
 
 ## preCreate(data, options)
 
 Performs a mutation just before creating the entity.
 
 - `data` `<Object>` Entity's data.
-- `options` `<Object>` Object used while unwrapping.
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<Object>`
 
 ## create(data, options)
@@ -15,7 +15,7 @@ Performs a mutation just before creating the entity.
 Creates the entity.
 
 - `data` `<Object>` Entity's data.
-- `options` `<Object>` Object used while unwrapping.
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<*>`
 
 ## preUpdate(data, options)
@@ -23,16 +23,16 @@ Creates the entity.
 Performs a mutation just before updating the entity.
 
 - `data` `<Object>` Entity's data.
-- `options` `<Object>` Object used while unwrapping.
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<Object>`
 
 ## update(source, target, options)
 
-Updates the entity. The `source` variable represents the entity's data just after its retrieving from its service.  The `target` variable represents the resulting data after all configured mutations are applied.
+Updates the entity.
 
-- `source` `<Object>`Entity's data.
-- `target` `<Object>`Entity's data.
-- `options` `<Object>` Object used while unwrapping.
+- `source` `<Object>` Entity's data **before** any mutation are applied.
+- `target` `<Object>` Entity's data **after** all described mutations are applied.
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<*>`
 
 ## preDelete(data, options)
@@ -40,7 +40,7 @@ Updates the entity. The `source` variable represents the entity's data just afte
 Performs a mutation just before deleting the entity.
 
 - `data` `<Object>` Entity's data.
-- `options` `<Object>` Object used while unwrapping.
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<Object>`
 
 ## delete(data, options)
@@ -48,7 +48,7 @@ Performs a mutation just before deleting the entity.
 Deletes the entity.
 
 - `data` `<Object>` Entity's data.
-- `options` `<Object>` Object used while unwrapping.
+- `options` `<Object>` Unwrap options.
 - Returns: `<Promise>` | `<*>`
 
 ## Example

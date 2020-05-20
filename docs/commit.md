@@ -1,6 +1,6 @@
 # Commit
 
-Committing is the intent to perform a write against a service. The [Writer](writer.md) defines how a commit operation needs to execute.
+Committing is the intent to perform a write against a data source. The [Writer](writer.md) defines how a commit operation needs to execute.
 
 A single commit request will always result in a single action between **create**, **update**, and **delete**. In some circumstances, a commit request may be skipped. For example, if an entity is created in memory, and then deleted, there's no need to write that data to its service.
 
