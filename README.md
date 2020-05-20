@@ -236,3 +236,118 @@ store
   .on('data', data => console.log(data))
   .on('error', err => console.error(err))
 ```
+
+## Example
+
+```javascript
+const { createStore } = require('mutent')
+
+function createReader (array, matcher) {
+  return {
+    find (query) {
+      return array.find(item => matcher(item, query))
+    },
+    filter (query) {
+      return array.filter(item => matcher(item, query))
+    }
+  }
+}
+
+function createWriter (array) {
+  return {
+    create (data) {
+      array.push(data)
+    },
+    update (source, target) {
+      array.splice(
+        array.findIndex(item => item === source),
+        1,
+        target
+      )
+    },
+    delete (data) {
+      array.splice(
+        array.findIndex(item => item === data),
+        1
+      )
+    }
+  }
+}
+
+function setAge (entity, age) {
+  return {
+    ...entity,
+    age
+  }
+}
+
+async function foo () {
+  const database = []
+
+  function matcher (item, query) {
+    return query instanceof RegExp
+      ? query.test(item.name)
+      : item.name === query
+  }
+
+  const store = createStore({
+    autoCommit: true,
+    classy: false,
+    historySize: 10,
+    safe: true,
+    reader: createReader(database, matcher),
+    writer: createWriter(database)
+  })
+
+  const steven = await store
+    .create({ name: 'steven' })
+    .unwrap()
+  console.log(steven) // { name: 'steven' }
+
+  const stevenAgain = await store
+    .find('steven')
+    .unwrap()
+  console.log(stevenAgain) // { name: 'steven' }
+
+  const nobody = await store
+    .find('tyrone')
+    .unwrap()
+  console.log(nobody) // null
+
+  try {
+    await store.read('tyrone').unwrap()
+  } catch (err) {
+    console.log(err) // UnknownEntityError: Unknown entity
+  }
+
+  const stevenWithAge = await store
+    .read('steven')
+    .update(setAge, 42)
+    .unwrap()
+  console.log(database) // [ { name: 'steven', age: 42 } ]
+
+  const lastVersionOfSteven = await store
+    .read('steven')
+    .delete()
+    .unwrap()
+  console.log(database) // []
+
+  const newPeople = await store
+    .create([
+      { name: 'alice' },
+      { name: 'bob' },
+      { name: 'charlie' }
+    ])
+    .update(setAge, 42)
+    .unwrap()
+  console.log(newPeople) // [ { name: 'alice', age: 42 }, ... ]
+
+  const deadPeople = await store
+    .filter(/e$/)
+    .delete()
+    .unwrap()
+  console.log(database) // [ { name: 'bob', age: 42 } ]
+}
+
+foo().catch(err => console.error(err))
+```
