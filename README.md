@@ -231,7 +231,7 @@ Alternatively, an entity collection may be unwrapped with the `entities.stream` 
 
 ```javascript
 store
-  .read(readEntities)
+  .read(/^b/)
   .stream()
   .on('data', data => console.log(data))
   .on('error', err => console.error(err))
