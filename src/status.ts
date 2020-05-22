@@ -1,5 +1,5 @@
 import { UndefinedEntityError } from './errors'
-import { isNull, isUndefined } from './utils'
+import { isUndefined } from './utils'
 
 export interface Status<T> {
   /**
@@ -77,5 +77,5 @@ export function commitStatus<T> (status: Status<T>): Status<T> {
 }
 
 export function shouldCommit (status: Status<any>) {
-  return !isNull(status.target) && (status.created || status.updated || status.deleted)
+  return status.created || status.updated || status.deleted
 }

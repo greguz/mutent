@@ -62,21 +62,13 @@ function createState<T, O> (
   }
 }
 
-function skipNullMutations<T, O> (mapper: Mapper<T, O>): Mapper<T, O> {
-  return function wrappedMapper (status, options) {
-    return isNull(status.target)
-      ? status
-      : mapper(status, options)
-  }
-}
-
 function mapState<T, O> (
   state: State<T, O>,
   mapper: Mapper<T, O>
 ): State<T, O> {
   return {
     ...state,
-    mappers: [...state.mappers, skipNullMutations(mapper)]
+    mappers: [...state.mappers, mapper]
   }
 }
 
@@ -111,20 +103,25 @@ async function unwrapState<T, O> (
 ): Promise<T> {
   const obj = objectify(options)
 
-  let res = await state.mappers.reduce(
+  let res = await state.extract(obj)
+  if (isNull(res.target)) {
+    return res.target
+  }
+
+  res = await state.mappers.reduce(
     (acc, mapper) => acc.then(status => mapper(status, obj)),
-    state.extract(obj)
+    Promise.resolve(res)
   )
 
-  const autoCommit = isUndefined(obj.autoCommit)
-    ? state.autoCommit
-    : obj.autoCommit !== false
-
-  const safe = isUndefined(obj.safe)
-    ? state.safe
-    : obj.safe !== false
-
   if (shouldCommit(res)) {
+    const autoCommit = isUndefined(obj.autoCommit)
+      ? state.autoCommit
+      : obj.autoCommit !== false
+
+    const safe = isUndefined(obj.safe)
+      ? state.safe
+      : obj.safe !== false
+
     if (autoCommit) {
       res = await handleWriter(state.writer, res, obj)
     } else if (safe) {
