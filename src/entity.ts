@@ -4,7 +4,7 @@ import { One, getOne } from './data'
 import { ExpectedCommitError } from './errors'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
-import { Handler, Writer, createHandler } from './writer'
+import { Writer, handleWriter } from './writer'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
@@ -38,9 +38,9 @@ export interface Settings<T, O = any> {
 interface State<T, O> {
   autoCommit: boolean
   extract: (options: Partial<O>) => Promise<Status<T>>
-  handle: Handler<T, O>
   mappers: Array<Mapper<T, O>>
   safe: boolean
+  writer: Writer<T, O>
 }
 
 type Mapper<T, O> = (
@@ -56,9 +56,9 @@ function createState<T, O> (
   return {
     autoCommit: settings.autoCommit !== false,
     extract: options => getOne(one, options).then(buildStatus),
-    handle: createHandler(settings.writer),
     mappers: [],
-    safe: settings.safe !== false
+    safe: settings.safe !== false,
+    writer: settings.writer || {}
   }
 }
 
@@ -126,7 +126,7 @@ async function unwrapState<T, O> (
 
   if (shouldCommit(res)) {
     if (autoCommit) {
-      res = await state.handle(res, obj)
+      res = await handleWriter(state.writer, res, obj)
     } else if (safe) {
       throw new ExpectedCommitError(res.source, res.target, obj)
     }
@@ -136,7 +136,10 @@ async function unwrapState<T, O> (
 }
 
 function commitState<T, O> (state: State<T, O>): State<T, O> {
-  return mapState(state, state.handle)
+  return mapState(
+    state,
+    (status, options) => handleWriter(state.writer, status, options)
+  )
 }
 
 function wrapState<T, O> (

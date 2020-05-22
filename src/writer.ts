@@ -12,11 +12,6 @@ export interface Writer<T, O = any> {
   delete? (data: T, options: Partial<O>): any
 }
 
-export type Handler<T, O> = (
-  status: Status<T>,
-  options: Partial<O>
-) => Promise<Status<T>>
-
 function exec<T, A extends any[]> (
   fn: (...args: A) => MaybePromise<T>,
   ...args: A
@@ -62,10 +57,4 @@ export async function handleWriter<T, O> (
   }
 
   return commitStatus(status)
-}
-
-export function createHandler<T, O> (
-  writer: Writer<T, O> = {}
-): Handler<T, O> {
-  return (status, options) => handleWriter(writer, status, options)
 }
