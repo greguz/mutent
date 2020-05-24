@@ -13,7 +13,7 @@ export interface Entities<T, O = any> {
   update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entities<T, O>
   assign (object: Partial<T>): Entities<T, O>
   delete (): Entities<T, O>
-  commit (): Entities<T, O>,
+  commit (): Entities<T, O>
   unwrap (options?: UnwrapOptions<O>): Promise<T[]>
   stream (options?: StreamOptions<O>): stream.Readable
   undo (steps?: number): Entities<T, O>

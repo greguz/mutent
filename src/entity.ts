@@ -45,7 +45,7 @@ interface State<T, O> {
 
 type Mapper<T, O> = (
   status: Status<T>,
-  options: Partial<O>
+  options: Partial<UnwrapOptions<O>>
 ) => Status<T> | Promise<Status<T>>
 
 function createState<T, O> (
