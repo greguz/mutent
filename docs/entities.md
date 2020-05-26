@@ -4,48 +4,52 @@ Represents a collection of entities.
 
 ## update(mutator, ...arguments)
 
-TODO
+Describes a mutation to apply to all processed entities.
 
 - `mutator` `<Function>`
 - `...arguments` `<*>`
 - Returns: `<Entities>`
 
+A `mutator` is a function that always accepts the entity's data as the first argument. It **must** return a new object that represents the fully updated entity.
+
+**WARNING**: Inside a mutator, It's **not** safe to direct update the entity's data. You should always return a new object as mutation result.
+
 ## assign(data)
 
-TODO
+Mimics the `Object.assign` method by extending the entity's data with the passed argument.
 
 - `data` `<Object>`
 - Returns: `<Entities>`
 
 ## delete()
 
-TODO
+Schedules all entities' deletion.
 
 - Returns: `<Entities>`
 
 ## commit()
 
-TODO
+Schedules a synchronization between the current entity's data and its data source. The entity might be created, updated, or deleted. More informations [here](commit.md).
 
 - Returns: `<Entities>`
 
 ## undo([steps])
 
-TODO
+Undoes one or more defined actions. `Infinity` is accepted and, if provided, will invalidate all possible actions.
 
 - `steps` `<Number>`
 - Returns: `<Entities>`
 
 ## redo([steps])
 
-TODO
+In the case of undid actions, this method reapplies the last reverted actions by the `undo` method. `Infinity` is accepted and, if provided, will reapply all reverted actions.
 
 - `steps` `<Number>`
 - Returns: `<Entities>`
 
 ## unwrap([options])
 
-TODO
+Runs all described actions and exposes the resulting entities' array through a `Promise`.
 
 - `options` `<Object>`
   - `autoCommit` `<Boolean>`
@@ -54,7 +58,7 @@ TODO
 
 ## stream([options])
 
-TODO
+Runs all described actions and exposes the resulting entities' array through a Readable stream.
 
 - `options` `<Object>`
   - `autoCommit` `<Boolean>`
