@@ -32,11 +32,11 @@ test('one promised value', async t => {
 test('one rejections', async t => {
   const message = 'STOP'
   await t.throwsAsync(
-    () => getOne(Promise.reject(new Error(message))),
+    getOne(Promise.reject(new Error(message))),
     { message }
   )
   await t.throwsAsync(
-    () => getOne(() => Promise.reject(new Error(message))),
+    getOne(() => Promise.reject(new Error(message))),
     { message }
   )
 })

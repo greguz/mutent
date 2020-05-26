@@ -53,7 +53,7 @@ test('plugin', async t => {
   const a = await store.find(0).unwrap()
   t.is(a, null)
 
-  await t.throwsAsync(() => store.read(0).unwrap())
+  await t.throwsAsync(store.read(0).unwrap())
 
   await store
     .create({ id: 42 })
@@ -98,7 +98,7 @@ test('default store', async t => {
   const entity = await store.find({}).unwrap()
   t.is(entity, null)
 
-  await t.throwsAsync(() => store.read({}).unwrap())
+  await t.throwsAsync(store.read({}).unwrap())
 
   const entities = await store.filter({}).unwrap()
   t.deepEqual(entities, [])
@@ -111,11 +111,11 @@ test('store missing', async t => {
     }
   })
   await t.throwsAsync(
-    () => store.read('STOP').unwrap(),
+    store.read('STOP').unwrap(),
     { message: 'STOP' }
   )
   await t.throwsAsync(
-    () => createStore({}).read({}).unwrap(),
+    createStore({}).read({}).unwrap(),
     { code: 'EMUT_NOENT' }
   )
 })

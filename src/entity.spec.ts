@@ -219,6 +219,61 @@ test('classy entity', async t => {
   t.throws(entity.unwrap)
 })
 
+test('entity autoCommit override', async t => {
+  t.plan(1)
+  function entity (autoCommit: boolean) {
+    return createEntity<Item>(
+      { id: 0 },
+      {
+        autoCommit,
+        safe: false,
+        writer: {
+          create () {
+            t.pass()
+          },
+          update () {
+            t.fail()
+          },
+          delete () {
+            t.fail()
+          }
+        }
+      }
+    )
+  }
+  await entity(true).unwrap({ autoCommit: false })
+  await entity(false).unwrap({ autoCommit: true })
+})
+
+test('entity safe override', async t => {
+  t.plan(1)
+  function entity (safe: boolean) {
+    return createEntity<Item>(
+      { id: 0 },
+      {
+        autoCommit: false,
+        safe,
+        writer: {
+          create () {
+            t.pass()
+          },
+          update () {
+            t.pass()
+          },
+          delete () {
+            t.pass()
+          }
+        }
+      }
+    )
+  }
+  await entity(true).unwrap({ safe: false })
+  await t.throwsAsync(
+    entity(false).unwrap({ safe: true }),
+    { code: "EMUT_NOCOM" }
+  )
+})
+
 test('safe create', async t => {
   t.plan(4)
 
@@ -238,7 +293,7 @@ test('safe create', async t => {
   await entity().unwrap()
   await entity(true, true).unwrap()
   await entity(true, false).unwrap()
-  await t.throwsAsync(() => entity(false, true).unwrap())
+  await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
 })
 
@@ -261,7 +316,7 @@ test('safe update', async t => {
   await entity().unwrap()
   await entity(true, true).unwrap()
   await entity(true, false).unwrap()
-  await t.throwsAsync(() => entity(false, true).unwrap())
+  await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
 })
 
@@ -284,6 +339,6 @@ test('safe delete', async t => {
   await entity().unwrap()
   await entity(true, true).unwrap()
   await entity(true, false).unwrap()
-  await t.throwsAsync(() => entity(false, true).unwrap())
+  await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
 })
