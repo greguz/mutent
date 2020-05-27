@@ -82,7 +82,7 @@ function mapState<T, O> (
   }
 }
 
-function updateState<T, O, A extends any[]> (
+function updateMethod<T, O, A extends any[]> (
   state: State<T, O>,
   mutator: Mutator<T, A>,
   ...args: A
@@ -96,14 +96,14 @@ function updateState<T, O, A extends any[]> (
   )
 }
 
-function assignState<T, O> (state: State<T, O>, object: Partial<T>) {
-  return updateState(
+function assignMethod<T, O> (state: State<T, O>, object: Partial<T>) {
+  return updateMethod(
     state,
     data => Object.assign({}, data, object)
   )
 }
 
-function deleteState<T, O> (state: State<T, O>): State<T, O> {
+function deleteMethod<T, O> (state: State<T, O>): State<T, O> {
   return mapState(state, deleteStatus)
 }
 
@@ -131,7 +131,7 @@ async function unwrapStatus<T, O> (
   return status.target
 }
 
-async function unwrapState<T, O> (
+async function unwrapMethod<T, O> (
   state: State<T, O>,
   options?: UnwrapOptions<O>
 ): Promise<T> {
@@ -150,14 +150,14 @@ async function unwrapState<T, O> (
   return unwrapStatus(state, res, obj)
 }
 
-function commitState<T, O> (state: State<T, O>): State<T, O> {
+function commitMethod<T, O> (state: State<T, O>): State<T, O> {
   return mapState(
     state,
     (status, options) => handleWriter(state.writer, status, options)
   )
 }
 
-function runState<T, O> (
+function runMethod<T, O> (
   state: State<T, O>,
   key: string,
   ...args: any[]
@@ -183,14 +183,14 @@ function wrapState<T, O> (
   return fluente({
     state,
     fluent: {
-      update: updateState,
-      assign: assignState,
-      delete: deleteState,
-      commit: commitState,
-      run: runState
+      update: updateMethod,
+      assign: assignMethod,
+      delete: deleteMethod,
+      commit: commitMethod,
+      run: runMethod
     },
     methods: {
-      unwrap: unwrapState
+      unwrap: unwrapMethod
     },
     constants: {
       [mutentSymbol]: true,

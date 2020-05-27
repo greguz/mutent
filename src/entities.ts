@@ -56,7 +56,7 @@ function mapState<T, O> (
   }
 }
 
-function updateState<T, O, A extends any[]> (
+function updateMethod<T, O, A extends any[]> (
   state: State<T, O>,
   mutator: Mutator<T, A>,
   ...args: A
@@ -64,26 +64,26 @@ function updateState<T, O, A extends any[]> (
   return mapState(state, entity => entity.update(mutator, ...args))
 }
 
-function assignState<T, O> (
+function assignMethod<T, O> (
   state: State<T, O>,
   object: Partial<T>
 ): State<T, O> {
   return mapState(state, entity => entity.assign(object))
 }
 
-function deleteState<T, O> (state: State<T, O>) {
+function deleteMethod<T, O> (state: State<T, O>) {
   return mapState(state, entity => entity.delete())
 }
 
-function commitState<T, O> (state: State<T, O>) {
+function commitMethod<T, O> (state: State<T, O>) {
   return mapState(state, entity => entity.commit())
 }
 
-function runState<T, O> (state: State<T, O>, key: string, ...args: any[]) {
+function runMethod<T, O> (state: State<T, O>, key: string, ...args: any[]) {
   return mapState(state, entity => entity.run(key, ...args))
 }
 
-function unwrapState<T, O> (
+function unwrapMethod<T, O> (
   state: State<T, O>,
   options?: UnwrapOptions<O>
 ): Promise<T[]> {
@@ -116,7 +116,7 @@ function unwrapState<T, O> (
   })
 }
 
-function streamState<T, O> (
+function streamMethod<T, O> (
   state: State<T, O>,
   options?: StreamOptions<O>
 ): stream.Readable {
@@ -152,15 +152,15 @@ function wrapState<T, O> (
   return fluente({
     state,
     fluent: {
-      update: updateState,
-      assign: assignState,
-      delete: deleteState,
-      commit: commitState,
-      run: runState
+      update: updateMethod,
+      assign: assignMethod,
+      delete: deleteMethod,
+      commit: commitMethod,
+      run: runMethod
     },
     methods: {
-      unwrap: unwrapState,
-      stream: streamState
+      unwrap: unwrapMethod,
+      stream: streamMethod
     },
     constants: {
       [mutentSymbol]: true,
