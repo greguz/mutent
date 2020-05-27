@@ -14,6 +14,7 @@ export interface Entities<T, O = any> {
   assign (object: Partial<T>): Entities<T, O>
   delete (): Entities<T, O>
   commit (): Entities<T, O>
+  run (routine: string, ...args: any[]): Entities<T, O>
   unwrap (options?: UnwrapOptions<O>): Promise<T[]>
   stream (options?: StreamOptions<O>): stream.Readable
   undo (steps?: number): Entities<T, O>
@@ -76,6 +77,10 @@ function deleteState<T, O> (state: State<T, O>) {
 
 function commitState<T, O> (state: State<T, O>) {
   return mapState(state, entity => entity.commit())
+}
+
+function runState<T, O> (state: State<T, O>, key: string, ...args: any[]) {
+  return mapState(state, entity => entity.run(key, ...args))
 }
 
 function unwrapState<T, O> (
@@ -150,7 +155,8 @@ function wrapState<T, O> (
       update: updateState,
       assign: assignState,
       delete: deleteState,
-      commit: commitState
+      commit: commitState,
+      run: runState
     },
     methods: {
       unwrap: unwrapState,

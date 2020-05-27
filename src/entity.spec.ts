@@ -342,3 +342,43 @@ test('safe delete', async t => {
   await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
 })
+
+test('entity routine', async t => {
+  t.plan(2)
+
+  const entity = createEntity<Item>(
+    { id: 0 },
+    {
+      routines: {
+        test (data) {
+          return {
+            ...data,
+            value: 'ROUTINE'
+          }
+        }
+      },
+      writer: {
+        create () {
+          t.pass()
+        }
+      }
+    }
+  )
+
+  const data = await entity
+    .update(next)
+    .run('test')
+    .unwrap()
+
+  t.deepEqual(data, {
+    id: 1,
+    value: 'ROUTINE'
+  })
+})
+
+test('no routine', async t => {
+  await t.throwsAsync(
+    createEntity({ id: 0 }).run('test').unwrap(),
+    { code: 'EMUT_NORTN' }
+  )
+})

@@ -1,7 +1,7 @@
 import fluente from 'fluente'
 
 import { One, getOne } from './data'
-import { ExpectedCommitError } from './errors'
+import { ExpectedCommitError, UnknownRoutineError } from './errors'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
 import { Writer, handleWriter } from './writer'
@@ -22,15 +22,23 @@ export interface Entity<T, O = any> {
   assign (object: Partial<T>): Entity<T, O>
   delete (): Entity<T, O>
   commit (): Entity<T, O>
+  run (routine: string, ...args: any[]): Entity<T, O>
   unwrap (options?: UnwrapOptions<O>): Promise<T>
   undo (steps?: number): Entity<T, O>
   redo (steps?: number): Entity<T, O>
+}
+
+export type Routine<T> = (data: T, ...args: any[]) => Promise<T> | T
+
+export interface Routines<T> {
+  [key: string]: Routine<T> | undefined
 }
 
 export interface Settings<T, O = any> {
   autoCommit?: boolean
   classy?: boolean
   historySize?: number
+  routines?: Routines<T>
   safe?: boolean
   writer?: Writer<T, O>
 }
@@ -39,6 +47,7 @@ interface State<T, O> {
   autoCommit: boolean
   extract: (options: Partial<O>) => Promise<Status<T>>
   mappers: Array<Mapper<T, O>>
+  routines: Routines<T>
   safe: boolean
   writer: Writer<T, O>
 }
@@ -57,6 +66,7 @@ function createState<T, O> (
     autoCommit: settings.autoCommit !== false,
     extract: options => getOne(one, options).then(buildStatus),
     mappers: [],
+    routines: settings.routines || {},
     safe: settings.safe !== false,
     writer: settings.writer || {}
   }
@@ -97,6 +107,30 @@ function deleteState<T, O> (state: State<T, O>): State<T, O> {
   return mapState(state, deleteStatus)
 }
 
+async function unwrapStatus<T, O> (
+  state: State<T, O>,
+  status: Status<T>,
+  options: Partial<UnwrapOptions<O>>
+): Promise<T> {
+  if (shouldCommit(status)) {
+    const autoCommit = isUndefined(options.autoCommit)
+      ? state.autoCommit
+      : options.autoCommit !== false
+
+    const safe = isUndefined(options.safe)
+      ? state.safe
+      : options.safe !== false
+
+    if (autoCommit) {
+      status = await handleWriter(state.writer, status, options)
+    } else if (safe) {
+      throw new ExpectedCommitError(status.source, status.target, options)
+    }
+  }
+
+  return status.target
+}
+
 async function unwrapState<T, O> (
   state: State<T, O>,
   options?: UnwrapOptions<O>
@@ -113,29 +147,32 @@ async function unwrapState<T, O> (
     Promise.resolve(res)
   )
 
-  if (shouldCommit(res)) {
-    const autoCommit = isUndefined(obj.autoCommit)
-      ? state.autoCommit
-      : obj.autoCommit !== false
-
-    const safe = isUndefined(obj.safe)
-      ? state.safe
-      : obj.safe !== false
-
-    if (autoCommit) {
-      res = await handleWriter(state.writer, res, obj)
-    } else if (safe) {
-      throw new ExpectedCommitError(res.source, res.target, obj)
-    }
-  }
-
-  return res.target
+  return unwrapStatus(state, res, obj)
 }
 
 function commitState<T, O> (state: State<T, O>): State<T, O> {
   return mapState(
     state,
     (status, options) => handleWriter(state.writer, status, options)
+  )
+}
+
+function runState<T, O> (
+  state: State<T, O>,
+  key: string,
+  ...args: any[]
+): State<T, O> {
+  const routine = state.routines[key]
+  return mapState(
+    state,
+    async (status, options) => {
+      if (!routine) {
+        throw new UnknownRoutineError(key)
+      }
+      const oldData = await unwrapStatus(state, status, options)
+      const newData = await routine(oldData, ...args, options)
+      return readStatus(newData)
+    }
   )
 }
 
@@ -149,7 +186,8 @@ function wrapState<T, O> (
       update: updateState,
       assign: assignState,
       delete: deleteState,
-      commit: commitState
+      commit: commitState,
+      run: runState
     },
     methods: {
       unwrap: unwrapState

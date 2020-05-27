@@ -35,3 +35,9 @@ export class ExpectedCommitError extends MutentError {
     this.options = options
   }
 }
+
+export class UnknownRoutineError extends MutentError {
+  constructor (key: string) {
+    super('EMUT_NORTN', `Unknown ${key} routine`)
+  }
+}

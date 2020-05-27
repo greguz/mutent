@@ -83,7 +83,7 @@ export function createStore<T, Q, O> (
   return {
     find: query => readEntity(
       options => findData(reader, query, options),
-      plugin
+      plugin as Plugin<T | null>
     ),
     read: query => readEntity(
       options => readData(reader, query, options),
