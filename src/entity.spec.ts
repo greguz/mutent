@@ -270,7 +270,7 @@ test('entity safe override', async t => {
   await entity(true).unwrap({ safe: false })
   await t.throwsAsync(
     entity(false).unwrap({ safe: true }),
-    { code: "EMUT_NOCOM" }
+    { code: 'EMUT_NOCOM' }
   )
 })
 
