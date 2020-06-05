@@ -29,8 +29,9 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "dependencies": {
-    "fluente": "^1.0.4",
-    "fluido": "^1.0.1"
+    "fluente": "^1.1.0",
+    "fluido": "^1.0.1",
+    "herry": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^14.0.5",

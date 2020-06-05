@@ -1,18 +1,11 @@
-export class MutentError extends Error {
-  public code: string
-  constructor (code: string, message?: string) {
-    super(message)
-    this.name = this.constructor.name
-    Error.captureStackTrace(this, this.constructor)
-    this.code = code
-  }
-}
+import Herry from 'herry'
 
-export class UndefinedEntityError extends MutentError {
-  constructor () {
-    super('EMUT_NODEF', 'Undefined entity')
-  }
-}
+export const MutentError = Herry
+
+export const UndefinedEntityError = Herry.define(
+  'EMUT_NODEF',
+  'Undefined entity'
+)
 
 export class UnknownEntityError extends MutentError {
   public query: any
