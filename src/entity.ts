@@ -167,7 +167,7 @@ function runMethod<T, O> (
     state,
     async (status, options) => {
       if (!routine) {
-        throw new UnknownRoutineError(key)
+        throw new UnknownRoutineError({ key })
       }
       const oldData = await unwrapStatus(state, status, options)
       const newData = await routine(oldData, ...args, options)
