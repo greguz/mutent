@@ -1,4 +1,5 @@
-import { UndefinedEntityError } from './errors'
+import Herry from 'herry'
+
 import { isUndefined } from './utils'
 
 export interface Status<T> {
@@ -26,7 +27,7 @@ export interface Status<T> {
 
 function noUndef<T> (value: T): T {
   if (isUndefined(value)) {
-    throw new UndefinedEntityError()
+    throw new Herry('EMUT_NODEF', 'Undefined entity')
   }
   return value
 }

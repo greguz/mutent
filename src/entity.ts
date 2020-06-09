@@ -1,7 +1,7 @@
 import fluente from 'fluente'
+import Herry from 'herry'
 
 import { One, getOne } from './data'
-import { ExpectedCommitError } from './errors'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
 import { Writer, handleWriter, runRoutine } from './writer'
@@ -115,7 +115,11 @@ async function unwrapStatus<T, O> (
     if (autoCommit) {
       status = await handleWriter(state.writer, status, options)
     } else if (safe) {
-      throw new ExpectedCommitError(status.source, status.target, options)
+      throw new Herry('EMUT_NOCOM', 'Expected commit', {
+        source: status.source,
+        target: status.target,
+        options
+      })
     }
   }
 

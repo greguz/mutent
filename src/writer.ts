@@ -1,4 +1,5 @@
-import { UnknownRoutineError } from './errors'
+import Herry from 'herry'
+
 import { Status, commitStatus, updateStatus } from './status'
 import { MaybePromise, isNil, isNull } from './utils'
 
@@ -60,7 +61,7 @@ export async function runRoutine<T, O> (
 ): Promise<Status<T>> {
   const routine = writer[key]
   if (!routine) {
-    throw new UnknownRoutineError({ key })
+    throw new Herry('EMUT_NORTN', 'Unknown routine', { key })
   }
   if (key === 'update') {
     args = [status.source]

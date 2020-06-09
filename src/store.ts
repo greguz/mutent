@@ -1,7 +1,8 @@
+import Herry from 'herry'
+
 import { Value, Values } from './data'
 import { Entities, createEntities, readEntities } from './entities'
 import { Entity, Settings, createEntity, readEntity } from './entity'
-import { UnknownEntityError } from './errors'
 import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {
@@ -43,7 +44,7 @@ async function readData<T, Q, O> (
   if (isNull(data)) {
     throw typeof reader.Error === 'function'
       ? reader.Error(query, options)
-      : new UnknownEntityError(query, options)
+      : new Herry('EMUT_NOENT', 'Unknown entity', { query, options })
   }
   return data
 }
