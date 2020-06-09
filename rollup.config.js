@@ -6,6 +6,7 @@ export default {
   },
   external: [
     'fluente',
-    'fluido'
+    'fluido',
+    'herry'
   ]
 }
