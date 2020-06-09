@@ -33,6 +33,14 @@ Schedules a synchronization between the current entity's data and its data sourc
 
 - Returns: `<Entities>`
 
+## run(routine, ...args)
+
+Requires the execution of a [routine](routine.md).
+
+- `routine` `<String>`
+- `...args` `<*>`
+- Returns: `<Entities>`
+
 ## undo([steps])
 
 Undoes one or more defined actions. `Infinity` is accepted and, if provided, will invalidate all possible actions.
