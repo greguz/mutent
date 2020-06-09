@@ -1,10 +1,10 @@
 import fluente from 'fluente'
 
 import { One, getOne } from './data'
-import { ExpectedCommitError, UnknownRoutineError } from './errors'
+import { ExpectedCommitError } from './errors'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
-import { Writer, handleWriter } from './writer'
+import { Writer, handleWriter, runRoutine } from './writer'
 
 export type Mutator<T, A extends any[]> = (
   data: Exclude<T, null>,
@@ -28,17 +28,10 @@ export interface Entity<T, O = any> {
   redo (steps?: number): Entity<T, O>
 }
 
-export type Routine<T> = (data: T, ...args: any[]) => Promise<T> | T
-
-export interface Routines<T> {
-  [key: string]: Routine<T> | undefined
-}
-
 export interface Settings<T, O = any> {
   autoCommit?: boolean
   classy?: boolean
   historySize?: number
-  routines?: Routines<T>
   safe?: boolean
   writer?: Writer<T, O>
 }
@@ -47,7 +40,6 @@ interface State<T, O> {
   autoCommit: boolean
   extract: (options: Partial<O>) => Promise<Status<T>>
   mappers: Array<Mapper<T, O>>
-  routines: Routines<T>
   safe: boolean
   writer: Writer<T, O>
 }
@@ -66,7 +58,6 @@ function createState<T, O> (
     autoCommit: settings.autoCommit !== false,
     extract: options => getOne(one, options).then(buildStatus),
     mappers: [],
-    routines: settings.routines || {},
     safe: settings.safe !== false,
     writer: settings.writer || {}
   }
@@ -162,16 +153,11 @@ function runMethod<T, O> (
   key: string,
   ...args: any[]
 ): State<T, O> {
-  const routine = state.routines[key]
   return mapState(
     state,
     async (status, options) => {
-      if (!routine) {
-        throw new UnknownRoutineError({ key })
-      }
-      const oldData = await unwrapStatus(state, status, options)
-      const newData = await routine(oldData, ...args, options)
-      return readStatus(newData)
+      const data = await unwrapStatus(state, status, options)
+      return runRoutine(state.writer, readStatus(data), options, key, ...args)
     }
   )
 }

@@ -44,19 +44,17 @@ test('sCreate', async t => {
   t.plan(3)
 
   const driver: Writer<Item> = {
-    preCreate (data) {
-      return {
-        ...data,
-        id: data.id + 1
-      }
-    },
     create (data, options) {
       t.deepEqual(data, {
-        id: 1
+        id: 0
       })
       t.deepEqual(options, {
         hello: 'world'
       })
+      return {
+        ...data,
+        id: data.id + 1
+      }
     },
     update () {
       t.fail()
@@ -120,23 +118,21 @@ test('sUpdate', async t => {
     create () {
       t.fail()
     },
-    preUpdate (data) {
-      return {
-        ...data,
-        id: data.id + 1
-      }
-    },
-    update (source, target, options) {
+    update (target, options, source) {
       t.deepEqual(source, {
         id: 0
       })
       t.deepEqual(target, {
-        id: 1,
+        id: 0,
         value: 'UPDATE'
       })
       t.deepEqual(options, {
         hello: 'world'
       })
+      return {
+        ...target,
+        id: target.id + 1
+      }
     },
     delete () {
       t.fail()
@@ -170,15 +166,9 @@ test('sDelete', async t => {
     update () {
       t.fail()
     },
-    preDelete (data) {
-      return {
-        ...data,
-        id: data.id + 1
-      }
-    },
     delete (data, options) {
       t.deepEqual(data, {
-        id: 1
+        id: 0
       })
       t.deepEqual(options, {
         hello: 'world'
@@ -194,7 +184,7 @@ test('sDelete', async t => {
     deleted: false,
     source: null,
     target: {
-      id: 1
+      id: 0
     }
   })
 })

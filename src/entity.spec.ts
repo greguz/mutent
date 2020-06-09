@@ -93,7 +93,7 @@ test('update', async t => {
     async create () {
       t.fail()
     },
-    async update (source, target, options) {
+    async update (target, options, source) {
       t.deepEqual(source, {
         id: 0
       })
@@ -344,22 +344,21 @@ test('safe delete', async t => {
 })
 
 test('entity routine', async t => {
-  t.plan(2)
+  t.plan(3)
 
   const entity = createEntity<Item>(
     { id: 0 },
     {
-      routines: {
+      writer: {
+        create () {
+          t.pass()
+        },
         test (data) {
+          t.pass()
           return {
             ...data,
             value: 'ROUTINE'
           }
-        }
-      },
-      writer: {
-        create () {
-          t.pass()
         }
       }
     }

@@ -1,60 +1,69 @@
+import { UnknownRoutineError } from './errors'
 import { Status, commitStatus, updateStatus } from './status'
-import { isNull } from './utils'
+import { MaybePromise, isNil, isNull } from './utils'
 
-export type MaybePromise<T> = Promise<T> | T
+export type WriterOutput<T> = MaybePromise<T | null | undefined | void>
+
+export type Routine<T, O = any> = (
+  data: T,
+  options: Partial<O>,
+  ...args: any[]
+) => WriterOutput<T>
 
 export interface Writer<T, O = any> {
-  preCreate? (data: T, options: Partial<O>): MaybePromise<T>
-  create? (data: T, options: Partial<O>): any
-  preUpdate? (data: T, options: Partial<O>): MaybePromise<T>
-  update? (source: T, target: T, options: Partial<O>): any
-  preDelete? (data: T, options: Partial<O>): MaybePromise<T>
-  delete? (data: T, options: Partial<O>): any
+  create? (data: T, options: Partial<O>): WriterOutput<T>
+  update? (data: T, options: Partial<O>, current: T): WriterOutput<T>
+  delete? (data: T, options: Partial<O>): WriterOutput<T>
+  [key: string]: Routine<T, O> | undefined
 }
 
-function exec<T, A extends any[]> (
-  fn: (...args: A) => MaybePromise<T>,
-  ...args: A
-): Promise<T> {
-  return Promise.resolve(fn(...args))
+async function exec<T, O> (
+  status: Status<T>,
+  options: Partial<O>,
+  routine: Routine<T>,
+  ...args: any[]
+): Promise<Status<T>> {
+  const out = await routine(status.target, options, ...args)
+  if (!isNil(out)) {
+    status = updateStatus(status, out)
+  }
+  return commitStatus(status)
 }
 
-export async function handleWriter<T, O> (
+export function handleWriter<T, O> (
   writer: Writer<T, O>,
-  status: Status<any>,
+  status: Status<T>,
   options: Partial<O> = {}
 ): Promise<Status<T>> {
   if (isNull(status.source) && !status.deleted) {
-    if (writer.preCreate) {
-      status = updateStatus(
-        status,
-        await exec(writer.preCreate, status.target, options)
-      )
-    }
     if (writer.create) {
-      await exec(writer.create, status.target, options)
+      return exec(status, options, writer.create)
     }
   } else if (!isNull(status.source) && status.updated && !status.deleted) {
-    if (writer.preUpdate) {
-      status = updateStatus(
-        status,
-        await exec(writer.preUpdate, status.target, options)
-      )
-    }
     if (writer.update) {
-      await exec(writer.update, status.source, status.target, options)
+      return exec(status, options, writer.update, status.source)
     }
   } else if (!isNull(status.source) && status.deleted) {
-    if (writer.preDelete) {
-      status = updateStatus(
-        status,
-        await exec(writer.preDelete, status.target, options)
-      )
-    }
     if (writer.delete) {
-      await exec(writer.delete, status.target, options)
+      return exec(status, options, writer.delete)
     }
   }
+  return Promise.resolve(commitStatus(status))
+}
 
-  return commitStatus(status)
+export async function runRoutine<T, O> (
+  writer: Writer<T, O>,
+  status: Status<T>,
+  options: Partial<O> = {},
+  key: string,
+  ...args: any[]
+): Promise<Status<T>> {
+  const routine = writer[key]
+  if (!routine) {
+    throw new UnknownRoutineError({ key })
+  }
+  if (key === 'update') {
+    args = [status.source]
+  }
+  return exec(status, options, routine, ...args)
 }
