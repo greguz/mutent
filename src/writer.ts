@@ -5,26 +5,31 @@ import { MaybePromise, isNil, isNull } from './utils'
 
 export type WriterOutput<T> = MaybePromise<T | null | undefined | void>
 
+export interface Subject<T, O = any> {
+  data: T
+  options: Partial<O>
+}
+
 export type Routine<T, O = any> = (
-  data: T,
-  options: Partial<O>,
+  subject: Subject<T, O>,
   ...args: any[]
 ) => WriterOutput<T>
 
 export interface Writer<T, O = any> {
   create? (data: T, options: Partial<O>): WriterOutput<T>
-  update? (data: T, options: Partial<O>, current: T): WriterOutput<T>
+  update? (oldData: T, newData: T, options: Partial<O>): WriterOutput<T>
   delete? (data: T, options: Partial<O>): WriterOutput<T>
-  [key: string]: Routine<T, O> | undefined
+  routines?: {
+    [key: string]: Routine<T, O> | undefined
+  }
 }
 
-async function exec<T, O> (
+async function exec<T, A extends any[]> (
   status: Status<T>,
-  options: Partial<O>,
-  routine: Routine<T>,
-  ...args: any[]
+  fn: (...args: A) => WriterOutput<T>,
+  ...args: A
 ): Promise<Status<T>> {
-  const out = await routine(status.target, options, ...args)
+  const out = await fn(...args)
   if (!isNil(out)) {
     status = updateStatus(status, out)
   }
@@ -38,15 +43,15 @@ export function handleWriter<T, O> (
 ): Promise<Status<T>> {
   if (isNull(status.source) && !status.deleted) {
     if (writer.create) {
-      return exec(status, options, writer.create)
+      return exec(status, writer.create, status.target, options)
     }
   } else if (!isNull(status.source) && status.updated && !status.deleted) {
     if (writer.update) {
-      return exec(status, options, writer.update, status.source)
+      return exec(status, writer.update, status.source, status.target, options)
     }
   } else if (!isNull(status.source) && status.deleted) {
     if (writer.delete) {
-      return exec(status, options, writer.delete)
+      return exec(status, writer.delete, status.source, options)
     }
   }
   return Promise.resolve(commitStatus(status))
@@ -59,12 +64,13 @@ export async function runRoutine<T, O> (
   key: string,
   ...args: any[]
 ): Promise<Status<T>> {
-  const routine = writer[key]
+  const routine = (writer.routines || {})[key]
   if (!routine) {
     throw new Herry('EMUT_NORTN', 'Unknown routine', { key })
   }
-  if (key === 'update') {
-    args = [status.source]
+  const subject: Subject<T, O> = {
+    data: status.target,
+    options
   }
-  return exec(status, options, routine, ...args)
+  return exec(status, routine, subject, ...args)
 }

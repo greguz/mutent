@@ -93,7 +93,7 @@ test('update', async t => {
     async create () {
       t.fail()
     },
-    async update (target, options, source) {
+    async update (source, target, options) {
       t.deepEqual(source, {
         id: 0
       })
@@ -353,11 +353,13 @@ test('entity routine', async t => {
         create () {
           t.pass()
         },
-        test (data) {
-          t.pass()
-          return {
-            ...data,
-            value: 'ROUTINE'
+        routines: {
+          test (subject) {
+            t.pass()
+            return {
+              ...subject.data,
+              value: 'ROUTINE'
+            }
           }
         }
       }

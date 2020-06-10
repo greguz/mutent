@@ -25,7 +25,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       }
       t.deepEqual(options, { db: 'test' })
     },
-    async update (target, options) {
+    async update (source, target, options) {
       if (mode.update === true) {
         t.pass()
       } else {
@@ -231,10 +231,12 @@ test('entities routine', async t => {
     [{ value: 42 }],
     {
       writer: {
-        test (data) {
-          return {
-            ...data,
-            num: 42
+        routines: {
+          test (subject) {
+            return {
+              ...subject.data,
+              num: 42
+            }
           }
         }
       }

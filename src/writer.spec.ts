@@ -118,7 +118,7 @@ test('sUpdate', async t => {
     create () {
       t.fail()
     },
-    update (target, options, source) {
+    update (source, target, options) {
       t.deepEqual(source, {
         id: 0
       })
@@ -271,8 +271,7 @@ test('sUpdateDelete', async t => {
     },
     delete (source, options) {
       t.deepEqual(source, {
-        id: 0,
-        value: 'UPDATE'
+        id: 0
       })
       t.deepEqual(options, {
         hello: 'world'
