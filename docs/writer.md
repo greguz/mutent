@@ -2,46 +2,22 @@
 
 A Writer defines how write actions need to be performed against a particular data source.
 
-## preCreate(data, options)
-
-Performs a mutation just before creating the entity.
-
-- `data` `<Object>` Entity's data.
-- `options` `<Object>` Unwrap options.
-- Returns: `<Promise>` | `<Object>`
-
 ## create(data, options)
 
 Creates the entity.
 
 - `data` `<Object>` Entity's data.
 - `options` `<Object>` Unwrap options.
-- Returns: `<Promise>` | `<*>`
+- Returns: `<Promise>` | `<Object>` | `<null>` | `<undefined>`
 
-## preUpdate(data, options)
-
-Performs a mutation just before updating the entity.
-
-- `data` `<Object>` Entity's data.
-- `options` `<Object>` Unwrap options.
-- Returns: `<Promise>` | `<Object>`
-
-## update(source, target, options)
+## update(data, options, current)
 
 Updates the entity.
 
-- `source` `<Object>` Entity's data **before** any mutation are applied.
-- `target` `<Object>` Entity's data **after** all described mutations are applied.
+- `oldData` `<Object>` Entity's data **after** all described mutations are applied.
+- `newData` `<Object>` Entity's data **before** any mutation are applied.
 - `options` `<Object>` Unwrap options.
-- Returns: `<Promise>` | `<*>`
-
-## preDelete(data, options)
-
-Performs a mutation just before deleting the entity.
-
-- `data` `<Object>` Entity's data.
-- `options` `<Object>` Unwrap options.
-- Returns: `<Promise>` | `<Object>`
+- Returns: `<Promise>` | `<Object>` | `<null>` | `<undefined>`
 
 ## delete(data, options)
 
@@ -49,7 +25,11 @@ Deletes the entity.
 
 - `data` `<Object>` Entity's data.
 - `options` `<Object>` Unwrap options.
-- Returns: `<Promise>` | `<*>`
+- Returns: `<Promise>` | `<Object>` | `<null>` | `<undefined>`
+
+## routines
+
+TODO
 
 ## Example
 

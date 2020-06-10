@@ -12,7 +12,6 @@ Creates a [Store](store.md). All optional.
   - `historySize` `<Number>` Defines the size of mutation history. Defaults `10`.
   - `safe` `<Boolean>` If `true`, enforces that all updated entities must be committed before unwrapping. Default `true`.
   - `reader` `<Object>` See [here](reader.md).
-  - `routines` `<Object>` See [here](routine.md).
   - `writer` `<Object>` See [here](writer.md).
 - Returns: `<Store>`
 

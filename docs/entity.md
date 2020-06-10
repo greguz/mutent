@@ -35,7 +35,7 @@ Schedules a synchronization between the current entity's data and its data sourc
 
 ## run(routine, ...args)
 
-Requires the execution of a [routine](routine.md).
+Requires the execution of a routine.
 
 - `routine` `<String>`
 - `...args` `<*>`

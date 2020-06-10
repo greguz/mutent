@@ -27,7 +27,6 @@ Defines a not-yet-persisted [Entity](entity.md).
   - `autoCommit` `<Boolean>`
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
-  - `routines` `<Object>` See [here](routine.md).
   - `safe` `<Boolean>`
   - `writer` `<Object>` See [here](writer.md).
 - Returns: [`<Entity>`](entity.md)
@@ -41,7 +40,6 @@ Defines a persisted [Entity](entity.md).
   - `autoCommit` `<Boolean>`
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
-  - `routines` `<Object>` See [here](routine.md).
   - `safe` `<Boolean>`
   - `writer` `<Object>` See [here](writer.md).
 - Returns: [`<Entity>`](entity.md)
@@ -55,7 +53,6 @@ Defines multiple not-yet-persisted [Entities](entities.md).
   - `autoCommit` `<Boolean>`
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
-  - `routines` `<Object>` See [here](routine.md).
   - `safe` `<Boolean>`
   - `writer` `<Object>` See [here](writer.md).
 - Returns: [`<Entities>`](entities.md)
@@ -69,7 +66,6 @@ Defines multiple persisted [Entities](entities.md).
   - `autoCommit` `<Boolean>`
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
-  - `routines` `<Object>` See [here](routine.md).
   - `safe` `<Boolean>`
   - `writer` `<Object>` See [here](writer.md).
 - Returns: [`<Entities>`](entities.md)
