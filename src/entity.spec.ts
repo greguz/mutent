@@ -383,3 +383,17 @@ test('no routine', async t => {
     { code: 'EMUT_NORTN' }
   )
 })
+
+test('condition', async t => {
+  const meet = await createEntity<Item>({ id: 0 })
+    .if(data => data.id !== 0)
+    .assign({ value: 'UPDATED' })
+    .unwrap()
+  t.deepEqual(meet, { id: 0 })
+
+  const not = await createEntity<Item>({ id: 0 })
+    .if(data => data.id === 0)
+    .assign({ value: 'UPDATED' })
+    .unwrap()
+  t.deepEqual(not, { id: 0, value: 'UPDATED' })
+})

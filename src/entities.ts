@@ -3,7 +3,7 @@ import { Transform, Writable, pipeline, readify } from 'fluido'
 import fluente from 'fluente'
 
 import { Many, getMany } from './data'
-import { Entity, Mutator, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
+import { Condition, Entity, Mutator, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
 import { isNull, mutentSymbol, objectify } from './utils'
 
 export type StreamOptions<O = {}> = UnwrapOptions<O> & { highWaterMark?: number }
@@ -19,6 +19,7 @@ export interface Entities<T, O = any> {
   stream (options?: StreamOptions<O>): stream.Readable
   undo (steps?: number): Entities<T, O>
   redo (steps?: number): Entities<T, O>
+  if (condition: Condition<T>): Entities<T, O>
 }
 
 interface State<T, O> {
@@ -81,6 +82,10 @@ function commitMethod<T, O> (state: State<T, O>) {
 
 function runMethod<T, O> (state: State<T, O>, key: string, ...args: any[]) {
   return mapState(state, entity => entity.run(key, ...args))
+}
+
+function ifMethod<T, O> (state: State<T, O>, condition: Condition<T>) {
+  return mapState(state, entity => entity.if(condition))
 }
 
 function unwrapMethod<T, O> (
@@ -156,7 +161,8 @@ function wrapState<T, O> (
       assign: assignMethod,
       delete: deleteMethod,
       commit: commitMethod,
-      run: runMethod
+      run: runMethod,
+      if: ifMethod
     },
     methods: {
       unwrap: unwrapMethod,

@@ -16,6 +16,8 @@ export type UnwrapOptions<O = {}> = O & {
   safe?: boolean
 }
 
+export type Condition<T> = (data: T) => Promise<boolean> | boolean
+
 export interface Entity<T, O = any> {
   isEntity: boolean
   update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entity<T, O>
@@ -26,6 +28,7 @@ export interface Entity<T, O = any> {
   unwrap (options?: UnwrapOptions<O>): Promise<T>
   undo (steps?: number): Entity<T, O>
   redo (steps?: number): Entity<T, O>
+  if (condition: Condition<T>): Entity<T, O>
 }
 
 export interface Settings<T, O = any> {
@@ -38,6 +41,7 @@ export interface Settings<T, O = any> {
 
 interface State<T, O> {
   autoCommit: boolean
+  condition?: Condition<T>
   extract: (options: Partial<O>) => Promise<Status<T>>
   mappers: Array<Mapper<T, O>>
   safe: boolean
@@ -56,10 +60,25 @@ function createState<T, O> (
 ): State<T, O> {
   return {
     autoCommit: settings.autoCommit !== false,
+    condition: undefined,
     extract: options => getOne(one, options).then(buildStatus),
     mappers: [],
     safe: settings.safe !== false,
     writer: settings.writer || {}
+  }
+}
+
+function applyCondition<T, O> (
+  mapper: Mapper<T, O>,
+  condition: Condition<T>
+): Mapper<T, O> {
+  return async function conditionalMapper (status, options) {
+    const ok = await condition(status.target)
+    if (!ok) {
+      return status
+    } else {
+      return mapper(status, options)
+    }
   }
 }
 
@@ -69,7 +88,11 @@ function mapState<T, O> (
 ): State<T, O> {
   return {
     ...state,
-    mappers: [...state.mappers, mapper]
+    condition: undefined,
+    mappers: [
+      ...state.mappers,
+      state.condition ? applyCondition(mapper, state.condition) : mapper
+    ]
   }
 }
 
@@ -166,6 +189,16 @@ function runMethod<T, O> (
   )
 }
 
+function ifMethod<T, O> (
+  state: State<T, O>,
+  condition: Condition<T>
+): State<T, O> {
+  return {
+    ...state,
+    condition
+  }
+}
+
 function wrapState<T, O> (
   state: State<T, O>,
   settings: Settings<T, O>
@@ -177,7 +210,8 @@ function wrapState<T, O> (
       assign: assignMethod,
       delete: deleteMethod,
       commit: commitMethod,
-      run: runMethod
+      run: runMethod,
+      if: ifMethod
     },
     methods: {
       unwrap: unwrapMethod
