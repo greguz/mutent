@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { Plugin, createStore } from './store'
+import { StoreSettings, createStore } from './store'
 
 interface Item {
   id: number
@@ -13,7 +13,7 @@ function match (item: Item, value: number | string) {
     : item.value === value
 }
 
-function createPlugin (): Plugin<Item, number | string> {
+function createSettings (): StoreSettings<Item, number | string> {
   const items: Item[] = []
 
   return {
@@ -48,7 +48,7 @@ function createPlugin (): Plugin<Item, number | string> {
 }
 
 test('plugin', async t => {
-  const store = createStore(createPlugin())
+  const store = createStore(createSettings())
 
   const a = await store.find(0).unwrap()
   t.is(a, null)

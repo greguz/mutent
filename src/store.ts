@@ -1,7 +1,7 @@
 import Herry from 'herry'
 
 import { Value, Values } from './data'
-import { Entities, Entity, Settings, createEntities, createEntity, readEntities, readEntity } from './instance'
+import { Entities, Entity, InstanceSettings, createEntities, createEntity, readEntities, readEntity } from './instance'
 import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {
@@ -10,7 +10,7 @@ export interface Reader<T, Q = any, O = any> {
   Error?: (query: Q, options: Partial<O>) => any
 }
 
-export interface Plugin<T, Q = any, O = any> extends Settings<T, O> {
+export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
   reader?: Reader<T, Q, O>
 }
 
@@ -59,41 +59,41 @@ function filterData<T, Q, O> (
 }
 
 function fromData<T, Q, O> (
-  plugin: Plugin<T, Q, O>,
+  settings: StoreSettings<T, Q, O>,
   data: T[] | T
 ): any {
   return Array.isArray(data)
-    ? readEntities(data, plugin)
-    : readEntity(data, plugin)
+    ? readEntities(data, settings)
+    : readEntity(data, settings)
 }
 
 function createMethod<T, Q, O> (
-  plugin: Plugin<T, Q, O>,
+  settings: StoreSettings<T, Q, O>,
   data: T[] | T
 ): any {
   return Array.isArray(data)
-    ? createEntities(data, plugin)
-    : createEntity(data, plugin)
+    ? createEntities(data, settings)
+    : createEntity(data, settings)
 }
 
 export function createStore<T, Q, O> (
-  plugin: Plugin<T, Q, O>
+  settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
-  const reader = plugin.reader || {}
+  const reader = settings.reader || {}
   return {
     find: query => readEntity(
       options => findData(reader, query, options),
-      plugin as Plugin<T | null>
+      settings as StoreSettings<T | null>
     ),
     read: query => readEntity(
       options => readData(reader, query, options),
-      plugin
+      settings
     ),
     filter: query => readEntities(
       options => filterData(reader, query, options),
-      plugin
+      settings
     ),
-    create: data => createMethod(plugin, data),
-    from: data => fromData(plugin, data)
+    create: data => createMethod(settings, data),
+    from: data => fromData(settings, data)
   }
 }

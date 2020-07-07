@@ -42,7 +42,7 @@ test('mutation#auto-create', async t => {
       t.fail()
     }
   }
-  const mutation = defineMutation(writer)
+  const mutation = defineMutation({ writer })
   const out = await applyMutation(
     { id: 0, value: 'CREATE' },
     createStatus,
@@ -64,7 +64,7 @@ test('mutation#manual-create', async t => {
       t.fail()
     }
   }
-  const mutation = defineMutation(writer)
+  const mutation = defineMutation({ writer })
   await t.throwsAsync(
     applyMutation(
       { id: 0, value: 'CREATE' },
@@ -96,7 +96,7 @@ test('mutation#auto-update', async t => {
       t.fail()
     }
   }
-  const mutation = defineMutation(writer).assign({ value: 'UPDATE' })
+  const mutation = defineMutation({ writer }).assign({ value: 'UPDATE' })
   const out = await applyMutation(
     { id: 0 },
     readStatus,
@@ -119,7 +119,7 @@ test('mutation#manual-update', async t => {
       t.fail()
     }
   }
-  const mutation = defineMutation(writer).assign({ value: 'UPDATE' })
+  const mutation = defineMutation({ writer }).assign({ value: 'UPDATE' })
   await t.throwsAsync(
     applyMutation(
       { id: 0 },
@@ -150,7 +150,7 @@ test('mutation#auto-delete', async t => {
       t.deepEqual(data, { id: 0, value: 'DELETE' })
     }
   }
-  const mutation = defineMutation(writer).delete()
+  const mutation = defineMutation({ writer }).delete()
   const out = await applyMutation(
     { id: 0, value: 'DELETE' },
     readStatus,
@@ -172,7 +172,7 @@ test('mutation#manual-delete', async t => {
       t.deepEqual(data, { id: 0, value: 'DELETE' })
     }
   }
-  const mutation = defineMutation(writer).delete()
+  const mutation = defineMutation({ writer }).delete()
   await t.throwsAsync(
     applyMutation(
       { id: 0, value: 'DELETE' },

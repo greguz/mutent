@@ -2,20 +2,16 @@ import stream from 'stream'
 import fluente from 'fluente'
 
 import { Many, One, StreamOptions, UnwrapOptions } from './data'
-import { Condition, Mapper, Mutation, defineMutation } from './mutation'
+import { Condition, Mapper, Mutation, MutationSettings, defineMutation } from './mutation'
 import { createStatus, readStatus } from './status'
 import { defaults, objectify } from './utils'
-import { Writer } from './writer'
 
 import { streamMany, unwrapMany } from './entities'
 import { streamOne, unwrapOne } from './entity'
 
-export interface Settings<T, O = any> {
+export interface InstanceSettings<T, O = any> extends MutationSettings<T, O> {
   autoCommit?: boolean
-  classy?: boolean
-  historySize?: number
   safe?: boolean
-  writer?: Writer<T, O>
 }
 
 export interface Instance<T, U, O> {
@@ -50,30 +46,26 @@ type Streamer<T, I, U, O> = (
 ) => stream.Readable
 
 interface State<T, I, U, O> {
-  autoCommit: boolean
-  input: I
   mutation: Mutation<T>
-  safe: boolean
+  settings: InstanceSettings<T, O>
   stream: Streamer<T, I, U, O>
   unwrap: Unwrapper<T, I, U, O>
-  writer: Writer<T, O>
 }
 
 function createState<T, I, U, O> (
-  input: I,
   unwrap: Unwrapper<T, I, U, O>,
   stream: Streamer<T, I, U, O>,
-  settings: Settings<T, O>
+  settings: InstanceSettings<T, O>
 ): State<T, I, U, O> {
-  const writer = settings.writer || {}
   return {
-    autoCommit: settings.autoCommit !== false,
-    input,
-    mutation: defineMutation(writer),
-    safe: settings.safe !== false,
+    mutation: defineMutation({
+      classy: false,
+      historySize: 0,
+      writer: settings.writer
+    }),
+    settings,
     stream,
-    unwrap,
-    writer
+    unwrap
   }
 }
 
@@ -156,8 +148,8 @@ async function unwrapMethod<T, I, U, O> (
     defaults(
       objectify(options),
       {
-        autoCommit: state.autoCommit,
-        safe: state.safe
+        autoCommit: state.settings.autoCommit !== false,
+        safe: state.settings.safe !== false
       }
     )
   )
@@ -172,8 +164,8 @@ function streamMethod<T, I, U, O> (
     defaults(
       objectify(options),
       {
-        autoCommit: state.autoCommit,
-        safe: state.safe
+        autoCommit: state.settings.autoCommit !== false,
+        safe: state.settings.safe !== false
       }
     )
   )
@@ -182,14 +174,17 @@ function streamMethod<T, I, U, O> (
 function defineMutationMethod<T, I, U, O> (
   state: State<T, I, U, O>
 ): Mutation<T, O> {
-  return defineMutation(state.writer)
+  return defineMutation({
+    classy: state.settings.classy,
+    historySize: state.settings.historySize,
+    writer: state.settings.writer
+  })
 }
 
-function wrapState<T, I, U, O> (
-  state: State<T, I, U, O>,
-  settings: Settings<T, O>
-): Instance<T, U, O> {
+function wrapState<T, I, U, O> (state: State<T, I, U, O>): Instance<T, U, O> {
   return fluente({
+    historySize: state.settings.historySize || 8,
+    isMutable: state.settings.classy === true,
     state,
     fluent: {
       mutate: mutateMethod,
@@ -206,68 +201,58 @@ function wrapState<T, I, U, O> (
       unwrap: unwrapMethod,
       stream: streamMethod,
       defineMutation: defineMutationMethod
-    },
-    historySize: settings.historySize || 8,
-    isMutable: settings.classy === true
+    }
   })
 }
 
 export function createEntity<T, O = any> (
   one: One<T, O>,
-  settings: Settings<T, O> = {}
+  settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
   return wrapState(
     createState(
-      one,
       (mutation, options) => unwrapOne(one, createStatus, mutation, options),
       (mutation, options) => streamOne(one, createStatus, mutation, options),
       settings
-    ),
-    settings
+    )
   )
 }
 
 export function readEntity<T, O = any> (
   one: One<T, O>,
-  settings: Settings<T, O> = {}
+  settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
   return wrapState(
     createState(
-      one,
       (mutation, options) => unwrapOne(one, readStatus, mutation, options),
       (mutation, options) => streamOne(one, readStatus, mutation, options),
       settings
-    ),
-    settings
+    )
   )
 }
 
 export function createEntities<T, O = any> (
   many: Many<T, O>,
-  settings: Settings<T, O> = {}
+  settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
   return wrapState(
     createState(
-      many,
       (mutation, options) => unwrapMany(many, createStatus, mutation, options),
       (mutation, options) => streamMany(many, createStatus, mutation, options),
       settings
-    ),
-    settings
+    )
   )
 }
 
 export function readEntities<T, O = any> (
   many: Many<T, O>,
-  settings: Settings<T, O> = {}
+  settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
   return wrapState(
     createState(
-      many,
       (mutation, options) => unwrapMany(many, readStatus, mutation, options),
       (mutation, options) => streamMany(many, readStatus, mutation, options),
       settings
-    ),
-    settings
+    )
   )
 }

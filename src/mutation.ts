@@ -41,6 +41,12 @@ export interface Mutation<T, O = any> {
   redo (steps?: number): Mutation<T, O>
 }
 
+export interface MutationSettings<T, O = any> {
+  classy?: boolean
+  historySize?: number
+  writer?: Writer<T, O>
+}
+
 interface State<T, O> {
   mutators: Array<Mutator<T, O>>
   stack: ConditionalStack<T>
@@ -227,13 +233,17 @@ function mutateMethod<T, O> (
   return pushMutators(state, mutation.render())
 }
 
-export function defineMutation<T, O = any> (writer: Writer<T, O> = {}): Mutation<T, O> {
+export function defineMutation<T, O = any> (settings: MutationSettings<T, O> = {}): Mutation<T, O> {
+  const writer = Object.freeze(settings.writer || {})
   const state: State<T, O> = {
     mutators: [],
     stack: [],
     writer
   }
   return fluente({
+    historySize: settings.historySize || 8,
+    isMutable: settings.classy === true,
+    skipLocking: true,
     state,
     fluent: {
       update: updateMethod,
@@ -251,10 +261,7 @@ export function defineMutation<T, O = any> (writer: Writer<T, O> = {}): Mutation
     },
     constants: {
       writer
-    },
-    skipLocking: true,
-    isMutable: false,
-    historySize: 8
+    }
   })
 }
 
