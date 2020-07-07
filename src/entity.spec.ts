@@ -1,5 +1,4 @@
 import test from 'ava'
-import { collect, subscribe } from 'fluido'
 
 import { createEntity, readEntity } from './instance'
 import { Writer } from './writer'
@@ -328,30 +327,4 @@ test('safe delete', async t => {
   await entity(true, false).unwrap()
   await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
-})
-
-test('createEntity#unwrap', async t => {
-  const out = await createEntity<Item>({ id: 0, value: 'UNWRAP' }).unwrap()
-  t.deepEqual(out, { id: 0, value: 'UNWRAP' })
-})
-
-test('createEntity#stream', async t => {
-  const out = await subscribe<Item[]>(
-    createEntity<Item>({ id: 0, value: 'STREAM' }).stream(),
-    collect()
-  )
-  t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
-})
-
-test('readEntity#unwrap', async t => {
-  const out = await readEntity<Item>({ id: 0, value: 'UNWRAP' }).unwrap()
-  t.deepEqual(out, { id: 0, value: 'UNWRAP' })
-})
-
-test('readEntity#stream', async t => {
-  const out = await subscribe<Item[]>(
-    readEntity<Item>({ id: 0, value: 'STREAM' }).stream(),
-    collect()
-  )
-  t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
 })
