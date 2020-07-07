@@ -1,6 +1,7 @@
 import fluente from 'fluente'
 import Herry from 'herry'
 
+import { UnwrapOptions } from './data'
 import { Status, deleteStatus, shouldCommit, updateStatus } from './status'
 import { Writer, handleWriter } from './writer'
 
@@ -260,7 +261,7 @@ export async function applyMutation<T, O> (
   data: T,
   initializer: (data: T) => Status<T>,
   mutation: Mutation<T, O>,
-  options: any
+  options: Partial<UnwrapOptions<O>> = {}
 ): Promise<T> {
   if (data === null) {
     return data

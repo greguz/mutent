@@ -1,7 +1,7 @@
 import stream from 'stream'
 import fluente from 'fluente'
 
-import { Many, One } from './data'
+import { Many, One, StreamOptions, UnwrapOptions } from './data'
 import { Condition, Mapper, Mutation, defineMutation } from './mutation'
 import { createStatus, readStatus } from './status'
 import { defaults, objectify } from './utils'
@@ -9,16 +9,6 @@ import { Writer } from './writer'
 
 import { streamMany, unwrapMany } from './entities'
 import { streamOne, unwrapOne } from './entity'
-
-export type UnwrapOptions<O = {}> = O & {
-  autoCommit?: boolean
-  safe?: boolean
-}
-
-export type StreamOptions<O = {}> = UnwrapOptions<O> & {
-  concurrency?: number
-  highWaterMark?: number
-}
 
 export interface Settings<T, O = any> {
   autoCommit?: boolean
@@ -40,6 +30,7 @@ export interface Instance<T, U, O> {
   endIf (): Instance<T, U, O>
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
+  defineMutation (): Mutation<T, O>
   undo (steps?: number): Instance<T, U, O>
   redo (steps?: number): Instance<T, U, O>
 }
@@ -188,6 +179,12 @@ function streamMethod<T, I, U, O> (
   )
 }
 
+function defineMutationMethod<T, I, U, O> (
+  state: State<T, I, U, O>
+): Mutation<T, O> {
+  return defineMutation(state.writer)
+}
+
 function wrapState<T, I, U, O> (
   state: State<T, I, U, O>,
   settings: Settings<T, O>
@@ -207,7 +204,8 @@ function wrapState<T, I, U, O> (
     },
     methods: {
       unwrap: unwrapMethod,
-      stream: streamMethod
+      stream: streamMethod,
+      defineMutation: defineMutationMethod
     },
     historySize: settings.historySize || 8,
     isMutable: settings.classy === true

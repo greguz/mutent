@@ -18,6 +18,16 @@ export type One<T, O = any> = Lazy<Value<T>, O>
 
 export type Many<T, O = any> = Lazy<Values<T>, O>
 
+export type UnwrapOptions<O = {}> = O & {
+  autoCommit?: boolean
+  safe?: boolean
+}
+
+export type StreamOptions<O = {}> = UnwrapOptions<O> & {
+  concurrency?: number
+  highWaterMark?: number
+}
+
 function unlazy<T, O> (lazy: Lazy<T, O>, options: Partial<O>): T {
   return typeof lazy === 'function'
     ? (lazy as any)(objectify(options))

@@ -1,5 +1,5 @@
-export { Lazy, Many, One, Value, Values } from './data'
+export { Lazy, Many, One, StreamOptions, UnwrapOptions, Value, Values } from './data'
 export * from './instance'
-export * from './mutation'
+export { Condition, Mapper, Mutation, Mutator, defineMutation } from './mutation'
 export * from './store'
 export { Writer, WriterOutput } from './writer'

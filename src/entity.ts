@@ -1,7 +1,7 @@
 import stream from 'stream'
 import { Readable } from 'fluido'
 
-import { One, getOne } from './data'
+import { One, StreamOptions, UnwrapOptions, getOne } from './data'
 import { Mutation, applyMutation } from './mutation'
 import { Status } from './status'
 import { isNull } from './utils'
@@ -10,7 +10,7 @@ export async function unwrapOne<T, O> (
   one: One<T, O>,
   initializer: (data: T) => Status<T>,
   mutation: Mutation<T, O>,
-  options: any
+  options: Partial<UnwrapOptions<O>> = {}
 ): Promise<T> {
   return applyMutation(
     await getOne(one, options),
@@ -24,7 +24,7 @@ export function streamOne<T, O> (
   one: One<T, O>,
   initializer: (data: T) => Status<T>,
   mutation: Mutation<T, O>,
-  options: any
+  options: Partial<StreamOptions<O>> = {}
 ): stream.Readable {
   return new Readable({
     objectMode: true,
