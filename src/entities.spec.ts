@@ -1,5 +1,5 @@
 import test, { ExecutionContext } from 'ava'
-import { pipeline, Readable, Writable } from 'fluido'
+import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
 import { createEntities, readEntities } from './instance'
 import { Writer } from './writer'
@@ -218,10 +218,28 @@ test('redo entitites', async t => {
   t.is(results[15].value, -600)
 })
 
-// test('areEntities', t => {
-//   t.false(areEntities(undefined))
-//   t.false(areEntities(null))
-//   t.false(areEntities({}))
-//   t.false(areEntities([]))
-//   t.true(areEntities(createEntities([])))
-// })
+test('createEntities#unwrap', async t => {
+  const out = await createEntities<Item>([{ value: 0 }]).unwrap()
+  t.deepEqual(out, [{ value: 0 }])
+})
+
+test('createEntities#stream', async t => {
+  const out = await subscribe<Item[]>(
+    createEntities<Item>([{ value: 0 }]).stream(),
+    collect()
+  )
+  t.deepEqual(out, [{ value: 0 }])
+})
+
+test('readEntities#unwrap', async t => {
+  const out = await readEntities<Item>([{ value: 0 }]).unwrap()
+  t.deepEqual(out, [{ value: 0 }])
+})
+
+test('readEntities#stream', async t => {
+  const out = await subscribe<Item[]>(
+    readEntities<Item>([{ value: 0 }]).stream(),
+    collect()
+  )
+  t.deepEqual(out, [{ value: 0 }])
+})
