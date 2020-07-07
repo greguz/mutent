@@ -1,8 +1,7 @@
 import Herry from 'herry'
 
 import { Value, Values } from './data'
-import { Entities, createEntities, readEntities } from './entities'
-import { Entity, Settings, createEntity, readEntity } from './entity'
+import { Entities, Entity, Settings, createEntities, createEntity, readEntities, readEntity } from './instance'
 import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {

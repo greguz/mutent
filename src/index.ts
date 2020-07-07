@@ -1,6 +1,5 @@
 export { Lazy, Many, One, Value, Values } from './data'
-export * from './entities'
-export * from './entity'
+export * from './instance'
 export * from './mutation'
 export * from './store'
 export { Writer, WriterOutput } from './writer'

@@ -1,7 +1,7 @@
 import fluente from 'fluente'
 import Herry from 'herry'
 
-import { Status, deleteStatus, updateStatus } from './status'
+import { Status, deleteStatus, shouldCommit, updateStatus } from './status'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
@@ -24,6 +24,7 @@ interface ConditionalBlock<T> {
 type ConditionalStack<T> = Array<ConditionalBlock<T>>
 
 export interface Mutation<T, O = any> {
+  writer: Writer<T, O>
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Mutation<T>
   assign (object: Partial<T>): Mutation<T>
   delete (): Mutation<T>
@@ -32,8 +33,8 @@ export interface Mutation<T, O = any> {
   elseIf (condition: Condition<T>): Mutation<T, O>
   else (): Mutation<T, O>
   endIf (): Mutation<T, O>
-  mutate (mutation: Mutation<T, O>): Mutation<T, O>
   render (): Mutator<T, O>
+  mutate (mutation: Mutation<T, O>): Mutation<T, O>
   undo (steps?: number): Mutation<T, O>
   redo (steps?: number): Mutation<T, O>
 }
@@ -206,13 +207,6 @@ function endIfMethod<T, O> (
   }
 }
 
-function mutateMethod<T, O> (
-  state: State<T, O>,
-  mutation: Mutation<T, O>
-): State<T, O> {
-  return pushMutators(state, mutation.render())
-}
-
 function renderMethod<T, O> (
   state: State<T, O>
 ): Mutator<T, O> {
@@ -222,6 +216,13 @@ function renderMethod<T, O> (
       Promise.resolve(status)
     )
   }
+}
+
+function mutateMethod<T, O> (
+  state: State<T, O>,
+  mutation: Mutation<T, O>
+): State<T, O> {
+  return pushMutators(state, mutation.render())
 }
 
 export function defineMutation<T, O = any> (writer: Writer<T, O> = {}): Mutation<T, O> {
@@ -246,8 +247,36 @@ export function defineMutation<T, O = any> (writer: Writer<T, O> = {}): Mutation
     methods: {
       render: renderMethod
     },
+    constants: {
+      writer
+    },
     skipLocking: true,
     isMutable: false,
     historySize: 8
   })
+}
+
+export async function applyMutation<T, O> (
+  data: T,
+  initializer: (data: T) => Status<T>,
+  mutation: Mutation<T, O>,
+  options: any
+): Promise<T> {
+  if (data === null) {
+    return data
+  }
+  const mutator = mutation.render()
+  let status = await mutator(initializer(data), options)
+  if (shouldCommit(status)) {
+    if (options.autoCommit !== false) {
+      status = await handleWriter(mutation.writer, status, options)
+    } else if (options.safe !== false) {
+      throw new Herry('EMUT_NOCOM', 'Expected commit', {
+        source: status.source,
+        target: status.target,
+        options
+      })
+    }
+  }
+  return status.target
 }

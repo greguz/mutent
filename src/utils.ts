@@ -14,6 +14,18 @@ export function isNil (value: any): value is null | undefined | void {
   return isNull(value) || isUndefined(value)
 }
 
-export function objectify<O> (value?: O): Partial<O> {
+export function objectify<T> (value?: T): Partial<T> {
   return typeof value === 'object' && !isNull(value) ? value : {}
+}
+
+export function defaults (a: any, b: any): any {
+  return Object.keys(b).reduce(
+    (acc, key) => {
+      if (isUndefined(acc[key])) {
+        acc[key] = b[key]
+      }
+      return acc
+    },
+    a
+  )
 }

@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { pipeline, Readable, Writable } from 'fluido'
 
-import { areEntities, createEntities, readEntities } from './entities'
+import { createEntities, readEntities } from './instance'
 import { Writer } from './writer'
 
 interface Item {
@@ -23,7 +23,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       } else {
         t.fail()
       }
-      t.deepEqual(options, { db: 'test' })
+      t.is(options.db, 'test')
     },
     async update (source, target, options) {
       if (mode.update === true) {
@@ -31,7 +31,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       } else {
         t.fail()
       }
-      t.deepEqual(options, { db: 'test' })
+      t.is(options.db, 'test')
     },
     async delete (source, options) {
       if (mode.delete === true) {
@@ -39,7 +39,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       } else {
         t.fail()
       }
-      t.deepEqual(options, { db: 'test' })
+      t.is(options.db, 'test')
     }
   }
   return { writer }
@@ -218,10 +218,10 @@ test('redo entitites', async t => {
   t.is(results[15].value, -600)
 })
 
-test('areEntities', t => {
-  t.false(areEntities(undefined))
-  t.false(areEntities(null))
-  t.false(areEntities({}))
-  t.false(areEntities([]))
-  t.true(areEntities(createEntities([])))
-})
+// test('areEntities', t => {
+//   t.false(areEntities(undefined))
+//   t.false(areEntities(null))
+//   t.false(areEntities({}))
+//   t.false(areEntities([]))
+//   t.true(areEntities(createEntities([])))
+// })
