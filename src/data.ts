@@ -1,8 +1,6 @@
 import stream from 'stream'
 import { Readable, isReadable } from 'fluido'
 
-import { objectify } from './utils'
-
 export type Lazy<T, O = any> = ((options: Partial<O>) => T) | T
 
 export type Value<T> =
@@ -30,7 +28,7 @@ export type StreamOptions<O = {}> = UnwrapOptions<O> & {
 
 function unlazy<T, O> (lazy: Lazy<T, O>, options: Partial<O>): T {
   return typeof lazy === 'function'
-    ? (lazy as any)(objectify(options))
+    ? (lazy as any)(options)
     : lazy
 }
 

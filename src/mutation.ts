@@ -3,6 +3,7 @@ import Herry from 'herry'
 
 import { UnwrapOptions } from './data'
 import { Status, deleteStatus, shouldCommit, updateStatus } from './status'
+import { isNull } from './utils'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
@@ -263,7 +264,7 @@ export async function applyMutation<T, O> (
   mutation: Mutation<T, O>,
   options: Partial<UnwrapOptions<O>> = {}
 ): Promise<T> {
-  if (data === null) {
+  if (isNull(data)) {
     return data
   }
   const mutator = mutation.render()
