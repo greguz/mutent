@@ -26,7 +26,7 @@ export interface Instance<T, U, O> {
   endIf (): Instance<T, U, O>
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
-  defineMutation (): Mutation<T, O>
+  defineMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
   undo (steps?: number): Instance<T, U, O>
   redo (steps?: number): Instance<T, U, O>
 }
@@ -172,12 +172,14 @@ function streamMethod<T, I, U, O> (
 }
 
 function defineMutationMethod<T, I, U, O> (
-  state: State<T, I, U, O>
+  state: State<T, I, U, O>,
+  settings?: MutationSettings<T, O>
 ): Mutation<T, O> {
   return defineMutation({
     classy: state.settings.classy,
     historySize: state.settings.historySize,
-    writer: state.settings.writer
+    writer: state.settings.writer,
+    ...settings
   })
 }
 
