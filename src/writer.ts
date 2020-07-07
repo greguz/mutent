@@ -1,27 +1,12 @@
-import Herry from 'herry'
-
 import { Status, commitStatus, updateStatus } from './status'
 import { MaybePromise, isNil, isNull } from './utils'
 
 export type WriterOutput<T> = MaybePromise<T | null | undefined | void>
 
-export interface Subject<T, O = any> {
-  data: T
-  options: Partial<O>
-}
-
-export type Routine<T, O = any> = (
-  subject: Subject<T, O>,
-  ...args: any[]
-) => WriterOutput<T>
-
 export interface Writer<T, O = any> {
   create? (data: T, options: Partial<O>): WriterOutput<T>
   update? (oldData: T, newData: T, options: Partial<O>): WriterOutput<T>
   delete? (data: T, options: Partial<O>): WriterOutput<T>
-  routines?: {
-    [key: string]: Routine<T, O> | undefined
-  }
 }
 
 async function exec<T, A extends any[]> (
@@ -55,22 +40,4 @@ export function handleWriter<T, O> (
     }
   }
   return Promise.resolve(commitStatus(status))
-}
-
-export async function runRoutine<T, O> (
-  writer: Writer<T, O>,
-  status: Status<T>,
-  options: Partial<O> = {},
-  key: string,
-  ...args: any[]
-): Promise<Status<T>> {
-  const routine = (writer.routines || {})[key]
-  if (!routine) {
-    throw new Herry('EMUT_NORTN', 'Unknown routine', { key })
-  }
-  const subject: Subject<T, O> = {
-    data: status.target,
-    options
-  }
-  return exec(status, routine, subject, ...args)
 }

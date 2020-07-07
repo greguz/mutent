@@ -2,33 +2,25 @@ import fluente from 'fluente'
 import Herry from 'herry'
 
 import { One, getOne } from './data'
-import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
+import { Mapper, Mutation, defineMutation } from './mutation'
+import { Status, createStatus, readStatus, shouldCommit } from './status'
 import { isNull, isUndefined, mutentSymbol, objectify } from './utils'
-import { Writer, handleWriter, runRoutine } from './writer'
-
-export type Mutator<T, A extends any[]> = (
-  data: Exclude<T, null>,
-  ...args: A
-) => Promise<T> | T
+import { Writer, handleWriter } from './writer'
 
 export type UnwrapOptions<O = {}> = O & {
   autoCommit?: boolean
   safe?: boolean
 }
 
-export type Condition<T> = (data: T) => Promise<boolean> | boolean
-
 export interface Entity<T, O = any> {
   isEntity: boolean
-  update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entity<T, O>
+  update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Entity<T, O>
   assign (object: Partial<T>): Entity<T, O>
   delete (): Entity<T, O>
   commit (): Entity<T, O>
-  run (routine: string, ...args: any[]): Entity<T, O>
   unwrap (options?: UnwrapOptions<O>): Promise<T>
   undo (steps?: number): Entity<T, O>
   redo (steps?: number): Entity<T, O>
-  if (condition: Condition<T>): Entity<T, O>
 }
 
 export interface Settings<T, O = any> {
@@ -39,101 +31,86 @@ export interface Settings<T, O = any> {
   writer?: Writer<T, O>
 }
 
+type Extractor<T, O> = (options: Partial<O>) => Promise<Status<T>>
+
 interface State<T, O> {
   autoCommit: boolean
-  condition?: Condition<T>
-  extract: (options: Partial<O>) => Promise<Status<T>>
-  mappers: Array<Mapper<T, O>>
+  extract: Extractor<T, O>
+  mutation: Mutation<T>
   safe: boolean
   writer: Writer<T, O>
 }
 
-type Mapper<T, O> = (
-  status: Status<T>,
-  options: Partial<UnwrapOptions<O>>
-) => Status<T> | Promise<Status<T>>
-
 function createState<T, O> (
-  one: One<T, O>,
-  buildStatus: (data: T) => Status<T>,
+  extract: Extractor<T, O>,
   settings: Settings<T, O>
 ): State<T, O> {
+  const writer = settings.writer || {}
   return {
     autoCommit: settings.autoCommit !== false,
-    condition: undefined,
-    extract: options => getOne(one, options).then(buildStatus),
-    mappers: [],
+    extract,
+    mutation: defineMutation(writer),
     safe: settings.safe !== false,
-    writer: settings.writer || {}
-  }
-}
-
-function applyCondition<T, O> (
-  mapper: Mapper<T, O>,
-  condition: Condition<T>
-): Mapper<T, O> {
-  return async function conditionalMapper (status, options) {
-    const ok = await condition(status.target)
-    if (!ok) {
-      return status
-    } else {
-      return mapper(status, options)
-    }
-  }
-}
-
-function mapState<T, O> (
-  state: State<T, O>,
-  mapper: Mapper<T, O>
-): State<T, O> {
-  return {
-    ...state,
-    condition: undefined,
-    mappers: [
-      ...state.mappers,
-      state.condition ? applyCondition(mapper, state.condition) : mapper
-    ]
+    writer
   }
 }
 
 function updateMethod<T, O, A extends any[]> (
   state: State<T, O>,
-  mutator: Mutator<T, A>,
+  mapper: Mapper<T, A>,
   ...args: A
 ): State<T, O> {
-  return mapState(
-    state,
-    async (status: Status<any>) => {
-      const result = await mutator(status.target, ...args)
-      return updateStatus(status, result)
-    }
-  )
+  return {
+    ...state,
+    mutation: state.mutation.update(mapper, ...args)
+  }
 }
 
-function assignMethod<T, O> (state: State<T, O>, object: Partial<T>) {
-  return updateMethod(
-    state,
-    data => Object.assign({}, data, object)
-  )
+function assignMethod<T, O> (
+  state: State<T, O>,
+  object: Partial<T>
+): State<T, O> {
+  return {
+    ...state,
+    mutation: state.mutation.assign(object)
+  }
 }
 
 function deleteMethod<T, O> (state: State<T, O>): State<T, O> {
-  return mapState(state, deleteStatus)
+  return {
+    ...state,
+    mutation: state.mutation.delete()
+  }
 }
 
-async function unwrapStatus<T, O> (
-  state: State<T, O>,
-  status: Status<T>,
-  options: Partial<UnwrapOptions<O>>
-): Promise<T> {
-  if (shouldCommit(status)) {
-    const autoCommit = isUndefined(options.autoCommit)
-      ? state.autoCommit
-      : options.autoCommit !== false
+function commitMethod<T, O> (state: State<T, O>): State<T, O> {
+  return {
+    ...state,
+    mutation: state.mutation.commit()
+  }
+}
 
-    const safe = isUndefined(options.safe)
+async function unwrapMethod<T, O> (
+  state: State<T, O>,
+  options?: UnwrapOptions<O>
+): Promise<T> {
+  const obj = objectify(options)
+
+  let status = await state.extract(obj)
+  if (isNull(status.target)) {
+    return status.target
+  }
+
+  status = await state.mutation.render()(status, obj)
+
+  if (shouldCommit(status)) {
+    const autoCommit = isUndefined(obj.autoCommit)
+      ? state.autoCommit
+      : obj.autoCommit !== false
+
+    const safe = isUndefined(obj.safe)
       ? state.safe
-      : options.safe !== false
+      : obj.safe !== false
 
     if (autoCommit) {
       status = await handleWriter(state.writer, status, options)
@@ -149,56 +126,6 @@ async function unwrapStatus<T, O> (
   return status.target
 }
 
-async function unwrapMethod<T, O> (
-  state: State<T, O>,
-  options?: UnwrapOptions<O>
-): Promise<T> {
-  const obj = objectify(options)
-
-  let res = await state.extract(obj)
-  if (isNull(res.target)) {
-    return res.target
-  }
-
-  res = await state.mappers.reduce(
-    (acc, mapper) => acc.then(status => mapper(status, obj)),
-    Promise.resolve(res)
-  )
-
-  return unwrapStatus(state, res, obj)
-}
-
-function commitMethod<T, O> (state: State<T, O>): State<T, O> {
-  return mapState(
-    state,
-    (status, options) => handleWriter(state.writer, status, options)
-  )
-}
-
-function runMethod<T, O> (
-  state: State<T, O>,
-  key: string,
-  ...args: any[]
-): State<T, O> {
-  return mapState(
-    state,
-    async (status, options) => {
-      const data = await unwrapStatus(state, status, options)
-      return runRoutine(state.writer, readStatus(data), options, key, ...args)
-    }
-  )
-}
-
-function ifMethod<T, O> (
-  state: State<T, O>,
-  condition: Condition<T>
-): State<T, O> {
-  return {
-    ...state,
-    condition
-  }
-}
-
 function wrapState<T, O> (
   state: State<T, O>,
   settings: Settings<T, O>
@@ -209,9 +136,7 @@ function wrapState<T, O> (
       update: updateMethod,
       assign: assignMethod,
       delete: deleteMethod,
-      commit: commitMethod,
-      run: runMethod,
-      if: ifMethod
+      commit: commitMethod
     },
     methods: {
       unwrap: unwrapMethod
@@ -220,7 +145,7 @@ function wrapState<T, O> (
       [mutentSymbol]: true,
       isEntity: true
     },
-    historySize: settings.historySize,
+    historySize: settings.historySize || 8,
     isMutable: settings.classy === true
   })
 }
@@ -236,7 +161,10 @@ export function createEntity<T, O = any> (
   settings: Settings<T, O> = {}
 ): Entity<T, O> {
   return wrapState(
-    createState(one, createStatus, settings),
+    createState(
+      options => getOne(one, options).then(createStatus),
+      settings
+    ),
     settings
   )
 }
@@ -246,7 +174,10 @@ export function readEntity<T, O = any> (
   settings: Settings<T, O> = {}
 ): Entity<T, O> {
   return wrapState(
-    createState(one, readStatus, settings),
+    createState(
+      options => getOne(one, options).then(readStatus),
+      settings
+    ),
     settings
   )
 }

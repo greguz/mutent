@@ -3,23 +3,25 @@ import { Transform, Writable, pipeline, readify } from 'fluido'
 import fluente from 'fluente'
 
 import { Many, getMany } from './data'
-import { Condition, Entity, Mutator, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
+import { Entity, Settings, UnwrapOptions, createEntity, readEntity } from './entity'
+import { Mapper } from './mutation'
 import { isNull, mutentSymbol, objectify } from './utils'
 
-export type StreamOptions<O = {}> = UnwrapOptions<O> & { highWaterMark?: number }
+export type StreamOptions<O = {}> = UnwrapOptions<O> & {
+  concurrency?: number
+  highWaterMark?: number
+}
 
 export interface Entities<T, O = any> {
   areEntities: boolean
-  update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): Entities<T, O>
+  update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Entities<T, O>
   assign (object: Partial<T>): Entities<T, O>
   delete (): Entities<T, O>
   commit (): Entities<T, O>
-  run (routine: string, ...args: any[]): Entities<T, O>
   unwrap (options?: UnwrapOptions<O>): Promise<T[]>
   stream (options?: StreamOptions<O>): stream.Readable
   undo (steps?: number): Entities<T, O>
   redo (steps?: number): Entities<T, O>
-  if (condition: Condition<T>): Entities<T, O>
 }
 
 interface State<T, O> {
@@ -59,10 +61,10 @@ function mapState<T, O> (
 
 function updateMethod<T, O, A extends any[]> (
   state: State<T, O>,
-  mutator: Mutator<T, A>,
+  mapper: Mapper<T, A>,
   ...args: A
 ): State<T, O> {
-  return mapState(state, entity => entity.update(mutator, ...args))
+  return mapState(state, entity => entity.update(mapper, ...args))
 }
 
 function assignMethod<T, O> (
@@ -78,14 +80,6 @@ function deleteMethod<T, O> (state: State<T, O>) {
 
 function commitMethod<T, O> (state: State<T, O>) {
   return mapState(state, entity => entity.commit())
-}
-
-function runMethod<T, O> (state: State<T, O>, key: string, ...args: any[]) {
-  return mapState(state, entity => entity.run(key, ...args))
-}
-
-function ifMethod<T, O> (state: State<T, O>, condition: Condition<T>) {
-  return mapState(state, entity => entity.if(condition))
 }
 
 function unwrapMethod<T, O> (
@@ -127,8 +121,9 @@ function streamMethod<T, O> (
 ): stream.Readable {
   const obj = objectify(options)
   const streamOptions = {
-    objectMode: true,
-    highWaterMark: obj.highWaterMark
+    concurrency: obj.concurrency,
+    highWaterMark: obj.highWaterMark,
+    objectMode: true
   }
   return readify(
     streamOptions,
@@ -160,9 +155,7 @@ function wrapState<T, O> (
       update: updateMethod,
       assign: assignMethod,
       delete: deleteMethod,
-      commit: commitMethod,
-      run: runMethod,
-      if: ifMethod
+      commit: commitMethod
     },
     methods: {
       unwrap: unwrapMethod,

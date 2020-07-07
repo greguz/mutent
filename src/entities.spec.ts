@@ -225,27 +225,3 @@ test('areEntities', t => {
   t.false(areEntities([]))
   t.true(areEntities(createEntities([])))
 })
-
-test('entities routine', async t => {
-  const entities = readEntities<Item>(
-    [{ value: 42 }],
-    {
-      writer: {
-        routines: {
-          test (subject) {
-            return {
-              ...subject.data,
-              num: 42
-            }
-          }
-        }
-      }
-    }
-  )
-
-  const data = await entities
-    .run('test')
-    .unwrap()
-
-  t.deepEqual(data, [{ value: 42, num: 42 }])
-})
