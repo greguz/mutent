@@ -16,7 +16,7 @@ export type One<T, O = any> = Lazy<Value<T>, O>
 
 export type Many<T, O = any> = Lazy<Values<T>, O>
 
-export type UnwrapOptions<O = {}> = O & {
+export type UnwrapOptions<O = {}> = Partial<O> & {
   autoCommit?: boolean
   safe?: boolean
 }

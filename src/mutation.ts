@@ -2,8 +2,8 @@ import fluente from 'fluente'
 import Herry from 'herry'
 
 import { UnwrapOptions } from './data'
-import { Status, deleteStatus, shouldCommit, updateStatus } from './status'
-import { isNull } from './utils'
+import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
+import { isNull, objectify } from './utils'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
@@ -26,7 +26,6 @@ interface ConditionalBlock<T> {
 type ConditionalStack<T> = Array<ConditionalBlock<T>>
 
 export interface Mutation<T, O = any> {
-  writer: Writer<T, O>
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Mutation<T>
   assign (object: Partial<T>): Mutation<T>
   delete (): Mutation<T>
@@ -37,6 +36,8 @@ export interface Mutation<T, O = any> {
   endIf (): Mutation<T, O>
   render (): Mutator<T, O>
   mutate (mutation: Mutation<T, O>): Mutation<T, O>
+  create (data: T, options?: UnwrapOptions<O>): Promise<T>
+  read (data: T, options?: UnwrapOptions<O>): Promise<T>
   undo (steps?: number): Mutation<T, O>
   redo (steps?: number): Mutation<T, O>
 }
@@ -233,12 +234,61 @@ function mutateMethod<T, O> (
   return pushMutators(state, mutation.render())
 }
 
+async function handleMutation<T, O> (
+  status: Status<T>,
+  mutator: Mutator<T, O>,
+  writer: Writer<T, O>,
+  options: UnwrapOptions<O>
+): Promise<T> {
+  if (isNull(status.target)) {
+    return status.target
+  }
+  status = await mutator(status, options)
+  if (shouldCommit(status)) {
+    if (options.autoCommit !== false) {
+      status = await handleWriter(writer, status, options)
+    } else if (options.safe !== false) {
+      throw new Herry('EMUT_NOCOM', 'Expected commit', {
+        source: status.source,
+        target: status.target,
+        options
+      })
+    }
+  }
+  return status.target
+}
+
+function createMethod<T, O> (
+  state: State<T, O>,
+  data: T,
+  options?: UnwrapOptions<O>
+): Promise<T> {
+  return handleMutation(
+    createStatus(data),
+    renderMethod(state),
+    state.writer,
+    objectify(options)
+  )
+}
+
+function readMethod<T, O> (
+  state: State<T, O>,
+  data: T,
+  options?: UnwrapOptions<O>
+): Promise<T> {
+  return handleMutation(
+    readStatus(data),
+    renderMethod(state),
+    state.writer,
+    objectify(options)
+  )
+}
+
 export function defineMutation<T, O = any> (settings: MutationSettings<T, O> = {}): Mutation<T, O> {
-  const writer = Object.freeze(settings.writer || {})
   const state: State<T, O> = {
     mutators: [],
     stack: [],
-    writer
+    writer: settings.writer || {}
   }
   return fluente({
     historySize: settings.historySize || 8,
@@ -257,35 +307,22 @@ export function defineMutation<T, O = any> (settings: MutationSettings<T, O> = {
       mutate: mutateMethod
     },
     methods: {
-      render: renderMethod
-    },
-    constants: {
-      writer
+      render: renderMethod,
+      create: createMethod,
+      read: readMethod
     }
   })
 }
 
 export async function applyMutation<T, O> (
   data: T,
-  initializer: (data: T) => Status<T>,
+  persisted: boolean,
   mutation: Mutation<T, O>,
-  options: Partial<UnwrapOptions<O>> = {}
+  options?: UnwrapOptions<O>
 ): Promise<T> {
-  if (isNull(data)) {
-    return data
+  if (persisted) {
+    return mutation.read(data, options)
+  } else {
+    return mutation.create(data, options)
   }
-  const mutator = mutation.render()
-  let status = await mutator(initializer(data), options)
-  if (shouldCommit(status)) {
-    if (options.autoCommit !== false) {
-      status = await handleWriter(mutation.writer, status, options)
-    } else if (options.safe !== false) {
-      throw new Herry('EMUT_NOCOM', 'Expected commit', {
-        source: status.source,
-        target: status.target,
-        options
-      })
-    }
-  }
-  return status.target
 }

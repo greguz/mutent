@@ -14,7 +14,7 @@ export function isNil (value: any): value is null | undefined | void {
   return isNull(value) || isUndefined(value)
 }
 
-export function objectify<T> (value?: T): Partial<T> {
+export function objectify (value?: any): any {
   return typeof value === 'object' && !isNull(value) ? value : {}
 }
 

@@ -3,7 +3,6 @@ import fluente from 'fluente'
 
 import { Many, One, StreamOptions, UnwrapOptions } from './data'
 import { Condition, Mapper, Mutation, MutationSettings, defineMutation } from './mutation'
-import { createStatus, readStatus } from './status'
 import { defaults, objectify } from './utils'
 
 import { streamMany, unwrapMany } from './entities'
@@ -37,12 +36,12 @@ export type Entities<T, O = any> = Instance<T, T[], O>
 
 type Unwrapper<T, I, U, O> = (
   mutation: Mutation<T, O>,
-  options: Partial<UnwrapOptions<O>>
+  options: UnwrapOptions<O>
 ) => Promise<U>
 
 type Streamer<T, I, U, O> = (
   mutation: Mutation<T, O>,
-  options: Partial<StreamOptions<O>>
+  options: StreamOptions<O>
 ) => stream.Readable
 
 interface State<T, I, U, O> {
@@ -213,8 +212,8 @@ export function createEntity<T, O = any> (
 ): Entity<T, O> {
   return wrapState(
     createState(
-      (mutation, options) => unwrapOne(one, createStatus, mutation, options),
-      (mutation, options) => streamOne(one, createStatus, mutation, options),
+      (mutation, options) => unwrapOne(one, false, mutation, options),
+      (mutation, options) => streamOne(one, false, mutation, options),
       settings
     )
   )
@@ -226,8 +225,8 @@ export function readEntity<T, O = any> (
 ): Entity<T, O> {
   return wrapState(
     createState(
-      (mutation, options) => unwrapOne(one, readStatus, mutation, options),
-      (mutation, options) => streamOne(one, readStatus, mutation, options),
+      (mutation, options) => unwrapOne(one, true, mutation, options),
+      (mutation, options) => streamOne(one, true, mutation, options),
       settings
     )
   )
@@ -239,8 +238,8 @@ export function createEntities<T, O = any> (
 ): Entities<T, O> {
   return wrapState(
     createState(
-      (mutation, options) => unwrapMany(many, createStatus, mutation, options),
-      (mutation, options) => streamMany(many, createStatus, mutation, options),
+      (mutation, options) => unwrapMany(many, false, mutation, options),
+      (mutation, options) => streamMany(many, false, mutation, options),
       settings
     )
   )
@@ -252,8 +251,8 @@ export function readEntities<T, O = any> (
 ): Entities<T, O> {
   return wrapState(
     createState(
-      (mutation, options) => unwrapMany(many, readStatus, mutation, options),
-      (mutation, options) => streamMany(many, readStatus, mutation, options),
+      (mutation, options) => unwrapMany(many, true, mutation, options),
+      (mutation, options) => streamMany(many, true, mutation, options),
       settings
     )
   )

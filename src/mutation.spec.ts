@@ -1,7 +1,6 @@
 import test from 'ava'
 
-import { applyMutation, defineMutation } from './mutation'
-import { createStatus, readStatus } from './status'
+import { defineMutation } from './mutation'
 import { Writer } from './writer'
 
 interface Item {
@@ -11,7 +10,7 @@ interface Item {
 
 test('mutation#assign', async t => {
   const mutation = defineMutation<Item>().assign({ value: 'ASSIGN' })
-  const out = await applyMutation({ id: 0 }, readStatus, mutation)
+  const out = await mutation.read({ id: 0 })
   t.deepEqual(out, {
     id: 0,
     value: 'ASSIGN'
@@ -22,7 +21,7 @@ test('mutation#update', async t => {
   const mutation = defineMutation<Item>().update(
     item => ({ ...item, value: 'UDPATE' })
   )
-  const out = await applyMutation({ id: 0 }, readStatus, mutation)
+  const out = await mutation.read({ id: 0 })
   t.deepEqual(out, {
     id: 0,
     value: 'UDPATE'
@@ -43,11 +42,7 @@ test('mutation#auto-create', async t => {
     }
   }
   const mutation = defineMutation({ writer })
-  const out = await applyMutation(
-    { id: 0, value: 'CREATE' },
-    createStatus,
-    mutation
-  )
+  const out = await mutation.create({ id: 0, value: 'CREATE' })
   t.deepEqual(out, { id: 0, value: 'CREATE' })
 })
 
@@ -66,19 +61,17 @@ test('mutation#manual-create', async t => {
   }
   const mutation = defineMutation({ writer })
   await t.throwsAsync(
-    applyMutation(
+    mutation.create(
       { id: 0, value: 'CREATE' },
-      createStatus,
-      mutation,
       { autoCommit: false }
     )
   )
-  const out = await applyMutation(
-    { id: 0, value: 'CREATE' },
-    createStatus,
-    mutation.commit(),
-    { autoCommit: false }
-  )
+  const out = await mutation
+    .commit()
+    .create(
+      { id: 0, value: 'CREATE' },
+      { autoCommit: false }
+    )
   t.deepEqual(out, { id: 0, value: 'CREATE' })
 })
 
@@ -97,11 +90,7 @@ test('mutation#auto-update', async t => {
     }
   }
   const mutation = defineMutation({ writer }).assign({ value: 'UPDATE' })
-  const out = await applyMutation(
-    { id: 0 },
-    readStatus,
-    mutation
-  )
+  const out = await mutation.read({ id: 0 })
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
 })
 
@@ -120,20 +109,8 @@ test('mutation#manual-update', async t => {
     }
   }
   const mutation = defineMutation({ writer }).assign({ value: 'UPDATE' })
-  await t.throwsAsync(
-    applyMutation(
-      { id: 0 },
-      createStatus,
-      mutation,
-      { autoCommit: false }
-    )
-  )
-  const out = await applyMutation(
-    { id: 0 },
-    readStatus,
-    mutation.commit(),
-    { autoCommit: false }
-  )
+  await t.throwsAsync(mutation.read({ id: 0 }, { autoCommit: false }))
+  const out = await mutation.commit().read({ id: 0 })
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
 })
 
@@ -151,11 +128,7 @@ test('mutation#auto-delete', async t => {
     }
   }
   const mutation = defineMutation({ writer }).delete()
-  const out = await applyMutation(
-    { id: 0, value: 'DELETE' },
-    readStatus,
-    mutation
-  )
+  const out = await mutation.read({ id: 0, value: 'DELETE' })
   t.deepEqual(out, { id: 0, value: 'DELETE' })
 })
 
@@ -174,19 +147,14 @@ test('mutation#manual-delete', async t => {
   }
   const mutation = defineMutation({ writer }).delete()
   await t.throwsAsync(
-    applyMutation(
+    mutation.read(
       { id: 0, value: 'DELETE' },
-      createStatus,
-      mutation,
       { autoCommit: false }
     )
   )
-  const out = await applyMutation(
-    { id: 0, value: 'DELETE' },
-    readStatus,
-    mutation.commit(),
-    { autoCommit: false }
-  )
+  const out = await mutation
+    .commit()
+    .read({ id: 0, value: 'DELETE' }, { autoCommit: false })
   t.deepEqual(out, { id: 0, value: 'DELETE' })
 })
 
@@ -200,13 +168,13 @@ test('mutation#simple-conditions', async t => {
     .assign({ value: 'NOT-BINARY' })
     .endIf()
 
-  const a = await applyMutation({ id: 0 }, readStatus, mutation)
+  const a = await mutation.read({ id: 0 })
   t.deepEqual(a, { id: 0, value: 'ZERO' })
 
-  const b = await applyMutation({ id: 1 }, readStatus, mutation)
+  const b = await mutation.read({ id: 1 })
   t.deepEqual(b, { id: 1, value: 'ONE' })
 
-  const c = await applyMutation({ id: 42 }, readStatus, mutation)
+  const c = await mutation.read({ id: 42 })
   t.deepEqual(c, { id: 42, value: 'NOT-BINARY' })
 })
 
@@ -254,6 +222,6 @@ test('mutation#mutate', async t => {
     item => ({ ...item, id: item.id + 1 })
   )
   const b = defineMutation<Item>().assign({ value: 'MUTATE' })
-  const out = await applyMutation({ id: 0 }, readStatus, a.mutate(b))
+  const out = await a.mutate(b).read({ id: 0 })
   t.deepEqual(out, { id: 1, value: 'MUTATE' })
 })

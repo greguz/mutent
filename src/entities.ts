@@ -3,14 +3,13 @@ import { Transform, Writable, pipeline, readify } from 'fluido'
 
 import { Many, StreamOptions, UnwrapOptions, getMany } from './data'
 import { Mutation, applyMutation } from './mutation'
-import { Status } from './status'
 import { isNull } from './utils'
 
 export function unwrapMany<T, O> (
   many: Many<T, O>,
-  initializer: (data: T) => Status<T>,
+  persisted: boolean,
   mutation: Mutation<T, O>,
-  options: Partial<UnwrapOptions<O>> = {}
+  options: UnwrapOptions<O> = {}
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
@@ -19,7 +18,7 @@ export function unwrapMany<T, O> (
       new Writable<T>({
         objectMode: true,
         async write (chunk) {
-          const out = await applyMutation(chunk, initializer, mutation, options)
+          const out = await applyMutation(chunk, persisted, mutation, options)
           if (!isNull(out)) {
             results.push(out)
           }
@@ -38,9 +37,9 @@ export function unwrapMany<T, O> (
 
 export function streamMany<T, O> (
   many: Many<T, O>,
-  initializer: (data: T) => Status<T>,
+  persisted: boolean,
   mutation: Mutation<T, O>,
-  options: Partial<StreamOptions<O>> = {}
+  options: StreamOptions<O> = {}
 ): stream.Readable {
   const streamOptions = {
     concurrency: options.concurrency,
@@ -53,7 +52,7 @@ export function streamMany<T, O> (
     new Transform({
       ...streamOptions,
       async transform (chunk) {
-        const out = await applyMutation(chunk, initializer, mutation, options)
+        const out = await applyMutation(chunk, persisted, mutation, options)
         if (!isNull(out)) {
           this.push(out)
         }
