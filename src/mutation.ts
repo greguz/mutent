@@ -296,7 +296,7 @@ function readMethod<T, O> (
   return handleMutation(state, readStatus(data), objectify(options))
 }
 
-export function defineMutation<T, O = any> (
+export function createMutation<T, O = any> (
   settings: MutationSettings<T, O> = {}
 ): Mutation<T, O> {
   const state: State<T, O> = {

@@ -2,7 +2,7 @@ import stream from 'stream'
 import fluente from 'fluente'
 
 import { Many, One, StreamOptions, UnwrapOptions } from './data'
-import { Condition, Mapper, Mutation, MutationSettings, defineMutation } from './mutation'
+import { Condition, Mapper, Mutation, MutationSettings, createMutation } from './mutation'
 import { objectify } from './utils'
 
 import { streamMany, unwrapMany } from './entities'
@@ -20,7 +20,7 @@ export interface Instance<T, U, O> {
   endIf (): Instance<T, U, O>
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
-  defineMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
+  createMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
   undo (steps?: number): Instance<T, U, O>
   redo (steps?: number): Instance<T, U, O>
 }
@@ -130,11 +130,11 @@ function streamMethod<T, I, U, O> (
   return state.stream(state.mutation, objectify(options))
 }
 
-function defineMutationMethod<T, I, U, O> (
+function createMutationMethod<T, I, U, O> (
   state: State<T, I, U, O>,
   settings?: MutationSettings<T, O>
 ): Mutation<T, O> {
-  return defineMutation({ ...state.settings, ...settings })
+  return createMutation({ ...state.settings, ...settings })
 }
 
 function createInstance<T, I, U, O> (
@@ -143,7 +143,7 @@ function createInstance<T, I, U, O> (
   settings: MutationSettings<T, O>
 ): Instance<T, U, O> {
   const state: State<T, I, U, O> = {
-    mutation: defineMutation({
+    mutation: createMutation({
       autoCommit: settings.autoCommit,
       classy: false,
       historySize: 0,
@@ -172,7 +172,7 @@ function createInstance<T, I, U, O> (
     methods: {
       unwrap: unwrapMethod,
       stream: streamMethod,
-      defineMutation: defineMutationMethod
+      createMutation: createMutationMethod
     }
   })
 }
