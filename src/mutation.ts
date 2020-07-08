@@ -305,7 +305,7 @@ export function defineMutation<T, O = any> (
     settings
   }
   return fluente({
-    historySize: settings.historySize || 8,
+    historySize: settings.historySize,
     isMutable: settings.classy === true,
     skipLocking: true,
     state,

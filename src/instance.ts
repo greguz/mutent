@@ -155,8 +155,8 @@ function createInstance<T, I, U, O> (
     unwrap
   }
   return fluente({
-    historySize: state.settings.historySize || 8,
-    isMutable: state.settings.classy === true,
+    historySize: settings.historySize,
+    isMutable: settings.classy === true,
     state,
     fluent: {
       mutate: mutateMethod,
