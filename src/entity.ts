@@ -9,7 +9,7 @@ export async function unwrapOne<T, O> (
   one: One<T, O>,
   persisted: boolean,
   mutation: Mutation<T, O>,
-  options: UnwrapOptions<O> = {}
+  options: UnwrapOptions<O>
 ): Promise<T> {
   return applyMutation(
     await getOne(one, options),
@@ -23,7 +23,7 @@ export function streamOne<T, O> (
   one: One<T, O>,
   persisted: boolean,
   mutation: Mutation<T, O>,
-  options: StreamOptions<O> = {}
+  options: StreamOptions<O>
 ): stream.Readable {
   return new Readable({
     objectMode: true,

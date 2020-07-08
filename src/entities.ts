@@ -9,7 +9,7 @@ export function unwrapMany<T, O> (
   many: Many<T, O>,
   persisted: boolean,
   mutation: Mutation<T, O>,
-  options: UnwrapOptions<O> = {}
+  options: UnwrapOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
@@ -39,7 +39,7 @@ export function streamMany<T, O> (
   many: Many<T, O>,
   persisted: boolean,
   mutation: Mutation<T, O>,
-  options: StreamOptions<O> = {}
+  options: StreamOptions<O>
 ): stream.Readable {
   const streamOptions = {
     concurrency: options.concurrency,
