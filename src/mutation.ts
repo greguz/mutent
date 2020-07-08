@@ -3,7 +3,7 @@ import Herry from 'herry'
 
 import { UnwrapOptions } from './data'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
-import { isNull, objectify } from './utils'
+import { isNull, isUndefined, objectify } from './utils'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
@@ -43,15 +43,17 @@ export interface Mutation<T, O = any> {
 }
 
 export interface MutationSettings<T, O = any> {
+  autoCommit?: boolean
   classy?: boolean
   historySize?: number
+  safe?: boolean
   writer?: Writer<T, O>
 }
 
 interface State<T, O> {
   mutators: Array<Mutator<T, O>>
   stack: ConditionalStack<T>
-  writer: Writer<T, O>
+  settings: MutationSettings<T, O>
 }
 
 function setCurrentCondition<T> (
@@ -162,9 +164,13 @@ function deleteMethod<T, O> (
 function commitMethod<T, O> (
   state: State<T, O>
 ): State<T, O> {
+  const { writer } = state.settings
+  if (!writer) {
+    return state
+  }
   return pushMutators(
     state,
-    (status, options) => handleWriter(state.writer, status, options)
+    (status, options) => handleWriter(writer, status, options)
   )
 }
 
@@ -235,19 +241,33 @@ function mutateMethod<T, O> (
 }
 
 async function handleMutation<T, O> (
+  state: State<T, O>,
   status: Status<T>,
-  mutator: Mutator<T, O>,
-  writer: Writer<T, O>,
   options: UnwrapOptions<O>
 ): Promise<T> {
+  // Skip null mutations (special case)
   if (isNull(status.target)) {
     return status.target
   }
+
+  // Apply mutation to status object
+  const mutator = renderMethod(state)
   status = await mutator(status, options)
-  if (shouldCommit(status)) {
-    if (options.autoCommit !== false) {
+
+  // Handle safe output
+  const { writer } = state.settings
+  if (writer && shouldCommit(status)) {
+    const autoCommit = isUndefined(options.autoCommit)
+      ? state.settings.autoCommit !== false
+      : options.autoCommit !== false
+
+    const safe = isUndefined(options.safe)
+      ? state.settings.safe !== false
+      : options.safe !== false
+
+    if (autoCommit) {
       status = await handleWriter(writer, status, options)
-    } else if (options.safe !== false) {
+    } else if (safe) {
       throw new Herry('EMUT_NOCOM', 'Expected commit', {
         source: status.source,
         target: status.target,
@@ -255,6 +275,8 @@ async function handleMutation<T, O> (
       })
     }
   }
+
+  // Return resulting object
   return status.target
 }
 
@@ -263,12 +285,7 @@ function createMethod<T, O> (
   data: T,
   options?: UnwrapOptions<O>
 ): Promise<T> {
-  return handleMutation(
-    createStatus(data),
-    renderMethod(state),
-    state.writer,
-    objectify(options)
-  )
+  return handleMutation(state, createStatus(data), objectify(options))
 }
 
 function readMethod<T, O> (
@@ -276,19 +293,16 @@ function readMethod<T, O> (
   data: T,
   options?: UnwrapOptions<O>
 ): Promise<T> {
-  return handleMutation(
-    readStatus(data),
-    renderMethod(state),
-    state.writer,
-    objectify(options)
-  )
+  return handleMutation(state, readStatus(data), objectify(options))
 }
 
-export function defineMutation<T, O = any> (settings: MutationSettings<T, O> = {}): Mutation<T, O> {
+export function defineMutation<T, O = any> (
+  settings: MutationSettings<T, O> = {}
+): Mutation<T, O> {
   const state: State<T, O> = {
     mutators: [],
     stack: [],
-    writer: settings.writer || {}
+    settings
   }
   return fluente({
     historySize: settings.historySize || 8,

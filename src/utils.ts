@@ -17,15 +17,3 @@ export function isNil (value: any): value is null | undefined | void {
 export function objectify (value?: any): any {
   return typeof value === 'object' && !isNull(value) ? value : {}
 }
-
-export function defaults (a: any, b: any): any {
-  return Object.keys(b).reduce(
-    (acc, key) => {
-      if (isUndefined(acc[key])) {
-        acc[key] = b[key]
-      }
-      return acc
-    },
-    a
-  )
-}

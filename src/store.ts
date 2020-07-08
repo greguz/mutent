@@ -1,7 +1,8 @@
 import Herry from 'herry'
 
 import { Value, Values } from './data'
-import { Entities, Entity, InstanceSettings, createEntities, createEntity, readEntities, readEntity } from './instance'
+import { Entities, Entity, createEntities, createEntity, readEntities, readEntity } from './instance'
+import { MutationSettings } from './mutation'
 import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {
@@ -10,7 +11,7 @@ export interface Reader<T, Q = any, O = any> {
   Error?: (query: Q, options: Partial<O>) => any
 }
 
-export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
+export interface StoreSettings<T, Q = any, O = any> extends MutationSettings<T, O> {
   reader?: Reader<T, Q, O>
 }
 
