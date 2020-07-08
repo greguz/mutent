@@ -39,110 +39,110 @@ type Streamer<T, O> = (
   options: StreamOptions<O>
 ) => stream.Readable
 
-interface State<T, I, U, O> {
+interface State<T, U, O> {
   mutation: Mutation<T>
   settings: MutationSettings<T, O>
   stream: Streamer<T, O>
   unwrap: Unwrapper<T, U, O>
 }
 
-function mutateState<T, I, U, O> (
-  state: State<T, I, U, O>,
+function mutateState<T, U, O> (
+  state: State<T, U, O>,
   procedure: (mutation: Mutation<T, O>) => Mutation<T, O>
-): State<T, I, U, O> {
+): State<T, U, O> {
   return {
     ...state,
     mutation: procedure(state.mutation)
   }
 }
 
-function mutateMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+function mutateMethod<T, U, O> (
+  state: State<T, U, O>,
   newMutation: Mutation<T, O>
-): State<T, I, U, O> {
+): State<T, U, O> {
   return mutateState(state, oldMutation => oldMutation.mutate(newMutation))
 }
 
-function updateMethod<T, I, U, O, A extends any[]> (
-  state: State<T, I, U, O>,
+function updateMethod<T, U, O, A extends any[]> (
+  state: State<T, U, O>,
   mapper: Mapper<T, A>,
   ...args: A
-): State<T, I, U, O> {
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.update(mapper, ...args))
 }
 
 function assignMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+  state: State<T, U, O>,
   object: Partial<T>
-): State<T, I, U, O> {
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.assign(object))
 }
 
 function deleteMethod<T, I, U, O> (
-  state: State<T, I, U, O>
-): State<T, I, U, O> {
+  state: State<T, U, O>
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.delete())
 }
 
-function commitMethod<T, I, U, O> (
-  state: State<T, I, U, O>
-): State<T, I, U, O> {
+function commitMethod<T, U, O> (
+  state: State<T, U, O>
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.commit())
 }
 
-function ifMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+function ifMethod<T, U, O> (
+  state: State<T, U, O>,
   condition: Condition<T>
-): State<T, I, U, O> {
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.if(condition))
 }
 
-function elseIfMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+function elseIfMethod<T, U, O> (
+  state: State<T, U, O>,
   condition: Condition<T>
-): State<T, I, U, O> {
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.elseIf(condition))
 }
 
-function elseMethod<T, I, U, O> (
-  state: State<T, I, U, O>
-): State<T, I, U, O> {
+function elseMethod<T, U, O> (
+  state: State<T, U, O>
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.else())
 }
 
-function endIfMethod<T, I, U, O> (
-  state: State<T, I, U, O>
-): State<T, I, U, O> {
+function endIfMethod<T, U, O> (
+  state: State<T, U, O>
+): State<T, U, O> {
   return mutateState(state, mutation => mutation.endIf())
 }
 
 async function unwrapMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+  state: State<T, U, O>,
   options?: UnwrapOptions<O>
 ): Promise<U> {
   return state.unwrap(state.mutation, objectify(options))
 }
 
-function streamMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+function streamMethod<T, U, O> (
+  state: State<T, U, O>,
   options?: StreamOptions<O>
 ): stream.Readable {
   return state.stream(state.mutation, objectify(options))
 }
 
 function createMutationMethod<T, I, U, O> (
-  state: State<T, I, U, O>,
+  state: State<T, U, O>,
   settings?: MutationSettings<T, O>
 ): Mutation<T, O> {
   return createMutation({ ...state.settings, ...settings })
 }
 
-function createInstance<T, I, U, O> (
+function createInstance<T, U, O> (
   unwrap: Unwrapper<T, U, O>,
   stream: Streamer<T, O>,
   settings: MutationSettings<T, O>
 ): Instance<T, U, O> {
-  const state: State<T, I, U, O> = {
+  const state: State<T, U, O> = {
     mutation: createMutation({
       autoCommit: settings.autoCommit,
       classy: false,
