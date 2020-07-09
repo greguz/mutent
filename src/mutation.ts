@@ -307,7 +307,6 @@ export function createMutation<T, O = any> (
   return fluente({
     historySize: settings.historySize,
     isMutable: settings.classy === true,
-    skipLocking: true,
     state,
     fluent: {
       update: updateMethod,
