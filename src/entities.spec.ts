@@ -53,34 +53,6 @@ function getItems (count: number = 16) {
   return items
 }
 
-test('lock', async t => {
-  t.throws(() => {
-    const entities = createEntities([])
-    entities.update(data => data)
-    entities.update(data => data)
-  })
-  t.throws(() => {
-    const entities = createEntities([])
-    entities.assign({})
-    entities.assign({})
-  })
-  t.throws(() => {
-    const entities = createEntities([])
-    entities.delete()
-    entities.delete()
-  })
-  t.throws(() => {
-    const entities = createEntities([])
-    entities.commit()
-    entities.commit()
-  })
-  await t.throwsAsync(async () => {
-    const entities = createEntities([])
-    await entities.unwrap()
-    await entities.unwrap()
-  })
-})
-
 test('create', async t => {
   t.plan(35)
   const results = await createEntities(getItems(), bind(t, { create: true }))

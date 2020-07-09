@@ -157,6 +157,7 @@ function createInstance<T, U, O> (
   return fluente({
     historySize: settings.historySize,
     isMutable: settings.classy === true,
+    skipLocking: true,
     state,
     fluent: {
       mutate: mutateMethod,

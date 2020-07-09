@@ -15,44 +15,6 @@ function next (item: Item): Item {
   }
 }
 
-test('lock', async t => {
-  t.throws(() => {
-    const entity = createEntity({})
-    entity.update(data => data)
-    entity.update(data => data)
-  })
-  t.throws(() => {
-    const entity = createEntity({})
-    entity.assign({})
-    entity.assign({})
-  })
-  t.throws(() => {
-    const entity = createEntity({})
-    entity.delete()
-    entity.delete()
-  })
-  t.throws(() => {
-    const entity = createEntity({})
-    entity.commit()
-    entity.commit()
-  })
-  await t.throwsAsync(async () => {
-    const entity = createEntity({})
-    await entity.unwrap()
-    await entity.unwrap()
-  })
-  t.throws(() => {
-    const entity = createEntity({})
-    entity.redo()
-    entity.redo()
-  })
-  t.throws(() => {
-    const entity = createEntity({})
-    entity.undo()
-    entity.undo()
-  })
-})
-
 test('create', async t => {
   t.plan(3)
 
