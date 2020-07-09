@@ -2,7 +2,7 @@ import Herry from 'herry'
 
 import { Value, Values } from './data'
 import { Entities, Entity, createEntities, createEntity, readEntities, readEntity } from './instance'
-import { MutationSettings } from './mutation'
+import { Mutation, MutationSettings, createMutation } from './mutation'
 import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {
@@ -21,6 +21,7 @@ export interface Store<T, Q = any, O = any> {
   filter (query: Q): Entities<T, O>
   create<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
   from<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
+  createMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
 }
 
 async function findData<T, Q, O> (
@@ -95,6 +96,7 @@ export function createStore<T, Q, O> (
       settings
     ),
     create: data => createMethod(settings, data),
-    from: data => fromData(settings, data)
+    from: data => fromData(settings, data),
+    createMutation: custom => createMutation({ ...settings, ...custom })
   }
 }

@@ -132,9 +132,9 @@ function streamMethod<T, U, O> (
 
 function createMutationMethod<T, I, U, O> (
   state: State<T, U, O>,
-  settings?: MutationSettings<T, O>
+  custom?: MutationSettings<T, O>
 ): Mutation<T, O> {
-  return createMutation({ ...state.settings, ...settings })
+  return createMutation({ ...state.settings, ...custom })
 }
 
 function createInstance<T, U, O> (
