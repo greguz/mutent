@@ -178,6 +178,35 @@ test('mutation#simple-conditions', async t => {
   t.deepEqual(c, { id: 42, value: 'NOT-BINARY' })
 })
 
+test('mutation#nested-conditions', async t => {
+  const mutation = createMutation<Item>()
+    .if(item => item.id < 8)
+    .if(item => item.id < 4)
+    .if(item => item.id < 2)
+    .assign({ value: 'BINARY' })
+    .else()
+    .assign({ value: 'NOK2' })
+    .endIf()
+    .else()
+    .assign({ value: 'NOK1' })
+    .endIf()
+    .else()
+    .assign({ value: 'NOK0' })
+    .endIf()
+
+  const a = await mutation.read({ id: 0 })
+  t.deepEqual(a, { id: 0, value: 'BINARY' })
+
+  const b = await mutation.read({ id: 2 })
+  t.deepEqual(b, { id: 2, value: 'NOK2' })
+
+  const c = await mutation.read({ id: 4 })
+  t.deepEqual(c, { id: 4, value: 'NOK1' })
+
+  const d = await mutation.read({ id: 8 })
+  t.deepEqual(d, { id: 8, value: 'NOK0' })
+})
+
 test('mutation#errors', async t => {
   const mutation = createMutation<Item>()
   const yes = () => true

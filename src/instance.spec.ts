@@ -59,3 +59,25 @@ test('readEntities#stream', async t => {
   )
   t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
 })
+
+test('instance#mutation-methods', async t => {
+  const entity = readEntity<any>({ c: 'C' })
+    .if(() => false)
+    .elseIf(() => false)
+    .else()
+    .endIf()
+
+  const mutation = entity.createMutation()
+    .assign({ a: 'A' })
+    .update(data => ({ ...data, b: 'B' }))
+    .delete()
+    .commit()
+
+  const out = await entity.mutate(mutation).unwrap()
+
+  t.deepEqual(out, {
+    a: 'A',
+    b: 'B',
+    c: 'C'
+  })
+})
