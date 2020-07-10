@@ -117,7 +117,7 @@ test('store missing', async t => {
   )
   await t.throwsAsync(
     createStore({}).read({}).unwrap(),
-    { code: 'EMUT_NOENT' }
+    { code: 'EMUT_NOT_FOUND' }
   )
 })
 

@@ -27,7 +27,7 @@ export interface Status<T> {
 
 function noUndef<T> (value: T): T {
   if (isUndefined(value)) {
-    throw new Herry('EMUT_NODEF', 'Undefined entity')
+    throw new Herry('EMUT_UNDEFINED', 'Undefined values are not valid')
   }
   return value
 }

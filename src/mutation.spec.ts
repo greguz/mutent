@@ -212,37 +212,37 @@ test('mutation#errors', async t => {
   const yes = () => true
   t.throws(
     () => mutation.elseIf(yes),
-    { code: 'EMUT_EXPIF' }
+    { code: 'EMUT_NO_CONDITION' }
   )
   t.throws(
     () => mutation.else(),
-    { code: 'EMUT_EXPIF' }
+    { code: 'EMUT_NO_CONDITION' }
   )
   t.throws(
     () => mutation.endIf(),
-    { code: 'EMUT_ENDIF' }
+    { code: 'EMUT_NO_CONDITION' }
   )
   const closed = mutation.if(yes).elseIf(yes).elseIf(yes).else()
   t.throws(
     () => closed.elseIf(yes),
-    { code: 'EMUT_CLSIF' }
+    { code: 'EMUT_CLOSED_CONDITION' }
   )
   t.throws(
     () => closed.else(),
-    { code: 'EMUT_CLSIF' }
+    { code: 'EMUT_CLOSED_CONDITION' }
   )
   const dead = closed.endIf()
   t.throws(
     () => dead.elseIf(yes),
-    { code: 'EMUT_EXPIF' }
+    { code: 'EMUT_NO_CONDITION' }
   )
   t.throws(
     () => dead.else(),
-    { code: 'EMUT_EXPIF' }
+    { code: 'EMUT_NO_CONDITION' }
   )
   t.throws(
     () => dead.endIf(),
-    { code: 'EMUT_ENDIF' }
+    { code: 'EMUT_NO_CONDITION' }
   )
 })
 

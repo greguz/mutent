@@ -62,7 +62,7 @@ function setCurrentCondition<T> (
 ): ConditionalBlock<T> {
   const { current, previous } = block
   if (current === null) {
-    throw new Herry('EMUT_CLSIF', 'Closed condition')
+    throw new Herry('EMUT_CLOSED_CONDITION', 'The current condition was closed')
   }
   return {
     previous: [...previous, current],
@@ -70,14 +70,19 @@ function setCurrentCondition<T> (
   }
 }
 
+function getCurrentConditionIndex (stack: ConditionalStack<any>) {
+  const index = stack.length - 1
+  if (index < 0) {
+    throw new Herry('EMUT_NO_CONDITION', 'There is not condition to use')
+  }
+  return index
+}
+
 function updateCurrentConditionalBlock<T> (
   stack: ConditionalStack<T>,
   condition: Condition<T> | null
 ): ConditionalStack<T> {
-  const index = stack.length - 1
-  if (index < 0) {
-    throw new Herry('EMUT_EXPIF', 'Expected open condition')
-  }
+  const index = getCurrentConditionIndex(stack)
   return stack.map(
     (block, i) => index === i ? setCurrentCondition(block, condition) : block
   )
@@ -212,13 +217,9 @@ function elseMethod<T, O> (
 function endIfMethod<T, O> (
   state: State<T, O>
 ): State<T, O> {
-  const end = state.stack.length - 1
-  if (end < 0) {
-    throw new Herry('EMUT_ENDIF', 'Unexpected conditional block end')
-  }
   return {
     ...state,
-    stack: state.stack.slice(0, end)
+    stack: state.stack.slice(0, getCurrentConditionIndex(state.stack))
   }
 }
 
@@ -268,7 +269,7 @@ async function handleMutation<T, O> (
     if (autoCommit) {
       status = await handleWriter(writer, status, options)
     } else if (safe) {
-      throw new Herry('EMUT_NOCOM', 'Expected commit', {
+      throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         source: status.source,
         target: status.target,
         options

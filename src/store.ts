@@ -45,7 +45,7 @@ async function readData<T, Q, O> (
   if (isNull(data)) {
     throw typeof reader.Error === 'function'
       ? reader.Error(query, options)
-      : new Herry('EMUT_NOENT', 'Unknown entity', { query, options })
+      : new Herry('EMUT_NOT_FOUND', 'Entity not found', { query, options })
   }
   return data
 }
