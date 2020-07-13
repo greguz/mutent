@@ -3,7 +3,6 @@ import { Transform, Writable, pipeline, readify } from 'fluido'
 
 import { Many, StreamOptions, UnwrapOptions, getMany } from './data'
 import { Mutation, applyMutation } from './mutation'
-import { isNull } from './utils'
 
 export function unwrapMany<T, O> (
   many: Many<T, O>,
@@ -19,9 +18,7 @@ export function unwrapMany<T, O> (
         objectMode: true,
         async write (chunk) {
           const out = await applyMutation(chunk, persisted, mutation, options)
-          if (!isNull(out)) {
-            results.push(out)
-          }
+          results.push(out)
         }
       }),
       err => {
@@ -53,9 +50,7 @@ export function streamMany<T, O> (
       ...streamOptions,
       async transform (chunk) {
         const out = await applyMutation(chunk, persisted, mutation, options)
-        if (!isNull(out)) {
-          this.push(out)
-        }
+        this.push(out)
       }
     })
   )

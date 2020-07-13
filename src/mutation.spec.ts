@@ -28,6 +28,14 @@ test('mutation#update', async t => {
   })
 })
 
+test('mutation#void-commit', async t => {
+  const mutation = createMutation<Item>()
+    .assign({ value: 'UPDATE' })
+    .commit()
+  const out = await mutation.read({ id: 0 })
+  t.deepEqual(out, { id: 0, value: 'UPDATE' })
+})
+
 test('mutation#auto-create', async t => {
   t.plan(2)
   const writer: Writer<Item> = {
@@ -158,92 +166,40 @@ test('mutation#manual-delete', async t => {
   t.deepEqual(out, { id: 0, value: 'DELETE' })
 })
 
-test('mutation#simple-conditions', async t => {
+test('mutation#if', async t => {
   const mutation = createMutation<Item>()
-    .if(item => item.id === 0)
-    .assign({ value: 'ZERO' })
-    .elseIf(item => item.id === 1)
-    .assign({ value: 'ONE' })
-    .else()
-    .assign({ value: 'NOT-BINARY' })
-    .endIf()
 
-  const a = await mutation.read({ id: 0 })
-  t.deepEqual(a, { id: 0, value: 'ZERO' })
+  const isBinary = (item: Item) => item.id === 0 || item.id === 1
 
-  const b = await mutation.read({ id: 1 })
-  t.deepEqual(b, { id: 1, value: 'ONE' })
+  const setValue = createMutation<Item>().assign({ value: 'UPDATE' })
 
-  const c = await mutation.read({ id: 42 })
-  t.deepEqual(c, { id: 42, value: 'NOT-BINARY' })
+  const a = await mutation
+    .if(isBinary, setValue)
+    .read({ id: 0, value: 'READ' })
+  t.deepEqual(a, { id: 0, value: 'UPDATE' })
+
+  const b = await mutation
+    .if(isBinary, setValue)
+    .read({ id: 42, value: 'READ' })
+  t.deepEqual(b, { id: 42, value: 'READ' })
 })
 
-test('mutation#nested-conditions', async t => {
+test('mutation#unless', async t => {
   const mutation = createMutation<Item>()
-    .if(item => item.id < 8)
-    .if(item => item.id < 4)
-    .if(item => item.id < 2)
-    .assign({ value: 'BINARY' })
-    .else()
-    .assign({ value: 'NOK2' })
-    .endIf()
-    .else()
-    .assign({ value: 'NOK1' })
-    .endIf()
-    .else()
-    .assign({ value: 'NOK0' })
-    .endIf()
 
-  const a = await mutation.read({ id: 0 })
-  t.deepEqual(a, { id: 0, value: 'BINARY' })
+  const isBinary = (item: Item) => item.id === 0 || item.id === 1
 
-  const b = await mutation.read({ id: 2 })
-  t.deepEqual(b, { id: 2, value: 'NOK2' })
+  const setValue = createMutation<Item>().assign({ value: 'UPDATE' })
 
-  const c = await mutation.read({ id: 4 })
-  t.deepEqual(c, { id: 4, value: 'NOK1' })
+  const a = await mutation
+    .unless(isBinary, setValue)
+    .read({ id: 0, value: 'READ' })
+  t.deepEqual(a, { id: 0, value: 'READ' })
 
-  const d = await mutation.read({ id: 8 })
-  t.deepEqual(d, { id: 8, value: 'NOK0' })
-})
-
-test('mutation#errors', async t => {
-  const mutation = createMutation<Item>()
-  const yes = () => true
-  t.throws(
-    () => mutation.elseIf(yes),
-    { code: 'EMUT_NO_CONDITION' }
-  )
-  t.throws(
-    () => mutation.else(),
-    { code: 'EMUT_NO_CONDITION' }
-  )
-  t.throws(
-    () => mutation.endIf(),
-    { code: 'EMUT_NO_CONDITION' }
-  )
-  const closed = mutation.if(yes).elseIf(yes).elseIf(yes).else()
-  t.throws(
-    () => closed.elseIf(yes),
-    { code: 'EMUT_CLOSED_CONDITION' }
-  )
-  t.throws(
-    () => closed.else(),
-    { code: 'EMUT_CLOSED_CONDITION' }
-  )
-  const dead = closed.endIf()
-  t.throws(
-    () => dead.elseIf(yes),
-    { code: 'EMUT_NO_CONDITION' }
-  )
-  t.throws(
-    () => dead.else(),
-    { code: 'EMUT_NO_CONDITION' }
-  )
-  t.throws(
-    () => dead.endIf(),
-    { code: 'EMUT_NO_CONDITION' }
-  )
+  const b = await mutation
+    .unless(isBinary, setValue)
+    .read({ id: 42, value: 'READ' })
+  t.deepEqual(b, { id: 42, value: 'UPDATE' })
 })
 
 test('mutation#mutate', async t => {

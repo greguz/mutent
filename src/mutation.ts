@@ -18,22 +18,13 @@ export type Mutator<T, O = any> = (
 
 export type Condition<T> = (data: T) => Promise<boolean> | boolean
 
-interface ConditionalBlock<T> {
-  previous: Array<Condition<T>>
-  current: Condition<T> | null
-}
-
-type ConditionalStack<T> = Array<ConditionalBlock<T>>
-
 export interface Mutation<T, O = any> {
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Mutation<T>
   assign (object: Partial<T>): Mutation<T>
   delete (): Mutation<T>
   commit (): Mutation<T>
-  if (condition: Condition<T>): Mutation<T, O>
-  elseIf (condition: Condition<T>): Mutation<T, O>
-  else (): Mutation<T, O>
-  endIf (): Mutation<T, O>
+  if (condition: Condition<T>, mutation: Mutation<T, O>): Mutation<T, O>
+  unless (condition: Condition<T>, mutation: Mutation<T, O>): Mutation<T, O>
   render (): Mutator<T, O>
   mutate (mutation: Mutation<T, O>): Mutation<T, O>
   create (data: T, options?: UnwrapOptions<O>): Promise<T>
@@ -52,76 +43,7 @@ export interface MutationSettings<T, O = any> {
 
 interface State<T, O> {
   mutators: Array<Mutator<T, O>>
-  stack: ConditionalStack<T>
   settings: MutationSettings<T, O>
-}
-
-function setCurrentCondition<T> (
-  block: ConditionalBlock<T>,
-  condition: Condition<T> | null
-): ConditionalBlock<T> {
-  const { current, previous } = block
-  if (current === null) {
-    throw new Herry('EMUT_CLOSED_CONDITION', 'The current condition was closed')
-  }
-  return {
-    previous: [...previous, current],
-    current: condition
-  }
-}
-
-function getCurrentConditionIndex (stack: ConditionalStack<any>) {
-  const index = stack.length - 1
-  if (index < 0) {
-    throw new Herry('EMUT_NO_CONDITION', 'There is not condition to use')
-  }
-  return index
-}
-
-function updateCurrentConditionalBlock<T> (
-  stack: ConditionalStack<T>,
-  condition: Condition<T> | null
-): ConditionalStack<T> {
-  const index = getCurrentConditionIndex(stack)
-  return stack.map(
-    (block, i) => index === i ? setCurrentCondition(block, condition) : block
-  )
-}
-
-async function compileConditionalBlock<T> (
-  data: T,
-  block: ConditionalBlock<T>
-): Promise<boolean> {
-  for (const condition of block.previous) {
-    const a = await condition(data)
-    if (a) {
-      return false
-    }
-  }
-  if (block.current) {
-    const b = await block.current(data)
-    return !!b
-  } else {
-    return true
-  }
-}
-
-function applyConditions<T, O> (
-  mutator: Mutator<T, O>,
-  stack: ConditionalStack<T>
-): Mutator<T> {
-  if (stack.length <= 0) {
-    return mutator
-  }
-  return async function conditionalMutator (status, options) {
-    for (const block of stack) {
-      const out = await compileConditionalBlock(status.target, block)
-      if (!out) {
-        return status
-      }
-    }
-    return mutator(status, options)
-  }
 }
 
 function pushMutators<T, O> (
@@ -130,10 +52,7 @@ function pushMutators<T, O> (
 ): State<T, O> {
   return {
     ...state,
-    mutators: [
-      ...state.mutators,
-      ...mutators.map(mutator => applyConditions(mutator, state.stack))
-    ]
+    mutators: [...state.mutators, ...mutators]
   }
 }
 
@@ -179,48 +98,41 @@ function commitMethod<T, O> (
   )
 }
 
+function negateCondition<T> (condition: Condition<T>): Condition<T> {
+  return async function negatedCondition (data) {
+    const ok = await condition(data)
+    return !ok
+  }
+}
+
+function applyCondition<T, O> (
+  mutator: Mutator<T, O>,
+  condition: Condition<T>
+): Mutator<T, O> {
+  return async function conditionalMutator (status, options) {
+    const ok = await condition(status.target)
+    if (!ok) {
+      return status
+    } else {
+      return mutator(status, options)
+    }
+  }
+}
+
 function ifMethod<T, O> (
   state: State<T, O>,
-  condition: Condition<T>
+  condition: Condition<T>,
+  mutation: Mutation<T, O>
 ): State<T, O> {
-  return {
-    ...state,
-    stack: [
-      ...state.stack,
-      {
-        previous: [],
-        current: condition
-      }
-    ]
-  }
+  return pushMutators(state, applyCondition(mutation.render(), condition))
 }
 
-function elseIfMethod<T, O> (
+function unlessMethod<T, O> (
   state: State<T, O>,
-  condition: Condition<T>
+  condition: Condition<T>,
+  mutation: Mutation<T, O>
 ): State<T, O> {
-  return {
-    ...state,
-    stack: updateCurrentConditionalBlock(state.stack, condition)
-  }
-}
-
-function elseMethod<T, O> (
-  state: State<T, O>
-): State<T, O> {
-  return {
-    ...state,
-    stack: updateCurrentConditionalBlock(state.stack, null)
-  }
-}
-
-function endIfMethod<T, O> (
-  state: State<T, O>
-): State<T, O> {
-  return {
-    ...state,
-    stack: state.stack.slice(0, getCurrentConditionIndex(state.stack))
-  }
+  return ifMethod(state, negateCondition(condition), mutation)
 }
 
 function renderMethod<T, O> (
@@ -302,7 +214,6 @@ export function createMutation<T, O = any> (
 ): Mutation<T, O> {
   const state: State<T, O> = {
     mutators: [],
-    stack: [],
     settings
   }
   return fluente({
@@ -315,9 +226,7 @@ export function createMutation<T, O = any> (
       delete: deleteMethod,
       commit: commitMethod,
       if: ifMethod,
-      elseIf: elseIfMethod,
-      else: elseMethod,
-      endIf: endIfMethod,
+      unless: unlessMethod,
       mutate: mutateMethod
     },
     methods: {

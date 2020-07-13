@@ -1,7 +1,10 @@
 import test from 'ava'
+import { subscribe } from 'fluido'
 
+import { streamOne } from './entity'
 import { createEntity, readEntity } from './instance'
 import { Writer } from './writer'
+import { createMutation } from './mutation'
 
 interface Item {
   id: number
@@ -289,4 +292,11 @@ test('safe delete', async t => {
   await entity(true, false).unwrap()
   await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
+})
+
+test('streamOne#nulls', async t => {
+  const out = await subscribe(
+    streamOne(null, false, createMutation(), {})
+  )
+  t.is(out, null)
 })

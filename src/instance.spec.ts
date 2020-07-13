@@ -60,24 +60,31 @@ test('readEntities#stream', async t => {
   t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
 })
 
-test('instance#mutation-methods', async t => {
-  const entity = readEntity<any>({ c: 'C' })
-    .if(() => false)
-    .elseIf(() => false)
-    .else()
-    .endIf()
+test('instance#conditional-mutation', async t => {
+  const entity = readEntity<Item>({ id: 0 })
 
-  const mutation = entity.createMutation()
-    .assign({ a: 'A' })
-    .update(data => ({ ...data, b: 'B' }))
-    .delete()
-    .commit()
+  const mDelete = entity.createMutation().assign({ value: 'DELETE' })
+  const mUpdate = entity.createMutation().assign({ value: 'UPDATE' })
 
+  const yes = () => true
+  const no = () => false
+
+  const a = await entity
+    .if(yes, mDelete)
+    .unless(yes, mUpdate)
+    .unwrap()
+  t.deepEqual(a, { id: 0, value: 'DELETE' })
+
+  const b = await entity
+    .unless(no, mUpdate)
+    .if(no, mDelete)
+    .unwrap()
+  t.deepEqual(b, { id: 0, value: 'UPDATE' })
+})
+
+test('instance#mutate', async t => {
+  const entity = readEntity<Item>({ id: 0 })
+  const mutation = entity.createMutation().assign({ value: 'UPDATE' })
   const out = await entity.mutate(mutation).unwrap()
-
-  t.deepEqual(out, {
-    a: 'A',
-    b: 'B',
-    c: 'C'
-  })
+  t.deepEqual(out, { id: 0, value: 'UPDATE' })
 })

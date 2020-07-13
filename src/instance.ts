@@ -14,10 +14,8 @@ export interface Instance<T, U, O> {
   assign (object: Partial<T>): Instance<T, U, O>
   delete (): Instance<T, U, O>
   commit (): Instance<T, U, O>
-  if (condition: Condition<T>): Instance<T, U, O>
-  elseIf (condition: Condition<T>): Instance<T, U, O>
-  else (): Instance<T, U, O>
-  endIf (): Instance<T, U, O>
+  if (condition: Condition<T>, mutation: Mutation<T, O>): Instance<T, U, O>
+  unless (condition: Condition<T>, mutation: Mutation<T, O>): Instance<T, U, O>
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
   createMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
@@ -92,28 +90,18 @@ function commitMethod<T, U, O> (
 
 function ifMethod<T, U, O> (
   state: State<T, U, O>,
-  condition: Condition<T>
+  condition: Condition<T>,
+  newMutation: Mutation<T, O>
 ): State<T, U, O> {
-  return mutateState(state, mutation => mutation.if(condition))
+  return mutateState(state, oldMutation => oldMutation.if(condition, newMutation))
 }
 
-function elseIfMethod<T, U, O> (
+function unlessMethod<T, U, O> (
   state: State<T, U, O>,
-  condition: Condition<T>
+  condition: Condition<T>,
+  newMutation: Mutation<T, O>
 ): State<T, U, O> {
-  return mutateState(state, mutation => mutation.elseIf(condition))
-}
-
-function elseMethod<T, U, O> (
-  state: State<T, U, O>
-): State<T, U, O> {
-  return mutateState(state, mutation => mutation.else())
-}
-
-function endIfMethod<T, U, O> (
-  state: State<T, U, O>
-): State<T, U, O> {
-  return mutateState(state, mutation => mutation.endIf())
+  return mutateState(state, oldMutation => oldMutation.unless(condition, newMutation))
 }
 
 async function unwrapMethod<T, I, U, O> (
@@ -165,9 +153,7 @@ function createInstance<T, U, O> (
       delete: deleteMethod,
       commit: commitMethod,
       if: ifMethod,
-      elseIf: elseIfMethod,
-      else: elseMethod,
-      endIf: endIfMethod
+      unless: unlessMethod
     },
     methods: {
       unwrap: unwrapMethod,
