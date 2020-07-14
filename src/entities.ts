@@ -39,16 +39,16 @@ export function streamMany<T, O> (
   mutation: Mutation<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
-  const streamOptions = {
-    concurrency: options.concurrency,
-    highWaterMark: options.highWaterMark,
-    objectMode: true
-  }
   return readify(
-    streamOptions,
+    {
+      highWaterMark: options.highWaterMark,
+      objectMode: true
+    },
     getMany(many, options),
-    new Transform({
-      ...streamOptions,
+    new Transform<T, T>({
+      concurrency: options.concurrency,
+      highWaterMark: options.highWaterMark,
+      objectMode: true,
       async transform (chunk) {
         this.push(
           await applyMutation(chunk, persisted, mutation, options)

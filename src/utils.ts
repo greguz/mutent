@@ -1,7 +1,5 @@
 export type MaybePromise<T> = Promise<T> | T
 
-export const mutentSymbol = Symbol.for('mutent')
-
 export function isUndefined (value: any): value is undefined | void {
   return value === undefined
 }
