@@ -93,7 +93,10 @@ function ifMethod<T, U, O> (
   condition: Condition<T>,
   newMutation: Mutation<T, O>
 ): State<T, U, O> {
-  return mutateState(state, oldMutation => oldMutation.if(condition, newMutation))
+  return mutateState(
+    state,
+    oldMutation => oldMutation.if(condition, newMutation)
+  )
 }
 
 function unlessMethod<T, U, O> (
@@ -101,7 +104,10 @@ function unlessMethod<T, U, O> (
   condition: Condition<T>,
   newMutation: Mutation<T, O>
 ): State<T, U, O> {
-  return mutateState(state, oldMutation => oldMutation.unless(condition, newMutation))
+  return mutateState(
+    state,
+    oldMutation => oldMutation.unless(condition, newMutation)
+  )
 }
 
 async function unwrapMethod<T, I, U, O> (

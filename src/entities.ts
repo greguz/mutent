@@ -17,8 +17,9 @@ export function unwrapMany<T, O> (
       new Writable<T>({
         objectMode: true,
         async write (chunk) {
-          const out = await applyMutation(chunk, persisted, mutation, options)
-          results.push(out)
+          results.push(
+            await applyMutation(chunk, persisted, mutation, options)
+          )
         }
       }),
       err => {
@@ -49,8 +50,9 @@ export function streamMany<T, O> (
     new Transform({
       ...streamOptions,
       async transform (chunk) {
-        const out = await applyMutation(chunk, persisted, mutation, options)
-        this.push(out)
+        this.push(
+          await applyMutation(chunk, persisted, mutation, options)
+        )
       }
     })
   )
