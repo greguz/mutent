@@ -3,7 +3,7 @@ import Herry from 'herry'
 
 import { UnwrapOptions } from './data'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
-import { MaybePromise, isNull, isUndefined, objectify } from './utils'
+import { MaybePromise, isUndefined, objectify, isNil } from './utils'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
@@ -158,11 +158,6 @@ async function handleMutation<T, O> (
   status: Status<T>,
   options: UnwrapOptions<O>
 ): Promise<T> {
-  // Skip null mutations (special case)
-  if (isNull(status.target)) {
-    return status.target
-  }
-
   // Apply mutation to status object
   const mutator = renderMethod(state)
   status = await mutator(status, options)
@@ -243,7 +238,9 @@ export async function applyMutation<T, O> (
   mutation: Mutation<T, O>,
   options?: UnwrapOptions<O>
 ): Promise<T> {
-  if (persisted) {
+  if (isNil(data)) {
+    return data
+  } else if (persisted) {
     return mutation.read(data, options)
   } else {
     return mutation.create(data, options)
