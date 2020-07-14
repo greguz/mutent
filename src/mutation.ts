@@ -16,7 +16,7 @@ export type Mutator<T, O = any> = (
   options: Partial<O>
 ) => MaybePromise<Status<T>>
 
-export type Condition<T> = (data: T) => MaybePromise<boolean>
+export type Condition<T> = ((data: T) => MaybePromise<boolean>) | boolean
 
 export interface Mutation<T, O = any> {
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Mutation<T>
@@ -98,9 +98,20 @@ function commitMethod<T, O> (
   )
 }
 
+async function compileCondition<T> (
+  condition: Condition<T>,
+  data: T
+): Promise<boolean> {
+  if (typeof condition === 'boolean') {
+    return condition
+  } else {
+    return condition(data)
+  }
+}
+
 function negateCondition<T> (condition: Condition<T>): Condition<T> {
   return async function negatedCondition (data) {
-    const ok = await condition(data)
+    const ok = await compileCondition(condition, data)
     return !ok
   }
 }
@@ -110,7 +121,7 @@ function applyCondition<T, O> (
   condition: Condition<T>
 ): Mutator<T, O> {
   return async function conditionalMutator (status, options) {
-    const ok = await condition(status.target)
+    const ok = await compileCondition(condition, status.target)
     if (!ok) {
       return status
     } else {

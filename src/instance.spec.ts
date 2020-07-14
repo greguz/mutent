@@ -66,18 +66,15 @@ test('instance#conditional-mutation', async t => {
   const mDelete = entity.createMutation().assign({ value: 'DELETE' })
   const mUpdate = entity.createMutation().assign({ value: 'UPDATE' })
 
-  const yes = () => true
-  const no = () => false
-
   const a = await entity
-    .if(yes, mDelete)
-    .unless(yes, mUpdate)
+    .if(true, mDelete)
+    .unless(true, mUpdate)
     .unwrap()
   t.deepEqual(a, { id: 0, value: 'DELETE' })
 
   const b = await entity
-    .unless(no, mUpdate)
-    .if(no, mDelete)
+    .unless(() => false, mUpdate)
+    .if(() => false, mDelete)
     .unwrap()
   t.deepEqual(b, { id: 0, value: 'UPDATE' })
 })
