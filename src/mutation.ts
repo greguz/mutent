@@ -3,20 +3,20 @@ import Herry from 'herry'
 
 import { UnwrapOptions } from './data'
 import { Status, createStatus, deleteStatus, readStatus, shouldCommit, updateStatus } from './status'
-import { isNull, isUndefined, objectify } from './utils'
+import { MaybePromise, isNull, isUndefined, objectify } from './utils'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
-  data: T,
+  data: Exclude<T, null>,
   ...args: A
-) => Promise<T> | T
+) => MaybePromise<T>
 
 export type Mutator<T, O = any> = (
   status: Status<T>,
   options: Partial<O>
-) => Status<T> | Promise<Status<T>>
+) => MaybePromise<Status<T>>
 
-export type Condition<T> = (data: T) => Promise<boolean> | boolean
+export type Condition<T> = (data: T) => MaybePromise<boolean>
 
 export interface Mutation<T, O = any> {
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Mutation<T>
@@ -26,7 +26,7 @@ export interface Mutation<T, O = any> {
   if (condition: Condition<T>, mutation: Mutation<T, O>): Mutation<T, O>
   unless (condition: Condition<T>, mutation: Mutation<T, O>): Mutation<T, O>
   render (): Mutator<T, O>
-  mutate (mutation: Mutation<T, O>): Mutation<T, O>
+  concat (mutation: Mutation<T, O>): Mutation<T, O>
   create (data: T, options?: UnwrapOptions<O>): Promise<T>
   read (data: T, options?: UnwrapOptions<O>): Promise<T>
   undo (steps?: number): Mutation<T, O>
@@ -61,7 +61,7 @@ function updateMethod<T, O, A extends any[]> (
   mapper: Mapper<T, A>,
   ...args: A
 ): State<T, O> {
-  return pushMutators(state, async status => {
+  return pushMutators(state, async (status: Status<any>) => {
     return updateStatus(
       status,
       await mapper(status.target, ...args)
@@ -146,7 +146,7 @@ function renderMethod<T, O> (
   }
 }
 
-function mutateMethod<T, O> (
+function concatMethod<T, O> (
   state: State<T, O>,
   mutation: Mutation<T, O>
 ): State<T, O> {
@@ -227,7 +227,7 @@ export function createMutation<T, O = any> (
       commit: commitMethod,
       if: ifMethod,
       unless: unlessMethod,
-      mutate: mutateMethod
+      concat: concatMethod
     },
     methods: {
       render: renderMethod,

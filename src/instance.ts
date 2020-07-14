@@ -58,7 +58,7 @@ function mutateMethod<T, U, O> (
   state: State<T, U, O>,
   newMutation: Mutation<T, O>
 ): State<T, U, O> {
-  return mutateState(state, oldMutation => oldMutation.mutate(newMutation))
+  return mutateState(state, oldMutation => oldMutation.concat(newMutation))
 }
 
 function updateMethod<T, U, O, A extends any[]> (

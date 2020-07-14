@@ -202,11 +202,11 @@ test('mutation#unless', async t => {
   t.deepEqual(b, { id: 42, value: 'UPDATE' })
 })
 
-test('mutation#mutate', async t => {
+test('mutation#concat', async t => {
   const a = createMutation<Item>().update(
     item => ({ ...item, id: item.id + 1 })
   )
   const b = createMutation<Item>().assign({ value: 'MUTATE' })
-  const out = await a.mutate(b).read({ id: 0 })
+  const out = await a.concat(b).read({ id: 0 })
   t.deepEqual(out, { id: 1, value: 'MUTATE' })
 })
