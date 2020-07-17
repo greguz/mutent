@@ -2,15 +2,12 @@ import stream from 'stream'
 import fluente from 'fluente'
 import Herry from 'herry'
 
-import { Many, One, StreamOptions, UnwrapOptions } from './data'
-import { Mutation, MutationSettings, MutationState, assignMethod, ifMethod, renderMethod, commitMethod, deleteMethod, mutateMethod, unlessMethod, updateMethod } from './mutation'
+import { Many, One, StreamOptions, UnwrapOptions, streamMany, streamOne, unwrapMany, unwrapOne } from './data'
+import { Mutation, MutationSettings, MutationState, assignMethod, commitMethod, deleteMethod, ifMethod, mutateMethod, renderMethod, unlessMethod, updateMethod } from './mutation'
 import { Mutator, renderMutators } from './mutator'
 import { createStatus, readStatus, shouldCommit } from './status'
 import { isUndefined, objectify } from './utils'
 import { handleWriter } from './writer'
-
-import { streamMany, unwrapMany } from './entities'
-import { streamOne, unwrapOne } from './entity'
 
 export interface InstanceSettings<T, O> extends MutationSettings<T, O> {
   autoCommit?: boolean
