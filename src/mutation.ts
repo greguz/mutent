@@ -15,8 +15,8 @@ export interface Mutation<T, O = any> {
   assign (object: Partial<T>): this
   delete (): this
   commit (): this
-  if (condition: Condition<T>, mutation: MutationOrMapper<T, O>): this
-  unless (condition: Condition<T>, mutation: MutationOrMapper<T, O>): this
+  if (condition: Condition<T>, action: Action<T, O>): this
+  unless (condition: Condition<T>, action: Action<T, O>): this
   mutate (mutation: Mutation<T, O>): this
   render (): Mutator<T, O>
   undo (steps?: number): this
@@ -29,9 +29,9 @@ export interface MutationSettings<T, O = any> {
   writer?: Writer<T, O>
 }
 
-export type MutationMapper<T, O = any> = (mutation: Mutation<T, O>) => Mutation<T, O>
+export type Descriptor<T, O = any> = (mutation: Mutation<T, O>) => Mutation<T, O>
 
-export type MutationOrMapper<T, O = any> = Mutation<T, O> | MutationMapper<T, O>
+export type Action<T, O = any> = Mutation<T, O> | Descriptor<T, O>
 
 export interface MutationState<T, O> {
   mutators: Array<Mutator<T, O>>
@@ -90,12 +90,12 @@ export function commitMethod<T, O> (
   )
 }
 
-function wrapMutationMapper<T, O> (
-  fn: MutationMapper<T, O>,
+function wrapDescriptor<T, O> (
+  descriptor: Descriptor<T, O>,
   settings: MutationSettings<T, O>
 ): Mutator<T, O> {
-  return function wrappedMutationMapper (status, options) {
-    const mutation = fn(createMutation(settings))
+  return function wrappedDescriptor (status, options) {
+    const mutation = descriptor(createMutation(settings))
     const mutator = mutation.render()
     return mutator(status, options)
   }
@@ -104,14 +104,14 @@ function wrapMutationMapper<T, O> (
 export function ifMethod<T, O> (
   state: MutationState<T, O>,
   condition: Condition<T>,
-  mutation: MutationOrMapper<T, O>
+  action: Action<T, O>
 ): MutationState<T, O> {
   return pushMutators(
     state,
     applyCondition(
-      typeof mutation === 'function'
-        ? wrapMutationMapper(mutation, state.settings)
-        : mutation.render(),
+      typeof action === 'function'
+        ? wrapDescriptor(action, state.settings)
+        : action.render(),
       condition
     )
   )
@@ -120,9 +120,9 @@ export function ifMethod<T, O> (
 export function unlessMethod<T, O> (
   state: MutationState<T, O>,
   condition: Condition<T>,
-  mutation: MutationOrMapper<T, O>
+  action: Action<T, O>
 ): MutationState<T, O> {
-  return ifMethod(state, negateCondition(condition), mutation)
+  return ifMethod(state, negateCondition(condition), action)
 }
 
 export function mutateMethod<T, O> (
