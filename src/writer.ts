@@ -1,17 +1,17 @@
 import { Status, commitStatus, updateStatus } from './status'
-import { MaybePromise, isNil, isNull } from './utils'
+import { Result, isNil, isNull } from './utils'
 
-export type WriterOutput<T> = MaybePromise<T | null | undefined | void>
+export type WriteResult<T> = Result<T | null | undefined | void>
 
 export interface Writer<T, O = any> {
-  create? (data: T, options: Partial<O>): WriterOutput<T>
-  update? (oldData: T, newData: T, options: Partial<O>): WriterOutput<T>
-  delete? (data: T, options: Partial<O>): WriterOutput<T>
+  create? (data: T, options: Partial<O>): WriteResult<T>
+  update? (oldData: T, newData: T, options: Partial<O>): WriteResult<T>
+  delete? (data: T, options: Partial<O>): WriteResult<T>
 }
 
 async function exec<T, A extends any[]> (
   status: Status<T>,
-  fn: (...args: A) => WriterOutput<T>,
+  fn: (...args: A) => WriteResult<T>,
   ...args: A
 ): Promise<Status<T>> {
   const out = await fn(...args)

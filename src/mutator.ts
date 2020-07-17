@@ -1,27 +1,16 @@
 import { Status } from './status'
-import { MaybePromise, isNil } from './utils'
+import { Lazy, Result, isNil, unlazy } from './utils'
 
 export type Mutator<T, O = any> = (
   status: Status<T>,
   options: Partial<O>
-) => MaybePromise<Status<T>>
+) => Result<Status<T>>
 
-export type Condition<T> = ((data: T) => MaybePromise<boolean>) | boolean
-
-async function compileCondition<T> (
-  condition: Condition<T>,
-  data: T
-): Promise<boolean> {
-  if (typeof condition === 'boolean') {
-    return condition
-  } else {
-    return condition(data)
-  }
-}
+export type Condition<T> = Lazy<Result<boolean>, T>
 
 export function negateCondition<T> (condition: Condition<T>): Condition<T> {
   return async function negatedCondition (data) {
-    const ok = await compileCondition(condition, data)
+    const ok = await unlazy(condition, data)
     return !ok
   }
 }
@@ -31,7 +20,7 @@ export function applyCondition<T, O> (
   condition: Condition<T>
 ): Mutator<T, O> {
   return async function conditionalMutator (status, options) {
-    const ok = await compileCondition(condition, status.target)
+    const ok = await unlazy(condition, status.target)
     if (!ok) {
       return status
     } else {

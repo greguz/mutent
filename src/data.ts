@@ -10,17 +10,11 @@ import {
 
 import { Mutator, applyMutator } from './mutator'
 import { Status } from './status'
-import { isNull } from './utils'
-
-export type Lazy<T, O = any> = ((options: Partial<O>) => T) | T
+import { Lazy, isNull, unlazy } from './utils'
 
 export type Value<T> = Promise<T> | T
 
 export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
-
-export type One<T, O = any> = Lazy<Value<T>, O>
-
-export type Many<T, O = any> = Lazy<Values<T>, O>
 
 export type UnwrapOptions<O = {}> = Partial<O> & {
   autoCommit?: boolean
@@ -32,11 +26,9 @@ export type StreamOptions<O = {}> = UnwrapOptions<O> & {
   highWaterMark?: number
 }
 
-function unlazy<T, O> (lazy: Lazy<T, O>, options: Partial<O>): T {
-  return typeof lazy === 'function'
-    ? (lazy as any)(options)
-    : lazy
-}
+export type One<T, O = any> = Lazy<Value<T>, StreamOptions<O>>
+
+export type Many<T, O = any> = Lazy<Values<T>, StreamOptions<O>>
 
 async function getValue<T> (value: Value<T>): Promise<T> {
   return value

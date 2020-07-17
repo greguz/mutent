@@ -8,13 +8,13 @@ import {
   renderMutators
 } from './mutator'
 import { Status, deleteStatus, updateStatus } from './status'
-import { MaybePromise } from './utils'
+import { Result } from './utils'
 import { Writer, handleWriter } from './writer'
 
 export type Mapper<T, A extends any[]> = (
   data: Exclude<T, null>,
   ...args: A
-) => MaybePromise<T>
+) => Result<T>
 
 export interface Mutation<T, O = any> {
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): this

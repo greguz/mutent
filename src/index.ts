@@ -1,5 +1,4 @@
 export {
-  Lazy,
   Many,
   One,
   StreamOptions,
@@ -18,4 +17,5 @@ export {
 } from './mutation'
 export { Condition, Mutator } from './mutator'
 export * from './store'
-export { Writer, WriterOutput } from './writer'
+export { Lazy, Result } from './utils'
+export { WriteResult, Writer } from './writer'
