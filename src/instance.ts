@@ -2,7 +2,7 @@ import stream from 'stream'
 import fluente from 'fluente'
 
 import { Many, One, StreamOptions, UnwrapOptions } from './data'
-import { Condition, Mapper, Mutation, MutationSettings, createMutation } from './mutation'
+import { Condition, Mapper, Mutation, MutationOrMapper, MutationSettings, createMutation } from './mutation'
 import { objectify } from './utils'
 
 import { streamMany, unwrapMany } from './entities'
@@ -14,8 +14,8 @@ export interface Instance<T, U, O> {
   assign (object: Partial<T>): Instance<T, U, O>
   delete (): Instance<T, U, O>
   commit (): Instance<T, U, O>
-  if (condition: Condition<T>, mutation: Mutation<T, O>): Instance<T, U, O>
-  unless (condition: Condition<T>, mutation: Mutation<T, O>): Instance<T, U, O>
+  if (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Instance<T, U, O>
+  unless (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Instance<T, U, O>
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
   createMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
@@ -91,7 +91,7 @@ function commitMethod<T, U, O> (
 function ifMethod<T, U, O> (
   state: State<T, U, O>,
   condition: Condition<T>,
-  newMutation: Mutation<T, O>
+  newMutation: MutationOrMapper<T, O>
 ): State<T, U, O> {
   return mutateState(
     state,
@@ -102,7 +102,7 @@ function ifMethod<T, U, O> (
 function unlessMethod<T, U, O> (
   state: State<T, U, O>,
   condition: Condition<T>,
-  newMutation: Mutation<T, O>
+  newMutation: MutationOrMapper<T, O>
 ): State<T, U, O> {
   return mutateState(
     state,

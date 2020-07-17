@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { createMutation } from './mutation'
+import { Mutation, createMutation } from './mutation'
 import { Writer } from './writer'
 
 interface Item {
@@ -209,4 +209,22 @@ test('mutation#concat', async t => {
   const b = createMutation<Item>().assign({ value: 'MUTATE' })
   const out = await a.concat(b).read({ id: 0 })
   t.deepEqual(out, { id: 1, value: 'MUTATE' })
+})
+
+test('mutation#mapper', async t => {
+  const mutation = createMutation<Item>()
+
+  const isBinary = (item: Item) => item.id === 0 || item.id === 1
+
+  const setValue = (mutation: Mutation<Item>) => mutation.assign({ value: 'UPDATE' })
+
+  const a = await mutation
+    .if(isBinary, setValue)
+    .read({ id: 0, value: 'READ' })
+  t.deepEqual(a, { id: 0, value: 'UPDATE' })
+
+  const b = await mutation
+    .if(isBinary, setValue)
+    .read({ id: 42, value: 'READ' })
+  t.deepEqual(b, { id: 42, value: 'READ' })
 })

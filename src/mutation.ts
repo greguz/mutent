@@ -23,8 +23,8 @@ export interface Mutation<T, O = any> {
   assign (object: Partial<T>): Mutation<T>
   delete (): Mutation<T>
   commit (): Mutation<T>
-  if (condition: Condition<T>, mutation: Mutation<T, O>): Mutation<T, O>
-  unless (condition: Condition<T>, mutation: Mutation<T, O>): Mutation<T, O>
+  if (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Mutation<T, O>
+  unless (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Mutation<T, O>
   render (): Mutator<T, O>
   concat (mutation: Mutation<T, O>): Mutation<T, O>
   create (data: T, options?: UnwrapOptions<O>): Promise<T>
@@ -40,6 +40,10 @@ export interface MutationSettings<T, O = any> {
   safe?: boolean
   writer?: Writer<T, O>
 }
+
+export type MutationMapper<T, O = any> = (mutation: Mutation<T, O>) => Mutation<T, O>
+
+export type MutationOrMapper<T, O = any> = Mutation<T, O> | MutationMapper<T, O>
 
 interface State<T, O> {
   mutators: Array<Mutator<T, O>>
@@ -130,18 +134,37 @@ function applyCondition<T, O> (
   }
 }
 
+function wrapMutationMapper<T, O> (
+  fn: MutationMapper<T, O>,
+  settings: MutationSettings<T, O>
+): Mutator<T, O> {
+  return function wrappedMutationMapper (status, options) {
+    const mutation = fn(createMutation(settings))
+    const mutator = mutation.render()
+    return mutator(status, options)
+  }
+}
+
 function ifMethod<T, O> (
   state: State<T, O>,
   condition: Condition<T>,
-  mutation: Mutation<T, O>
+  mutation: MutationOrMapper<T, O>
 ): State<T, O> {
-  return pushMutators(state, applyCondition(mutation.render(), condition))
+  return pushMutators(
+    state,
+    applyCondition(
+      typeof mutation === 'function'
+        ? wrapMutationMapper(mutation, state.settings)
+        : mutation.render(),
+      condition
+    )
+  )
 }
 
 function unlessMethod<T, O> (
   state: State<T, O>,
   condition: Condition<T>,
-  mutation: Mutation<T, O>
+  mutation: MutationOrMapper<T, O>
 ): State<T, O> {
   return ifMethod(state, negateCondition(condition), mutation)
 }
