@@ -18,19 +18,22 @@ export type Mutator<T, O = any> = (
 
 export type Condition<T> = ((data: T) => MaybePromise<boolean>) | boolean
 
-export interface Mutation<T, O = any> {
-  update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Mutation<T>
-  assign (object: Partial<T>): Mutation<T>
-  delete (): Mutation<T>
-  commit (): Mutation<T>
-  if (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Mutation<T, O>
-  unless (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Mutation<T, O>
+export interface Mutable<T, O = any> {
+  update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): this
+  assign (object: Partial<T>): this
+  delete (): this
+  commit (): this
+  if (condition: Condition<T>, mutation: MutationOrMapper<T, O>): this
+  unless (condition: Condition<T>, mutation: MutationOrMapper<T, O>): this
+  undo (steps?: number): this
+  redo (steps?: number): this
+}
+
+export interface Mutation<T, O = any> extends Mutable<T, O> {
   render (): Mutator<T, O>
-  concat (mutation: Mutation<T, O>): Mutation<T, O>
+  concat (mutation: Mutation<T, O>): this
   create (data: T, options?: UnwrapOptions<O>): Promise<T>
   read (data: T, options?: UnwrapOptions<O>): Promise<T>
-  undo (steps?: number): Mutation<T, O>
-  redo (steps?: number): Mutation<T, O>
 }
 
 export interface MutationSettings<T, O = any> {

@@ -2,25 +2,17 @@ import stream from 'stream'
 import fluente from 'fluente'
 
 import { Many, One, StreamOptions, UnwrapOptions } from './data'
-import { Condition, Mapper, Mutation, MutationOrMapper, MutationSettings, createMutation } from './mutation'
+import { Condition, Mapper, Mutable, Mutation, MutationOrMapper, MutationSettings, createMutation } from './mutation'
 import { objectify } from './utils'
 
 import { streamMany, unwrapMany } from './entities'
 import { streamOne, unwrapOne } from './entity'
 
-export interface Instance<T, U, O> {
-  mutate (mutation: Mutation<T, O>): Instance<T, U, O>
-  update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): Instance<T, U, O>
-  assign (object: Partial<T>): Instance<T, U, O>
-  delete (): Instance<T, U, O>
-  commit (): Instance<T, U, O>
-  if (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Instance<T, U, O>
-  unless (condition: Condition<T>, mutation: MutationOrMapper<T, O>): Instance<T, U, O>
+export interface Instance<T, U, O> extends Mutable<T, O> {
+  mutate (mutation: Mutation<T, O>): this
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
   createMutation (settings?: MutationSettings<T, O>): Mutation<T, O>
-  undo (steps?: number): Instance<T, U, O>
-  redo (steps?: number): Instance<T, U, O>
 }
 
 export type Entity<T, O = any> = Instance<T, T, O>
