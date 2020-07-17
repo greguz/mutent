@@ -1,6 +1,12 @@
 import fluente from 'fluente'
 
-import { Condition, Mutator, applyCondition, negateCondition, renderMutators } from './mutator'
+import {
+  Condition,
+  Mutator,
+  applyCondition,
+  negateCondition,
+  renderMutators
+} from './mutator'
 import { Status, deleteStatus, updateStatus } from './status'
 import { MaybePromise } from './utils'
 import { Writer, handleWriter } from './writer'
@@ -29,7 +35,9 @@ export interface MutationSettings<T, O = any> {
   writer?: Writer<T, O>
 }
 
-export type Descriptor<T, O = any> = (mutation: Mutation<T, O>) => Mutation<T, O>
+export type Descriptor<T, O = any> = (
+  mutation: Mutation<T, O>
+) => Mutation<T, O>
 
 export type Action<T, O = any> = Mutation<T, O> | Descriptor<T, O>
 
@@ -38,13 +46,13 @@ export interface MutationState<T, O> {
   settings: MutationSettings<T, O>
 }
 
-function pushMutators<T, O> (
+function pushMutator<T, O> (
   state: MutationState<T, O>,
-  ...mutators: Array<Mutator<T, O>>
+  mutator: Mutator<T, O>
 ): MutationState<T, O> {
   return {
     ...state,
-    mutators: [...state.mutators, ...mutators]
+    mutators: [...state.mutators, mutator]
   }
 }
 
@@ -53,7 +61,7 @@ export function updateMethod<T, O, A extends any[]> (
   mapper: Mapper<T, A>,
   ...args: A
 ): MutationState<T, O> {
-  return pushMutators(state, async (status: Status<any>) => {
+  return pushMutator(state, async (status: Status<any>) => {
     return updateStatus(
       status,
       await mapper(status.target, ...args)
@@ -74,7 +82,7 @@ export function assignMethod<T, O> (
 export function deleteMethod<T, O> (
   state: MutationState<T, O>
 ): MutationState<T, O> {
-  return pushMutators(state, deleteStatus)
+  return pushMutator(state, deleteStatus)
 }
 
 export function commitMethod<T, O> (
@@ -84,7 +92,7 @@ export function commitMethod<T, O> (
   if (!writer) {
     return state
   }
-  return pushMutators(
+  return pushMutator(
     state,
     (status, options) => handleWriter(writer, status, options)
   )
@@ -106,7 +114,7 @@ export function ifMethod<T, O> (
   condition: Condition<T>,
   action: Action<T, O>
 ): MutationState<T, O> {
-  return pushMutators(
+  return pushMutator(
     state,
     applyCondition(
       typeof action === 'function'
@@ -129,7 +137,7 @@ export function mutateMethod<T, O> (
   state: MutationState<T, O>,
   mutation: Mutation<T, O>
 ): MutationState<T, O> {
-  return pushMutators(state, mutation.render())
+  return pushMutator(state, mutation.render())
 }
 
 export function renderMethod<T, O> (
@@ -160,6 +168,7 @@ export function createMutation<T, O = any> (
     },
     methods: {
       render: renderMethod
-    }
+    },
+    constants: {}
   })
 }

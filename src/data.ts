@@ -1,5 +1,12 @@
 import stream from 'stream'
-import { Readable, Transform, Writable, isReadable, pipeline, readify } from 'fluido'
+import {
+  Readable,
+  Transform,
+  Writable,
+  isReadable,
+  pipeline,
+  readify
+} from 'fluido'
 
 import { Mutator, applyMutator } from './mutator'
 import { Status } from './status'
