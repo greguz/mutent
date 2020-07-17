@@ -1,7 +1,6 @@
 import test from 'ava'
 
 import { StoreSettings, createStore } from './store'
-import { Writer } from './writer'
 
 interface Item {
   id: number
@@ -119,25 +118,4 @@ test('store missing', async t => {
     createStore({}).read({}).unwrap(),
     { code: 'EMUT_NOT_FOUND' }
   )
-})
-
-test('store mutation', async t => {
-  t.plan(3)
-  const writer: Writer<Item> = {
-    async create () {
-      t.fail()
-    },
-    async update (oldData, newData) {
-      t.deepEqual(oldData, { id: 0 })
-      t.deepEqual(newData, { id: 0, value: 'MUTATED' })
-    },
-    async delete () {
-      t.fail()
-    }
-  }
-  const out = await createStore({ writer })
-    .createMutation()
-    .assign({ value: 'MUTATED' })
-    .read({ id: 0 })
-  t.deepEqual(out, { id: 0, value: 'MUTATED' })
 })

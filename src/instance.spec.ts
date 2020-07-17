@@ -2,6 +2,7 @@ import test from 'ava'
 import { collect, subscribe } from 'fluido'
 
 import { createEntities, createEntity, readEntities, readEntity } from './instance'
+import { createMutation } from './mutation'
 
 interface Item {
   id: number,
@@ -63,8 +64,8 @@ test('readEntities#stream', async t => {
 test('instance#conditional-mutation', async t => {
   const entity = readEntity<Item>({ id: 0 })
 
-  const mDelete = entity.createMutation().assign({ value: 'DELETE' })
-  const mUpdate = entity.createMutation().assign({ value: 'UPDATE' })
+  const mDelete = createMutation().assign({ value: 'DELETE' })
+  const mUpdate = createMutation().assign({ value: 'UPDATE' })
 
   const a = await entity
     .if(true, mDelete)
@@ -81,7 +82,7 @@ test('instance#conditional-mutation', async t => {
 
 test('instance#mutate', async t => {
   const entity = readEntity<Item>({ id: 0 })
-  const mutation = entity.createMutation().assign({ value: 'UPDATE' })
+  const mutation = createMutation().assign({ value: 'UPDATE' })
   const out = await entity.mutate(mutation).unwrap()
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
 })

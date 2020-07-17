@@ -2,12 +2,13 @@ import stream from 'stream'
 import { Transform, Writable, pipeline, readify } from 'fluido'
 
 import { Many, StreamOptions, UnwrapOptions, getMany } from './data'
-import { Mutation, applyMutation } from './mutation'
+import { Mutator, applyMutator } from './mutator'
+import { Status } from './status'
 
 export function unwrapMany<T, O> (
   many: Many<T, O>,
-  persisted: boolean,
-  mutation: Mutation<T, O>,
+  build: (data: T) => Status<T>,
+  mutator: Mutator<T, O>,
   options: UnwrapOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
@@ -18,7 +19,7 @@ export function unwrapMany<T, O> (
         objectMode: true,
         async write (chunk) {
           results.push(
-            await applyMutation(chunk, persisted, mutation, options)
+            await applyMutator(build(chunk), mutator, options)
           )
         }
       }),
@@ -35,8 +36,8 @@ export function unwrapMany<T, O> (
 
 export function streamMany<T, O> (
   many: Many<T, O>,
-  persisted: boolean,
-  mutation: Mutation<T, O>,
+  build: (data: T) => Status<T>,
+  mutator: Mutator<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
   return readify(
@@ -51,7 +52,7 @@ export function streamMany<T, O> (
       objectMode: true,
       async transform (chunk) {
         this.push(
-          await applyMutation(chunk, persisted, mutation, options)
+          await applyMutator(build(chunk), mutator, options)
         )
       }
     })
