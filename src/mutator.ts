@@ -1,4 +1,4 @@
-import { Status } from './status'
+import { Status, updateStatus } from './status'
 import { Lazy, Result, isNil, unlazy } from './utils'
 
 export type Mutator<T, O = any> = (
@@ -6,7 +6,24 @@ export type Mutator<T, O = any> = (
   options: Partial<O>
 ) => Result<Status<T>>
 
+export type Mapper<T, A extends any[]> = (
+  data: Exclude<T, null>,
+  ...args: A
+) => Result<T>
+
 export type Condition<T> = Lazy<Result<boolean>, T>
+
+export function createMutator<T, A extends any[]> (
+  mapper: Mapper<T, A>,
+  ...args: A
+): Mutator<T, any> {
+  return async function mapMutator (status: Status<any>) {
+    return updateStatus(
+      status,
+      await mapper(status.target, ...args)
+    )
+  }
+}
 
 export function negateCondition<T> (condition: Condition<T>): Condition<T> {
   return async function negatedCondition (data) {

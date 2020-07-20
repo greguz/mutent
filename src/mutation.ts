@@ -2,19 +2,15 @@ import fluente from 'fluente'
 
 import {
   Condition,
+  Mapper,
   Mutator,
   applyCondition,
+  createMutator,
   negateCondition,
   renderMutators
 } from './mutator'
-import { Status, deleteStatus, updateStatus } from './status'
-import { Result } from './utils'
+import { deleteStatus } from './status'
 import { Writer, handleWriter } from './writer'
-
-export type Mapper<T, A extends any[]> = (
-  data: Exclude<T, null>,
-  ...args: A
-) => Result<T>
 
 export interface Mutation<T, O = any> {
   update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): this
@@ -61,22 +57,14 @@ export function updateMethod<T, O, A extends any[]> (
   mapper: Mapper<T, A>,
   ...args: A
 ): MutationState<T, O> {
-  return pushMutator(state, async (status: Status<any>) => {
-    return updateStatus(
-      status,
-      await mapper(status.target, ...args)
-    )
-  })
+  return pushMutator(state, createMutator(mapper, ...args))
 }
 
 export function assignMethod<T, O> (
   state: MutationState<T, O>,
   object: Partial<T>
 ): MutationState<T, O> {
-  return updateMethod(
-    state,
-    data => Object.assign({}, data, object)
-  )
+  return updateMethod(state, data => Object.assign({}, data, object))
 }
 
 export function deleteMethod<T, O> (
