@@ -6,7 +6,15 @@ export {
   Value,
   Values
 } from './data'
-export * from './instance'
+export {
+  Entities,
+  Entity,
+  InstanceSettings,
+  createEntities,
+  createEntity,
+  readEntities,
+  readEntity
+} from './instance'
 export {
   Action,
   Descriptor,
@@ -16,6 +24,6 @@ export {
   createMutation
 } from './mutation'
 export { Condition, Mutator } from './mutator'
-export * from './store'
+export { Reader, Store, StoreSettings, createStore } from './store'
 export { Lazy, Result } from './utils'
 export { WriteResult, Writer } from './writer'

@@ -35,14 +35,20 @@ export interface InstanceSettings<T, O> extends MutationSettings<T, O> {
   safe?: boolean
 }
 
-export interface Instance<T, U, O> extends Mutation<T, O> {
+interface Instance<T, U, O> extends Mutation<T, O> {
   unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
-export type Entity<T, O = any> = Instance<T, T, O>
+export interface Entity<T, O = any> extends Mutation<T, O> {
+  unwrap (options?: UnwrapOptions<O>): Promise<T>
+  stream (options?: StreamOptions<O>): stream.Readable
+}
 
-export type Entities<T, O = any> = Instance<T, T[], O>
+export interface Entities<T, O = any> extends Mutation<T, O> {
+  unwrap (options?: UnwrapOptions<O>): Promise<T[]>
+  stream (options?: StreamOptions<O>): stream.Readable
+}
 
 type Unwrapper<T, U, O> = (
   mutator: Mutator<T, O>,
