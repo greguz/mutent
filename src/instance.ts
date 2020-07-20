@@ -28,7 +28,7 @@ import {
 import { Mutator, renderMutators } from './mutator'
 import { createStatus, readStatus, shouldCommit } from './status'
 import { isUndefined, objectify } from './utils'
-import { handleWriter } from './writer'
+import { Writer, handleWriter } from './writer'
 
 export interface InstanceSettings<T, O> extends MutationSettings<T, O> {
   autoCommit?: boolean
@@ -60,23 +60,19 @@ interface InstanceState<T, U, O> extends MutationState<T, O> {
   unwrap: Unwrapper<T, U, O>
 }
 
-function createSafeMutator<T, U, O> (
-  state: InstanceState<T, U, O>
+function createSafeMutator<T, O> (
+  writer: Writer<T, O>,
+  defaultAutoCommit?: boolean,
+  defaultSafe?: boolean
 ): Mutator<T, O> {
-  const { settings } = state
-  const { writer } = settings
-  if (!writer) {
-    return status => status
-  }
-
   return async function safeMutator (status, options: UnwrapOptions<O>) {
     if (shouldCommit(status)) {
       const autoCommit = isUndefined(options.autoCommit)
-        ? settings.autoCommit !== false
+        ? defaultAutoCommit !== false
         : options.autoCommit !== false
 
       const safe = isUndefined(options.safe)
-        ? settings.safe !== false
+        ? defaultSafe !== false
         : options.safe !== false
 
       if (autoCommit) {
@@ -94,30 +90,38 @@ function createSafeMutator<T, U, O> (
   }
 }
 
+function getMutators<T, U, O> (
+  state: InstanceState<T, U, O>
+): Array<Mutator<T, O>> {
+  const { mutators, settings } = state
+  const { writer } = settings
+  if (!writer) {
+    return mutators
+  }
+  return [
+    ...mutators,
+    createSafeMutator(writer, settings.autoCommit, settings.safe)
+  ]
+}
+
 async function unwrapMethod<T, U, O> (
   state: InstanceState<T, U, O>,
   options?: UnwrapOptions<O>
 ): Promise<U> {
-  return state.unwrap(
-    renderMutators([...state.mutators, createSafeMutator(state)]),
-    objectify(options)
-  )
+  return state.unwrap(renderMutators(getMutators(state)), objectify(options))
 }
 
 function streamMethod<T, U, O> (
   state: InstanceState<T, U, O>,
   options?: StreamOptions<O>
 ): stream.Readable {
-  return state.stream(
-    renderMutators([...state.mutators, createSafeMutator(state)]),
-    objectify(options)
-  )
+  return state.stream(renderMutators(getMutators(state)), objectify(options))
 }
 
 function createInstance<T, U, O> (
   unwrap: Unwrapper<T, U, O>,
   stream: Streamer<T, O>,
-  settings: InstanceSettings<T, O>
+  settings: InstanceSettings<T, O> = {}
 ): Instance<T, U, O> {
   const state: InstanceState<T, U, O> = {
     mutators: [],
@@ -149,7 +153,7 @@ function createInstance<T, U, O> (
 
 export function createEntity<T, O = any> (
   one: One<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>
 ): Entity<T, O> {
   return createInstance(
     (mutator, options) => unwrapOne(one, createStatus, mutator, options),
@@ -160,7 +164,7 @@ export function createEntity<T, O = any> (
 
 export function readEntity<T, O = any> (
   one: One<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>
 ): Entity<T, O> {
   return createInstance(
     (mutator, options) => unwrapOne(one, readStatus, mutator, options),
@@ -171,7 +175,7 @@ export function readEntity<T, O = any> (
 
 export function createEntities<T, O = any> (
   many: Many<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>
 ): Entities<T, O> {
   return createInstance(
     (mutator, options) => unwrapMany(many, createStatus, mutator, options),
@@ -182,7 +186,7 @@ export function createEntities<T, O = any> (
 
 export function readEntities<T, O = any> (
   many: Many<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>
 ): Entities<T, O> {
   return createInstance(
     (mutator, options) => unwrapMany(many, readStatus, mutator, options),

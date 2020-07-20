@@ -21,7 +21,7 @@ async function exec<T, A extends any[]> (
   return commitStatus(status)
 }
 
-export function handleWriter<T, O> (
+export async function handleWriter<T, O> (
   writer: Writer<T, O>,
   status: Status<T>,
   options: Partial<O> = {}
@@ -39,5 +39,5 @@ export function handleWriter<T, O> (
       return exec(status, writer.delete, status.source, options)
     }
   }
-  return Promise.resolve(commitStatus(status))
+  return commitStatus(status)
 }
