@@ -15,7 +15,7 @@ import { isNull, isUndefined } from './utils'
 export interface Reader<T, Q = any, O = any> {
   find? (query: Q, options: Partial<O>): Value<T | null | undefined>
   filter? (query: Q, options: Partial<O>): Values<T>
-  Error?: (query: Q, options: Partial<O>) => any
+  errorFactory?: (query: Q, options: Partial<O>) => Error
 }
 
 export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
@@ -49,8 +49,8 @@ async function readData<T, Q, O> (
 ): Promise<T> {
   const data = await findData(reader, query, options)
   if (isNull(data)) {
-    throw typeof reader.Error === 'function'
-      ? reader.Error(query, options)
+    throw typeof reader.errorFactory === 'function'
+      ? reader.errorFactory(query, options)
       : new Herry('EMUT_NOT_FOUND', 'Entity not found', { query, options })
   }
   return data

@@ -105,9 +105,9 @@ test('default store', async t => {
 })
 
 test('store missing', async t => {
-  const store = createStore({
+  const store = createStore<any, string, any>({
     reader: {
-      Error
+      errorFactory: query => new Error(query)
     }
   })
   await t.throwsAsync(
