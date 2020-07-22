@@ -26,7 +26,7 @@ export async function handleWriter<T, O> (
   status: Status<T>,
   options: Partial<O> = {}
 ): Promise<Status<T>> {
-  if (isNull(status.source) && !status.deleted) {
+  if (isNull(status.source) && status.created && !status.deleted) {
     if (writer.create) {
       return exec(status, writer.create, status.target, options)
     }

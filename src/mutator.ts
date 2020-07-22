@@ -1,5 +1,5 @@
 import { Status, updateStatus } from './status'
-import { Lazy, Result, isNil, unlazy } from './utils'
+import { Lazy, Result, isNull, unlazy } from './utils'
 
 export type Mutator<T, O = any> = (
   status: Status<T>,
@@ -62,7 +62,7 @@ export async function applyMutator<T, O> (
   mutator: Mutator<T>,
   options: Partial<O>
 ): Promise<T> {
-  if (isNil(status.target)) {
+  if (isNull(status.target)) {
     return status.target
   }
   const result = await mutator(status, options)
