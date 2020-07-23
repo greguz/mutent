@@ -1,12 +1,10 @@
 import stream from 'stream'
 import fluente from 'fluente'
-import Herry from 'herry'
 
 import {
   Many,
   One,
   StreamOptions,
-  UnwrapOptions,
   streamMany,
   streamOne,
   unwrapMany,
@@ -25,114 +23,65 @@ import {
   unlessMethod,
   updateMethod
 } from './mutation'
-import { Mutator, renderMutators } from './mutator'
-import { createStatus, readStatus, shouldCommit } from './status'
-import { isUndefined, objectify } from './utils'
-import { Writer, handleWriter } from './writer'
+import { createStatus, readStatus } from './status'
+import { MutationTree } from './tree'
+import { objectify } from './utils'
+import { WritableSettings, WritableOptions } from './writer'
 
-export interface InstanceSettings<T, O> extends MutationSettings<T, O> {
-  autoCommit?: boolean
-  safe?: boolean
-}
+export interface InstanceSettings<T, O> extends MutationSettings, WritableSettings<T, O> {}
 
-interface Instance<T, U, O> extends Mutation<T, O> {
-  unwrap (options?: UnwrapOptions<O>): Promise<U>
+interface Instance<T, U, O> extends Mutation<T> {
+  unwrap (options?: WritableOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
-export interface Entity<T, O = any> extends Mutation<T, O> {
-  unwrap (options?: UnwrapOptions<O>): Promise<T>
+export interface Entity<T, O = any> extends Mutation<T> {
+  unwrap (options?: WritableOptions<O>): Promise<T>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
-export interface Entities<T, O = any> extends Mutation<T, O> {
-  unwrap (options?: UnwrapOptions<O>): Promise<T[]>
+export interface Entities<T, O = any> extends Mutation<T> {
+  unwrap (options?: WritableOptions<O>): Promise<T[]>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
 type Unwrapper<T, U, O> = (
-  mutator: Mutator<T, O>,
-  options: UnwrapOptions<O>
+  tree: MutationTree<T>,
+  options: WritableOptions<O>
 ) => Promise<U>
 
 type Streamer<T, O> = (
-  mutator: Mutator<T, O>,
+  tree: MutationTree<T>,
   options: StreamOptions<O>
 ) => stream.Readable
 
-interface InstanceState<T, U, O> extends MutationState<T, O> {
-  settings: InstanceSettings<T, O>
+interface InstanceState<T, U, O> extends MutationState<T> {
   stream: Streamer<T, O>
   unwrap: Unwrapper<T, U, O>
 }
 
-function createSafeMutator<T, O> (
-  writer: Writer<T, O>,
-  defaultAutoCommit?: boolean,
-  defaultSafe?: boolean
-): Mutator<T, O> {
-  return async function safeMutator (status, options: UnwrapOptions<O>) {
-    if (shouldCommit(status)) {
-      const autoCommit = isUndefined(options.autoCommit)
-        ? defaultAutoCommit !== false
-        : options.autoCommit !== false
-
-      const safe = isUndefined(options.safe)
-        ? defaultSafe !== false
-        : options.safe !== false
-
-      if (autoCommit) {
-        status = await handleWriter(writer, status, options)
-      } else if (safe) {
-        throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
-          source: status.source,
-          target: status.target,
-          options
-        })
-      }
-    }
-
-    return status
-  }
-}
-
-function getMutators<T, U, O> (
-  state: InstanceState<T, U, O>
-): Array<Mutator<T, O>> {
-  const { mutators, settings } = state
-  const { writer } = settings
-  if (!writer) {
-    return mutators
-  }
-  return [
-    ...mutators,
-    createSafeMutator(writer, settings.autoCommit, settings.safe)
-  ]
-}
-
 async function unwrapMethod<T, U, O> (
   state: InstanceState<T, U, O>,
-  options?: UnwrapOptions<O>
+  options?: WritableOptions<O>
 ): Promise<U> {
-  return state.unwrap(renderMutators(getMutators(state)), objectify(options))
+  return state.unwrap(state.tree, objectify(options))
 }
 
 function streamMethod<T, U, O> (
   state: InstanceState<T, U, O>,
   options?: StreamOptions<O>
 ): stream.Readable {
-  return state.stream(renderMutators(getMutators(state)), objectify(options))
+  return state.stream(state.tree, objectify(options))
 }
 
 function createInstance<T, U, O> (
   unwrap: Unwrapper<T, U, O>,
   stream: Streamer<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings: InstanceSettings<T, O>
 ): Instance<T, U, O> {
   const state: InstanceState<T, U, O> = {
-    mutators: [],
-    settings,
     stream,
+    tree: [],
     unwrap
   }
   return fluente({
@@ -159,44 +108,44 @@ function createInstance<T, U, O> (
 
 export function createEntity<T, O = any> (
   one: One<T, O>,
-  settings?: InstanceSettings<T, O>
+  settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
   return createInstance(
-    (mutator, options) => unwrapOne(one, createStatus, mutator, options),
-    (mutator, options) => streamOne(one, createStatus, mutator, options),
+    (tree, options) => unwrapOne(one, createStatus, tree, settings, options),
+    (tree, options) => streamOne(one, createStatus, tree, settings, options),
     settings
   )
 }
 
 export function readEntity<T, O = any> (
   one: One<T, O>,
-  settings?: InstanceSettings<T, O>
+  settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
   return createInstance(
-    (mutator, options) => unwrapOne(one, readStatus, mutator, options),
-    (mutator, options) => streamOne(one, readStatus, mutator, options),
+    (tree, options) => unwrapOne(one, readStatus, tree, settings, options),
+    (tree, options) => streamOne(one, readStatus, tree, settings, options),
     settings
   )
 }
 
 export function createEntities<T, O = any> (
   many: Many<T, O>,
-  settings?: InstanceSettings<T, O>
+  settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
   return createInstance(
-    (mutator, options) => unwrapMany(many, createStatus, mutator, options),
-    (mutator, options) => streamMany(many, createStatus, mutator, options),
+    (tree, options) => unwrapMany(many, createStatus, tree, settings, options),
+    (tree, options) => streamMany(many, createStatus, tree, settings, options),
     settings
   )
 }
 
 export function readEntities<T, O = any> (
   many: Many<T, O>,
-  settings?: InstanceSettings<T, O>
+  settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
   return createInstance(
-    (mutator, options) => unwrapMany(many, readStatus, mutator, options),
-    (mutator, options) => streamMany(many, readStatus, mutator, options),
+    (tree, options) => unwrapMany(many, readStatus, tree, settings, options),
+    (tree, options) => streamMany(many, readStatus, tree, settings, options),
     settings
   )
 }

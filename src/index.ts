@@ -2,7 +2,6 @@ export {
   Many,
   One,
   StreamOptions,
-  UnwrapOptions,
   Value,
   Values
 } from './data'
@@ -16,13 +15,17 @@ export {
   readEntity
 } from './instance'
 export {
-  Action,
-  Descriptor,
   Mutation,
+  Mutator,
   MutationSettings,
   createMutation
 } from './mutation'
-export { Condition, Mapper, Mutator } from './mutator'
 export { Reader, Store, StoreSettings, createStore } from './store'
+export { Condition } from './tree'
 export { Lazy, Result } from './utils'
-export { WriteResult, Writer } from './writer'
+export {
+  WritableOptions,
+  WritableSettings,
+  WriteResult,
+  Writer
+} from './writer'

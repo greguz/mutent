@@ -2,7 +2,6 @@ import test from 'ava'
 import { subscribe } from 'fluido'
 
 import { streamOne } from './data'
-import { createMutation } from './mutation'
 import { readStatus } from './status'
 
 test('streamOne#nulls', async t => {
@@ -10,7 +9,8 @@ test('streamOne#nulls', async t => {
     streamOne(
       null,
       readStatus,
-      createMutation().render(),
+      [],
+      {},
       {}
     )
   )

@@ -8,20 +8,16 @@ import {
   readify
 } from 'fluido'
 
-import { Mutator, applyMutator } from './mutator'
 import { Status } from './status'
+import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, unlazy } from './utils'
+import { WritableSettings, WritableOptions, ensureSafeStatus } from './writer'
 
 export type Value<T> = Promise<T> | T
 
 export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
 
-export type UnwrapOptions<O = {}> = Partial<O> & {
-  autoCommit?: boolean
-  safe?: boolean
-}
-
-export type StreamOptions<O = {}> = UnwrapOptions<O> & {
+export type StreamOptions<O = {}> = WritableOptions<O> & {
   concurrency?: number
   highWaterMark?: number
 }
@@ -38,27 +34,43 @@ function getValues<T> (values: Values<T>): stream.Readable {
   return isReadable(values) ? values : Readable.from(values)
 }
 
+async function mutate<T, O> (
+  status: Status<T>,
+  mutation: MutationTree<T>,
+  settings: WritableSettings<T, O>,
+  options: WritableOptions<O>
+): Promise<T> {
+  if (isNull(status.target)) {
+    return status.target
+  }
+  status = await mutateStatus(status, mutation, settings.writer, options)
+  status = await ensureSafeStatus(status, settings, options)
+  return status.target
+}
+
 export async function unwrapOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
-  mutator: Mutator<T, O>,
-  options: UnwrapOptions<O>
+  mutation: MutationTree<T>,
+  settings: WritableSettings<T, O>,
+  options: WritableOptions<O>
 ): Promise<T> {
   const data = await getValue(unlazy(one, options))
-  return applyMutator(build(data), mutator, options)
+  return mutate(build(data), mutation, settings, options)
 }
 
 export function streamOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
-  mutator: Mutator<T, O>,
+  mutation: MutationTree<T>,
+  settings: WritableSettings<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
   return new Readable({
     objectMode: true,
     async asyncRead () {
       const data = await getValue(unlazy(one, options))
-      const out = await applyMutator(build(data), mutator, options)
+      const out = await mutate(build(data), mutation, settings, options)
       if (!isNull(out)) {
         this.push(out)
       }
@@ -70,8 +82,9 @@ export function streamOne<T, O> (
 export function unwrapMany<T, O> (
   many: Many<T, O>,
   build: (data: T) => Status<T>,
-  mutator: Mutator<T, O>,
-  options: UnwrapOptions<O>
+  mutation: MutationTree<T>,
+  settings: WritableSettings<T, O>,
+  options: WritableOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
@@ -81,7 +94,7 @@ export function unwrapMany<T, O> (
         objectMode: true,
         async write (chunk) {
           results.push(
-            await applyMutator(build(chunk), mutator, options)
+            await mutate(build(chunk), mutation, settings, options)
           )
         }
       }),
@@ -99,7 +112,8 @@ export function unwrapMany<T, O> (
 export function streamMany<T, O> (
   many: Many<T, O>,
   build: (data: T) => Status<T>,
-  mutator: Mutator<T, O>,
+  mutation: MutationTree<T>,
+  settings: WritableSettings<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
   return readify(
@@ -114,7 +128,7 @@ export function streamMany<T, O> (
       objectMode: true,
       async transform (chunk) {
         this.push(
-          await applyMutator(build(chunk), mutator, options)
+          await mutate(build(chunk), mutation, settings, options)
         )
       }
     })

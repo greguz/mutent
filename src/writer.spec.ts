@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { Writer, handleWriter } from './writer'
+import { Writer, writeStatus } from './writer'
 import { Status, commitStatus, createStatus, deleteStatus, updateStatus } from './status'
 
 interface Item {
@@ -64,7 +64,7 @@ test('sCreate', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sCreate(0), { hello: 'world' })
+  const status = await writeStatus(sCreate(0), writer, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -94,9 +94,9 @@ test('sVoid', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sVoid(0), { hello: 'world' })
+  const status = await writeStatus(sVoid(0), writer, { hello: 'world' })
 
-  t.deepEqual(status, await handleWriter({}, sVoid(0)))
+  t.deepEqual(status, await writeStatus(sVoid(0), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -139,7 +139,11 @@ test('sUpdate', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sUpdate(0, 'UPDATE'), { hello: 'world' })
+  const status = await writeStatus(
+    sUpdate(0, 'UPDATE'),
+    writer,
+    { hello: 'world' }
+  )
 
   t.deepEqual(status, {
     created: false,
@@ -176,7 +180,7 @@ test('sDelete', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sDelete(0), { hello: 'world' })
+  const status = await writeStatus(sDelete(0), writer, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -210,9 +214,13 @@ test('sCreateUpdate', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sCreateUpdate(0, 'UPDATE'), { hello: 'world' })
+  const status = await writeStatus(
+    sCreateUpdate(0, 'UPDATE'),
+    writer,
+    { hello: 'world' }
+  )
 
-  t.deepEqual(status, await handleWriter({}, sCreateUpdate(0, 'UPDATE')))
+  t.deepEqual(status, await writeStatus(sCreateUpdate(0, 'UPDATE'), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -244,9 +252,9 @@ test('sCreateDelete', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sCreateDelete(0), { hello: 'world' })
+  const status = await writeStatus(sCreateDelete(0), writer, { hello: 'world' })
 
-  t.deepEqual(status, await handleWriter({}, sCreateDelete(0)))
+  t.deepEqual(status, await writeStatus(sCreateDelete(0), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -279,9 +287,13 @@ test('sUpdateDelete', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sUpdateDelete(0, 'UPDATE'), { hello: 'world' })
+  const status = await writeStatus(
+    sUpdateDelete(0, 'UPDATE'),
+    writer,
+    { hello: 'world' }
+  )
 
-  t.deepEqual(status, await handleWriter({}, sUpdateDelete(0, 'UPDATE')))
+  t.deepEqual(status, await writeStatus(sUpdateDelete(0, 'UPDATE'), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -310,9 +322,13 @@ test('sCreateUpdateDelete', async t => {
     }
   }
 
-  const status = await handleWriter(writer, sCreateUpdateDelete(0, 'UPDATE'), { hello: 'world' })
+  const status = await writeStatus(
+    sCreateUpdateDelete(0, 'UPDATE'),
+    writer,
+    { hello: 'world' }
+  )
 
-  t.deepEqual(status, await handleWriter({}, sCreateUpdateDelete(0, 'UPDATE')))
+  t.deepEqual(status, await writeStatus(sCreateUpdateDelete(0, 'UPDATE'), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -329,12 +345,12 @@ test('sCreateUpdateDelete', async t => {
 test('writer defaults', async t => {
   const writer: Writer<Item> = {}
 
-  const a = await handleWriter(writer, sCreate(0))
+  const a = await writeStatus(sCreate(0), writer)
   t.deepEqual(a.target, { id: 0 })
 
-  const b = await handleWriter(writer, sUpdate(0, 'UPDATE'))
+  const b = await writeStatus(sUpdate(0, 'UPDATE'), writer)
   t.deepEqual(b.target, { id: 0, value: 'UPDATE' })
 
-  const c = await handleWriter(writer, sDelete(0))
+  const c = await writeStatus(sDelete(0), writer)
   t.deepEqual(c.target, { id: 0 })
 })

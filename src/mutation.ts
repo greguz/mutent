@@ -1,145 +1,123 @@
 import fluente from 'fluente'
 
-import {
-  Condition,
-  Mapper,
-  Mutator,
-  applyCondition,
-  createMutator,
-  negateCondition,
-  renderMutators
-} from './mutator'
-import { deleteStatus } from './status'
-import { Writer, handleWriter } from './writer'
+import { Condition, MutationNode, MutationTree } from './tree'
+import { Result, unlazy } from './utils'
 
-export interface Mutation<T, O = any> {
-  update<A extends any[]> (mapper: Mapper<T, A>, ...args: A): this
+export type Mutator<T, A extends any[]> = (
+  data: Exclude<T, null>,
+  ...args: A
+) => Result<T>
+
+export interface MutationSettings {
+  classy?: boolean
+  historySize?: number
+}
+
+export interface Mutation<T> {
+  update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): this
   assign (object: Partial<T>): this
   delete (): this
   commit (): this
-  if (condition: Condition<T>, action: Action<T, O>): this
-  unless (condition: Condition<T>, action: Action<T, O>): this
-  mutate (mutation: Mutation<T, O>): this
-  render (): Mutator<T, O>
+  if (condition: Condition<T>, mutation: Mutation<T>): this
+  unless (condition: Condition<T>, mutation: Mutation<T>): this
+  mutate (mutation: Mutation<T>): this
+  render (): MutationTree<T>
   undo (steps?: number): this
   redo (steps?: number): this
 }
 
-export interface MutationSettings<T, O = any> {
-  classy?: boolean
-  historySize?: number
-  writer?: Writer<T, O>
+export interface MutationState<T> {
+  tree: MutationTree<T>
 }
 
-export type Descriptor<T, O = any> = (
-  mutation: Mutation<T, O>
-) => Mutation<T, O>
-
-export type Action<T, O = any> = Mutation<T, O> | Descriptor<T, O>
-
-export interface MutationState<T, O> {
-  mutators: Array<Mutator<T, O>>
-  settings: MutationSettings<T, O>
-}
-
-function pushMutator<T, O> (
-  state: MutationState<T, O>,
-  mutator: Mutator<T, O>
-): MutationState<T, O> {
+function pushNode<T> (
+  state: MutationState<T>,
+  node: MutationNode<T>
+): MutationState<T> {
   return {
     ...state,
-    mutators: [...state.mutators, mutator]
+    tree: [...state.tree, node]
   }
 }
 
-export function updateMethod<T, O, A extends any[]> (
-  state: MutationState<T, O>,
-  mapper: Mapper<T, A>,
+export function updateMethod<T, A extends any[]> (
+  state: MutationState<T>,
+  mutator: Mutator<T, A>,
   ...args: A
-): MutationState<T, O> {
-  return pushMutator(state, createMutator(mapper, ...args))
+): MutationState<T> {
+  return pushNode(state, {
+    type: 'UPDATE',
+    mutate: data => mutator(data as any, ...args)
+  })
 }
 
-export function assignMethod<T, O> (
-  state: MutationState<T, O>,
+export function assignMethod<T> (
+  state: MutationState<T>,
   object: Partial<T>
-): MutationState<T, O> {
-  return updateMethod(state, data => Object.assign({}, data, object))
+): MutationState<T> {
+  return pushNode(state, {
+    type: 'UPDATE',
+    mutate: data => Object.assign({}, data, object)
+  })
 }
 
-export function deleteMethod<T, O> (
-  state: MutationState<T, O>
-): MutationState<T, O> {
-  return pushMutator(state, deleteStatus)
+export function deleteMethod<T> (
+  state: MutationState<T>
+): MutationState<T> {
+  return pushNode(state, { type: 'DELETE' })
 }
 
-export function commitMethod<T, O> (
-  state: MutationState<T, O>
-): MutationState<T, O> {
-  const { writer } = state.settings
-  if (!writer) {
-    return state
-  }
-  return pushMutator(
+export function commitMethod<T> (
+  state: MutationState<T>
+): MutationState<T> {
+  return pushNode(state, { type: 'COMMIT' })
+}
+
+export function ifMethod<T> (
+  state: MutationState<T>,
+  condition: Condition<T>,
+  mutation: Mutation<T>
+): MutationState<T> {
+  return pushNode(state, {
+    type: 'CONDITION',
+    condition,
+    mutation: mutation.render()
+  })
+}
+
+export function unlessMethod<T> (
+  state: MutationState<T>,
+  condition: Condition<T>,
+  mutation: Mutation<T>
+): MutationState<T> {
+  return ifMethod(
     state,
-    (status, options) => handleWriter(writer, status, options)
+    data => !unlazy(condition, data),
+    mutation
   )
 }
 
-function wrapDescriptor<T, O> (
-  descriptor: Descriptor<T, O>,
-  settings: MutationSettings<T, O>
-): Mutator<T, O> {
-  return function wrappedDescriptor (status, options) {
-    const mutation = descriptor(createMutation(settings))
-    const mutator = mutation.render()
-    return mutator(status, options)
+export function mutateMethod<T> (
+  state: MutationState<T>,
+  mutation: Mutation<T>
+): MutationState<T> {
+  return {
+    ...state,
+    tree: [...state.tree, ...mutation.render()]
   }
 }
 
-export function ifMethod<T, O> (
-  state: MutationState<T, O>,
-  condition: Condition<T>,
-  action: Action<T, O>
-): MutationState<T, O> {
-  return pushMutator(
-    state,
-    applyCondition(
-      typeof action === 'function'
-        ? wrapDescriptor(action, state.settings)
-        : action.render(),
-      condition
-    )
-  )
+export function renderMethod<T> (
+  state: MutationState<T>
+): MutationTree<T> {
+  return state.tree
 }
 
-export function unlessMethod<T, O> (
-  state: MutationState<T, O>,
-  condition: Condition<T>,
-  action: Action<T, O>
-): MutationState<T, O> {
-  return ifMethod(state, negateCondition(condition), action)
-}
-
-export function mutateMethod<T, O> (
-  state: MutationState<T, O>,
-  mutation: Mutation<T, O>
-): MutationState<T, O> {
-  return pushMutator(state, mutation.render())
-}
-
-export function renderMethod<T, O> (
-  state: MutationState<T, O>
-): Mutator<T, O> {
-  return renderMutators(state.mutators)
-}
-
-export function createMutation<T, O = any> (
-  settings: MutationSettings<T, O> = {}
-): Mutation<T, O> {
-  const state: MutationState<T, O> = {
-    mutators: [],
-    settings
+export function createMutation<T> (
+  settings: MutationSettings = {}
+): Mutation<T> {
+  const state: MutationState<T> = {
+    tree: []
   }
   return fluente({
     historySize: settings.historySize,
