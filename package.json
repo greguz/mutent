@@ -15,7 +15,7 @@
     "immutable"
   ],
   "scripts": {
-    "test:ts": "tsc --noEmit",
+    "test:ts": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.spec.json",
     "test:lint": "eslint src/**/*.ts",
     "test:unit": "ava",
     "test": "npm run test:ts && npm run test:lint && npm run test:unit",
