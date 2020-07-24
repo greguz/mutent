@@ -8,7 +8,8 @@
     "typeRoots": ["./node_modules/@types"],
     "esModuleInterop": true,
     "rootDir": "src",
-    "outDir": ".out"
+    "outDir": ".out",
+    "removeComments": true
   },
   "exclude": [
     "node_modules"

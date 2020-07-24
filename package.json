@@ -22,7 +22,7 @@
     "coverage": "nyc --reporter=lcov --reporter=text-summary ava",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "build:types": "rimraf types && tsc --declaration --emitDeclarationOnly --declarationDir types",
-    "build:js": "rimraf .out && tsc --module es6 && rollup -c",
+    "build:js": "rimraf .out && tsc --module es6 && rollup -c && prettier --write mutent.js",
     "build": "npm run build:types && npm run build:js",
     "prepublishOnly": "npm run test && npm run build"
   },
@@ -46,6 +46,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "nyc": "^15.1.0",
+    "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.22.1",
     "ts-node": "^8.10.2",
