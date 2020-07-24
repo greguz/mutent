@@ -55,11 +55,11 @@ export async function writeStatus<T, O> (
   return commitStatus(status)
 }
 
-export async function ensureSafeStatus<T, O> (
+export async function unwrapStatus<T, O> (
   status: Status<T>,
   settings: WritableSettings<T, O>,
   options: WritableOptions<O>
-): Promise<Status<T>> {
+): Promise<T> {
   const { writer } = settings
 
   if (writer && shouldCommit(status)) {
@@ -82,5 +82,5 @@ export async function ensureSafeStatus<T, O> (
     }
   }
 
-  return commitStatus(status)
+  return status.target
 }

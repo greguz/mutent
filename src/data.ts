@@ -11,7 +11,7 @@ import {
 import { Status } from './status'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, unlazy } from './utils'
-import { WritableSettings, WritableOptions, ensureSafeStatus } from './writer'
+import { WritableSettings, WritableOptions, unwrapStatus } from './writer'
 
 export type Value<T> = Promise<T> | T
 
@@ -34,7 +34,7 @@ function getValues<T> (values: Values<T>): stream.Readable {
   return isReadable(values) ? values : Readable.from(values)
 }
 
-async function mutate<T, O> (
+async function unwrap<T, O> (
   status: Status<T>,
   mutation: MutationTree<T>,
   settings: WritableSettings<T, O>,
@@ -43,9 +43,11 @@ async function mutate<T, O> (
   if (isNull(status.target)) {
     return status.target
   }
-  status = await mutateStatus(status, mutation, settings.writer, options)
-  status = await ensureSafeStatus(status, settings, options)
-  return status.target
+  return unwrapStatus(
+    await mutateStatus(status, mutation, settings.writer, options),
+    settings,
+    options
+  )
 }
 
 export async function unwrapOne<T, O> (
@@ -56,7 +58,7 @@ export async function unwrapOne<T, O> (
   options: WritableOptions<O>
 ): Promise<T> {
   const data = await getValue(unlazy(one, options))
-  return mutate(build(data), mutation, settings, options)
+  return unwrap(build(data), mutation, settings, options)
 }
 
 export function streamOne<T, O> (
@@ -70,7 +72,7 @@ export function streamOne<T, O> (
     objectMode: true,
     async asyncRead () {
       const data = await getValue(unlazy(one, options))
-      const out = await mutate(build(data), mutation, settings, options)
+      const out = await unwrap(build(data), mutation, settings, options)
       if (!isNull(out)) {
         this.push(out)
       }
@@ -94,7 +96,7 @@ export function unwrapMany<T, O> (
         objectMode: true,
         async write (chunk) {
           results.push(
-            await mutate(build(chunk), mutation, settings, options)
+            await unwrap(build(chunk), mutation, settings, options)
           )
         }
       }),
@@ -128,7 +130,7 @@ export function streamMany<T, O> (
       objectMode: true,
       async transform (chunk) {
         this.push(
-          await mutate(build(chunk), mutation, settings, options)
+          await unwrap(build(chunk), mutation, settings, options)
         )
       }
     })

@@ -28,7 +28,7 @@ import { MutationTree } from './tree'
 import { objectify } from './utils'
 import { WritableSettings, WritableOptions } from './writer'
 
-export interface InstanceSettings<T, O> extends MutationSettings, WritableSettings<T, O> {}
+export interface InstanceSettings<T, O = any> extends MutationSettings, WritableSettings<T, O> {}
 
 interface Instance<T, U, O> extends Mutation<T> {
   unwrap (options?: WritableOptions<O>): Promise<U>
