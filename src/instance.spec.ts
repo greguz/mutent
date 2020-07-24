@@ -114,7 +114,7 @@ test('create one', async t => {
     }
   }
 
-  const item = await createEntity({ id: 0 }, { writer })
+  const item = await createEntity({ id: 0 }, { driver: writer })
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -148,7 +148,7 @@ test('update one', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { writer })
+  const item = await readEntity({ id: 0 }, { driver: writer })
     .assign({ value: 'UPDATE' })
     .update(next)
     .commit()
@@ -178,7 +178,7 @@ test('delete one', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { writer })
+  const item = await readEntity({ id: 0 }, { driver: writer })
     .delete()
     .commit()
     .unwrap({ hello: 'world' })
@@ -255,7 +255,7 @@ test('entity autoCommit override', async t => {
       {
         autoCommit,
         safe: false,
-        writer: {
+        driver: {
           create () {
             t.pass()
           },
@@ -281,7 +281,7 @@ test('entity safe override', async t => {
       {
         autoCommit: false,
         safe,
-        writer: {
+        driver: {
           create () {
             t.pass()
           },
@@ -314,7 +314,7 @@ test('safe create', async t => {
   function entity (autoCommit?: boolean, safe?: boolean) {
     return createEntity<Item>(
       { id: 0 },
-      { autoCommit, writer, safe }
+      { autoCommit, driver: writer, safe }
     )
   }
 
@@ -337,7 +337,7 @@ test('safe update', async t => {
   function entity (autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
-      { autoCommit, writer, safe }
+      { autoCommit, driver: writer, safe }
     ).update(next)
   }
 
@@ -360,7 +360,7 @@ test('safe delete', async t => {
   function entity (autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
-      { autoCommit, writer, safe }
+      { autoCommit, driver: writer, safe }
     ).delete()
   }
 
@@ -404,7 +404,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       t.is(options.db, 'test')
     }
   }
-  return { writer }
+  return { driver: writer }
 }
 
 function getItems (count: number = 16) {

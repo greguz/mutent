@@ -17,15 +17,13 @@ function createSettings (): StoreSettings<Item, number | string> {
   const items: Item[] = []
 
   return {
-    reader: {
+    driver: {
       find (query) {
         return items.find(item => match(item, query))
       },
       filter (query) {
         return items.filter(item => match(item, query))
-      }
-    },
-    writer: {
+      },
       create (target) {
         items.push(target)
       },
@@ -105,9 +103,13 @@ test('default store', async t => {
 })
 
 test('store missing', async t => {
+  t.plan(3)
   const store = createStore<any, string, any>({
-    reader: {
-      errorFactory: query => new Error(query)
+    driver: {
+      find (query, options, isRequired) {
+        t.true(isRequired)
+        throw new Error('STOP')
+      }
     }
   })
   await t.throwsAsync(

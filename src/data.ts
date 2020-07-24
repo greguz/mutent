@@ -7,17 +7,29 @@ import {
   pipeline,
   readify
 } from 'fluido'
+import Herry from 'herry'
 
-import { Status } from './status'
+import { Status, shouldCommit } from './status'
 import { MutationTree, mutateStatus } from './tree'
-import { Lazy, isNull, unlazy } from './utils'
-import { WritableSettings, WritableOptions, unwrapStatus } from './writer'
+import { Lazy, isNull, isUndefined, unlazy } from './utils'
+import { Writer, writeStatus } from './writer'
 
 export type Value<T> = Promise<T> | T
 
 export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
 
-export type StreamOptions<O = {}> = WritableOptions<O> & {
+export interface DataSettings<T, O> {
+  autoCommit?: boolean
+  safe?: boolean
+  driver?: Writer<T, O>
+}
+
+export type UnwrapOptions<O = {}> = Partial<O> & {
+  autoCommit?: boolean
+  safe?: boolean
+}
+
+export type StreamOptions<O = {}> = UnwrapOptions<O> & {
   concurrency?: number
   highWaterMark?: number
 }
@@ -34,45 +46,69 @@ function getValues<T> (values: Values<T>): stream.Readable {
   return isReadable(values) ? values : Readable.from(values)
 }
 
-async function unwrap<T, O> (
+async function unwrapStatus<T, O> (
   status: Status<T>,
-  mutation: MutationTree<T>,
-  settings: WritableSettings<T, O>,
-  options: WritableOptions<O>
+  tree: MutationTree<T>,
+  settings: DataSettings<T, O>,
+  options: UnwrapOptions<O>
 ): Promise<T> {
+  // Skip everything when "null entity"
   if (isNull(status.target)) {
     return status.target
   }
-  return unwrapStatus(
-    await mutateStatus(status, mutation, settings.writer, options),
-    settings,
-    options
-  )
+
+  const { driver } = settings
+
+  // Apply mutation tree to status
+  status = await mutateStatus(status, tree, driver, options)
+
+  // Handle autoCommit/safe features
+  if (driver && shouldCommit(status)) {
+    const autoCommit = isUndefined(options.autoCommit)
+      ? settings.autoCommit !== false
+      : options.autoCommit !== false
+
+    const safe = isUndefined(options.safe)
+      ? settings.safe !== false
+      : options.safe !== false
+
+    if (autoCommit) {
+      status = await writeStatus(status, driver, options)
+    } else if (safe) {
+      throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
+        source: status.source,
+        target: status.target,
+        options
+      })
+    }
+  }
+
+  return status.target
 }
 
 export async function unwrapOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
-  mutation: MutationTree<T>,
-  settings: WritableSettings<T, O>,
-  options: WritableOptions<O>
+  tree: MutationTree<T>,
+  settings: DataSettings<T, O>,
+  options: UnwrapOptions<O>
 ): Promise<T> {
   const data = await getValue(unlazy(one, options))
-  return unwrap(build(data), mutation, settings, options)
+  return unwrapStatus(build(data), tree, settings, options)
 }
 
 export function streamOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
   mutation: MutationTree<T>,
-  settings: WritableSettings<T, O>,
+  settings: DataSettings<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
   return new Readable({
     objectMode: true,
     async asyncRead () {
       const data = await getValue(unlazy(one, options))
-      const out = await unwrap(build(data), mutation, settings, options)
+      const out = await unwrapStatus(build(data), mutation, settings, options)
       if (!isNull(out)) {
         this.push(out)
       }
@@ -84,9 +120,9 @@ export function streamOne<T, O> (
 export function unwrapMany<T, O> (
   many: Many<T, O>,
   build: (data: T) => Status<T>,
-  mutation: MutationTree<T>,
-  settings: WritableSettings<T, O>,
-  options: WritableOptions<O>
+  tree: MutationTree<T>,
+  settings: DataSettings<T, O>,
+  options: UnwrapOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const results: T[] = []
@@ -96,7 +132,7 @@ export function unwrapMany<T, O> (
         objectMode: true,
         async write (chunk) {
           results.push(
-            await unwrap(build(chunk), mutation, settings, options)
+            await unwrapStatus(build(chunk), tree, settings, options)
           )
         }
       }),
@@ -114,8 +150,8 @@ export function unwrapMany<T, O> (
 export function streamMany<T, O> (
   many: Many<T, O>,
   build: (data: T) => Status<T>,
-  mutation: MutationTree<T>,
-  settings: WritableSettings<T, O>,
+  tree: MutationTree<T>,
+  settings: DataSettings<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
   return readify(
@@ -130,7 +166,7 @@ export function streamMany<T, O> (
       objectMode: true,
       async transform (chunk) {
         this.push(
-          await unwrap(build(chunk), mutation, settings, options)
+          await unwrapStatus(build(chunk), tree, settings, options)
         )
       }
     })

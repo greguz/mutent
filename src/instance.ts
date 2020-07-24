@@ -5,6 +5,7 @@ import {
   Many,
   One,
   StreamOptions,
+  UnwrapOptions,
   streamMany,
   streamOne,
   unwrapMany,
@@ -26,28 +27,32 @@ import {
 import { createStatus, readStatus } from './status'
 import { MutationTree } from './tree'
 import { objectify } from './utils'
-import { WritableSettings, WritableOptions } from './writer'
+import { Writer } from './writer'
 
-export interface InstanceSettings<T, O = any> extends MutationSettings, WritableSettings<T, O> {}
+export interface InstanceSettings<T, O = any> extends MutationSettings {
+  autoCommit?: boolean
+  safe?: boolean
+  driver?: Writer<T, O>
+}
 
 interface Instance<T, U, O> extends Mutation<T> {
-  unwrap (options?: WritableOptions<O>): Promise<U>
+  unwrap (options?: UnwrapOptions<O>): Promise<U>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
 export interface Entity<T, O = any> extends Mutation<T> {
-  unwrap (options?: WritableOptions<O>): Promise<T>
+  unwrap (options?: UnwrapOptions<O>): Promise<T>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
 export interface Entities<T, O = any> extends Mutation<T> {
-  unwrap (options?: WritableOptions<O>): Promise<T[]>
+  unwrap (options?: UnwrapOptions<O>): Promise<T[]>
   stream (options?: StreamOptions<O>): stream.Readable
 }
 
 type Unwrapper<T, U, O> = (
   tree: MutationTree<T>,
-  options: WritableOptions<O>
+  options: UnwrapOptions<O>
 ) => Promise<U>
 
 type Streamer<T, O> = (
@@ -62,7 +67,7 @@ interface InstanceState<T, U, O> extends MutationState<T> {
 
 async function unwrapMethod<T, U, O> (
   state: InstanceState<T, U, O>,
-  options?: WritableOptions<O>
+  options?: UnwrapOptions<O>
 ): Promise<U> {
   return state.unwrap(state.tree, objectify(options))
 }

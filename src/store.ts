@@ -1,6 +1,3 @@
-import Herry from 'herry'
-
-import { Value, Values } from './data'
 import {
   Entities,
   Entity,
@@ -10,16 +7,13 @@ import {
   readEntities,
   readEntity
 } from './instance'
-import { isNull, isUndefined } from './utils'
+import { Reader, filterData, findData, readData } from './reader'
+import { Writer } from './writer'
 
-export interface Reader<T, Q = any, O = any> {
-  find? (query: Q, options: Partial<O>): Value<T | null | undefined>
-  filter? (query: Q, options: Partial<O>): Values<T>
-  errorFactory?: (query: Q, options: Partial<O>) => Error
-}
+export interface Driver<T, Q = any, O = any> extends Reader<T, Q, O>, Writer<T, O> {}
 
 export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
-  reader?: Reader<T, Q, O>
+  driver?: Driver<T, Q, O>
 }
 
 export interface Store<T, Q = any, O = any> {
@@ -30,64 +24,28 @@ export interface Store<T, Q = any, O = any> {
   from<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
 }
 
-async function findData<T, Q, O> (
-  reader: Reader<T, Q, O>,
-  query: Q,
-  options: Partial<O>
-): Promise<T | null> {
-  if (!reader.find) {
-    return null
-  }
-  const data = await reader.find(query, options)
-  return isUndefined(data) ? null : data
-}
-
-async function readData<T, Q, O> (
-  reader: Reader<T, Q, O>,
-  query: Q,
-  options: Partial<O>
-): Promise<T> {
-  const data = await findData(reader, query, options)
-  if (isNull(data)) {
-    throw typeof reader.errorFactory === 'function'
-      ? reader.errorFactory(query, options)
-      : new Herry('EMUT_NOT_FOUND', 'Entity not found', { query, options })
-  }
-  return data
-}
-
-function filterData<T, Q, O> (
-  reader: Reader<T, Q, O>,
-  query: Q,
-  options: Partial<O>
-) {
-  return !reader.filter
-    ? []
-    : reader.filter(query, options)
-}
-
-function fromData<T, Q, O> (
-  settings: StoreSettings<T, Q, O>,
-  data: T[] | T
-): any {
-  return Array.isArray(data)
-    ? readEntities(data, settings)
-    : readEntity(data, settings)
-}
-
 function createMethod<T, Q, O> (
-  settings: StoreSettings<T, Q, O>,
-  data: T[] | T
+  data: any,
+  settings: StoreSettings<T, Q, O>
 ): any {
   return Array.isArray(data)
     ? createEntities(data, settings)
     : createEntity(data, settings)
 }
 
+function fromMethod<T, Q, O> (
+  data: any,
+  settings: StoreSettings<T, Q, O>
+): any {
+  return Array.isArray(data)
+    ? readEntities(data, settings)
+    : readEntity(data, settings)
+}
+
 export function createStore<T, Q, O> (
   settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
-  const reader = settings.reader || {}
+  const reader = settings.driver || {}
   return {
     find: query => readEntity(
       options => findData(reader, query, options),
@@ -101,7 +59,7 @@ export function createStore<T, Q, O> (
       options => filterData(reader, query, options),
       settings
     ),
-    create: data => createMethod(settings, data),
-    from: data => fromData(settings, data)
+    create: data => createMethod(data, settings),
+    from: data => fromMethod(data, settings)
   }
 }

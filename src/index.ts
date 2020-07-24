@@ -2,6 +2,7 @@ export {
   Many,
   One,
   StreamOptions,
+  UnwrapOptions,
   Value,
   Values
 } from './data'
@@ -20,12 +21,8 @@ export {
   MutationSettings,
   createMutation
 } from './mutation'
-export { Reader, Store, StoreSettings, createStore } from './store'
+export { Reader } from './reader'
+export { Driver, Store, StoreSettings, createStore } from './store'
 export { Condition } from './tree'
 export { Lazy, Result } from './utils'
-export {
-  WritableOptions,
-  WritableSettings,
-  WriteResult,
-  Writer
-} from './writer'
+export { WriteResult, Writer } from './writer'
