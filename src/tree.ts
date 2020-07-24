@@ -62,18 +62,23 @@ export async function mutateStatus<T, O> (
   options?: Partial<O>
 ): Promise<Status<T>> {
   for (const node of tree) {
-    if (node.type === 'COMMIT' && shouldCommit(status)) {
-      if (writer) {
-        status = await writeStatus(status, writer, options)
-      } else {
-        status = commitStatus(status)
-      }
-    } if (node.type === 'CONDITION') {
-      status = await handleConditionalNode(status, node, writer, options)
-    } else if (node.type === 'DELETE') {
-      status = deleteStatus(status)
-    } else if (node.type === 'UPDATE') {
-      status = await handleUpdateNode(status, node)
+    switch (node.type) {
+      case 'COMMIT':
+        if (writer && shouldCommit(status)) {
+          status = await writeStatus(status, writer, options)
+        } else {
+          status = commitStatus(status)
+        }
+        break
+      case 'CONDITION':
+        status = await handleConditionalNode(status, node, writer, options)
+        break
+      case 'DELETE':
+        status = deleteStatus(status)
+        break
+      case 'UPDATE':
+        status = await handleUpdateNode(status, node)
+        break
     }
   }
   return status

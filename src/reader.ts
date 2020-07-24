@@ -1,7 +1,7 @@
 import Herry from 'herry'
 
 import { Value, Values } from './data'
-import { isNil, isNull } from './utils'
+import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {
   find? (query: Q, options: Partial<O>, isRequired: boolean): Value<T | null | undefined>
@@ -17,7 +17,7 @@ async function find<T, Q, O> (
   const data = reader.find
     ? await reader.find(query, options, isRequired)
     : null
-  return isNil(data) ? null : data
+  return isUndefined(data) ? null : data
 }
 
 export function findData<T, Q, O> (
@@ -45,7 +45,7 @@ export function filterData<T, Q, O> (
   query: Q,
   options: Partial<O>
 ): Values<T> {
-  return !reader.filter
-    ? []
-    : reader.filter(query, options)
+  return reader.filter
+    ? reader.filter(query, options)
+    : []
 }
