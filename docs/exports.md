@@ -1,22 +1,12 @@
 # Exports
 
-## createStore(plugin)
+## createMutation([settings])
 
-Creates a [Store](store.md).
+Defines a new mutation.
 
-## isEntity(value)
-
-Returns `true` when `value` is an [Entity](entity.md) instance.
-
-- `value` `<*>`
-- Returns: `<Boolean>`
-
-## areEntities(value)
-
-Returns `true` when `value` is an [Entities](entities.md) instance.
-
-- `value` `<*>`
-- Returns: `<Boolean>`
+- `settings` `<Object>`
+  - `classy` `<Boolean>`
+  - `historySize` `<Number>`
 
 ## createEntity(one[, settings])
 
@@ -28,7 +18,7 @@ Defines a not-yet-persisted [Entity](entity.md).
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
   - `safe` `<Boolean>`
-  - `writer` `<Object>` See [here](writer.md).
+  - `driver` `<Object>` See [here](driver.md).
 - Returns: [`<Entity>`](entity.md)
 
 ## readEntity(one[, settings])
@@ -41,7 +31,7 @@ Defines a persisted [Entity](entity.md).
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
   - `safe` `<Boolean>`
-  - `writer` `<Object>` See [here](writer.md).
+  - `driver` `<Object>` See [here](driver.md).
 - Returns: [`<Entity>`](entity.md)
 
 ## createEntities(many[, settings])
@@ -54,7 +44,7 @@ Defines multiple not-yet-persisted [Entities](entities.md).
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
   - `safe` `<Boolean>`
-  - `writer` `<Object>` See [here](writer.md).
+  - `driver` `<Object>` See [here](driver.md).
 - Returns: [`<Entities>`](entities.md)
 
 ## readEntities(many[, settings])
@@ -67,5 +57,17 @@ Defines multiple persisted [Entities](entities.md).
   - `classy` `<Boolean>`
   - `historySize` `<Number>`
   - `safe` `<Boolean>`
-  - `writer` `<Object>` See [here](writer.md).
+  - `driver` `<Object>` See [here](driver.md).
 - Returns: [`<Entities>`](entities.md)
+
+## createStore(settings)
+
+Creates a [Store](store.md).
+
+- `settings` `<Object>`
+  - `autoCommit` `<Boolean>`
+  - `classy` `<Boolean>`
+  - `historySize` `<Number>`
+  - `safe` `<Boolean>`
+  - `driver` `<Object>` See [here](driver.md).
+- Returns: [`<Store>`](store.md)

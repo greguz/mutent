@@ -1,63 +1,10 @@
 # Entities
 
-Represents a collection of entities.
-
-## update(mutator, ...arguments)
-
-Describes a mutation to apply to all processed entities.
-
-- `mutator` `<Function>`
-- `...arguments` `<*>`
-- Returns: `<Entities>`
-
-A `mutator` is a function that always accepts the entity's data as the first argument. It **must** return a new object that represents the fully updated entity.
-
-**WARNING**: Inside a mutator, It's **not** safe to direct update the entity's data. You should always return a new object as mutation result.
-
-## assign(data)
-
-Mimics the `Object.assign` method by extending the entity's data with the passed argument.
-
-- `data` `<Object>`
-- Returns: `<Entities>`
-
-## delete()
-
-Schedules all entities' deletion.
-
-- Returns: `<Entities>`
-
-## commit()
-
-Schedules a synchronization between the current entity's data and its data source. The entity might be created, updated, or deleted. More informations [here](commit.md).
-
-- Returns: `<Entities>`
-
-## run(routine, ...args)
-
-Requires the execution of a routine.
-
-- `routine` `<String>`
-- `...args` `<*>`
-- Returns: `<Entities>`
-
-## undo([steps])
-
-Undoes one or more defined actions. `Infinity` is accepted and, if provided, will invalidate all possible actions.
-
-- `steps` `<Number>`
-- Returns: `<Entities>`
-
-## redo([steps])
-
-In the case of undid actions, this method reapplies the last reverted actions by the `undo` method. `Infinity` is accepted and, if provided, will reapply all reverted actions.
-
-- `steps` `<Number>`
-- Returns: `<Entities>`
+It fully *extends* a [mutation](mutation.md) and represents a dataset.
 
 ## unwrap([options])
 
-Runs all described actions and exposes the resulting entities' array through a `Promise`.
+It applies all described actions and returns a `Promise`. The `Promise` will resolve to an array containing the **updated** versions of the manipulated entities.
 
 - `options` `<Object>`
   - `autoCommit` `<Boolean>`
@@ -66,10 +13,11 @@ Runs all described actions and exposes the resulting entities' array through a `
 
 ## stream([options])
 
-Runs all described actions and exposes the resulting entities' array through a Readable stream.
+Same as the `uwrap` method, but It returns a `Readable` stream.
 
 - `options` `<Object>`
   - `autoCommit` `<Boolean>`
+  - `concurrency`: `<Number>`
   - `highWaterMark` `<Number>`
   - `safe` `<Boolean>`
 - Returns: `<Readable>`
