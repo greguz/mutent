@@ -11,6 +11,7 @@ import {
   unwrapMany,
   unwrapOne
 } from './data'
+import { Strategies } from './migration'
 import {
   Mutation,
   MutationSettings,
@@ -31,8 +32,9 @@ import { Writer } from './writer'
 
 export interface InstanceSettings<T, O = any> extends MutationSettings {
   autoCommit?: boolean
-  safe?: boolean
   driver?: Writer<T, O>
+  migration?: Strategies
+  safe?: boolean
 }
 
 interface Instance<T, U, O> extends Mutation<T> {

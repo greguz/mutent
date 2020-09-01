@@ -15,6 +15,7 @@ export {
   readEntities,
   readEntity
 } from './instance'
+export { Strategies, Strategy } from './migration'
 export {
   Mutation,
   Mutator,

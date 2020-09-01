@@ -6,6 +6,7 @@ import { createMutation } from './mutation'
 import { Writer } from './writer'
 
 interface Item {
+  version?: number
   id: number,
   value?: any
 }
@@ -550,4 +551,37 @@ test('redo entitites', async t => {
   t.is(results.length, 16)
   t.is(results[0].id, -0)
   t.is(results[15].id, -600)
+})
+
+test('migration', async t => {
+  const item: Item = {
+    version: 0,
+    id: 0
+  }
+
+  const data = await readEntity(item, {
+    migration: {
+      1: function (data) {
+        return {
+          ...data,
+          version: 1,
+          id: data.id + 1
+        }
+      },
+      2: function (data) {
+        return {
+          ...data,
+          version: 2,
+          value: 'MIGRATED'
+        }
+      }
+    },
+    safe: false
+  }).unwrap()
+
+  t.deepEqual(data, {
+    version: 2,
+    id: 1,
+    value: 'MIGRATED'
+  })
 })

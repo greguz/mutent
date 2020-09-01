@@ -9,6 +9,7 @@ import {
 } from 'fluido'
 import Herry from 'herry'
 
+import { Strategies, migrateStatus } from './migration'
 import { Status, shouldCommit } from './status'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, isUndefined, unlazy } from './utils'
@@ -20,8 +21,9 @@ export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
 
 export interface DataSettings<T, O> {
   autoCommit?: boolean
-  safe?: boolean
   driver?: Writer<T, O>
+  migration?: Strategies
+  safe?: boolean
 }
 
 export type UnwrapOptions<O = {}> = Partial<O> & {
@@ -57,7 +59,11 @@ async function unwrapStatus<T, O> (
     return status.target
   }
 
-  const { driver } = settings
+  // Apply migration strategies
+  const { driver, migration } = settings
+  if (migration) {
+    status = await migrateStatus(status, migration)
+  }
 
   // Apply mutation tree to status
   status = await mutateStatus(status, tree, driver, options)

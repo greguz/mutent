@@ -7,6 +7,7 @@ import {
   readEntities,
   readEntity
 } from './instance'
+import { Strategies } from './migration'
 import { Reader, filterData, findData, readData } from './reader'
 import { Writer } from './writer'
 
@@ -14,6 +15,7 @@ export interface Driver<T, Q = any, O = any> extends Reader<T, Q, O>, Writer<T, 
 
 export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
   driver?: Driver<T, Q, O>
+  migration?: Strategies
 }
 
 export interface Store<T, Q = any, O = any> {
