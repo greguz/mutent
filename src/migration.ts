@@ -16,8 +16,8 @@ function getLastVersion (strategies: Strategies): number {
     .reduce((a, b) => a > b ? a : b, 0)
 }
 
-function getCurrentVersion (data: any): number {
-  const version = objectify(data).version
+function getCurrentVersion (data: any, versionKey: string): number {
+  const version = objectify(data)[versionKey]
   return Number.isInteger(version) && version > 0
     ? version
     : 0
@@ -25,10 +25,11 @@ function getCurrentVersion (data: any): number {
 
 export async function migrateStatus<T> (
   status: Status<T>,
-  strategies: Strategies
+  strategies: Strategies,
+  versionKey: string = 'version'
 ): Promise<Status<T>> {
   const vLast = getLastVersion(strategies)
-  const vCurr = getCurrentVersion(status.target)
+  const vCurr = getCurrentVersion(status.target, versionKey)
   if (vCurr >= vLast) {
     return status
   }
@@ -44,7 +45,7 @@ export async function migrateStatus<T> (
       )
     }
     data = await strategy(data)
-    if (getCurrentVersion(data) !== v) {
+    if (getCurrentVersion(data, versionKey) !== v) {
       throw new Herry(
         'EMUT_EXPECTED_UPGRADE',
         'Expected version upgrade',

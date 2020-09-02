@@ -52,6 +52,7 @@ export interface InstanceSettings<T, O = any> extends MutationSettings {
   driver?: Writer<T, O>
   migration?: Strategies
   safe?: boolean
+  versionKey?: string
 }
 
 interface Instance<T, U, O> extends Mutation<T> {
@@ -94,11 +95,11 @@ async function unwrapStatus<T, O> (
   if (isNull(status.target)) {
     return status.target
   }
+  const { driver, migration, versionKey } = settings
 
   // Apply migration strategies
-  const { driver, migration } = settings
   if (migration) {
-    status = await migrateStatus(status, migration)
+    status = await migrateStatus(status, migration, versionKey)
   }
 
   // Apply mutation tree to status
