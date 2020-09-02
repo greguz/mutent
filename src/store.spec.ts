@@ -121,3 +121,32 @@ test('store missing', async t => {
     { code: 'EMUT_NOT_FOUND' }
   )
 })
+
+test('schema', async t => {
+  const schema: any = {
+    type: 'object',
+    properties: {
+      date: {
+        anyOf: [
+          { type: 'string', format: 'date-time' },
+          { type: 'object', instanceof: Date }
+        ],
+        parse: (value: any) => new Date(value)
+      }
+    }
+  }
+
+  const store = createStore<any, any, any>({
+    schema
+  })
+
+  const input: any = {
+    date: '2020-09-02T16:29:34.070Z'
+  }
+
+  const output = await store
+    .create(input)
+    .unwrap()
+
+  t.is(output.date.toISOString(), '2020-09-02T16:29:34.070Z')
+})
