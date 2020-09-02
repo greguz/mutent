@@ -575,8 +575,7 @@ test('migration', async t => {
           value: 'MIGRATED'
         }
       }
-    },
-    safe: false
+    }
   }).unwrap()
 
   t.deepEqual(data, {

@@ -1,15 +1,13 @@
 export {
+  Entities,
+  Entity,
+  InstanceSettings,
   Many,
   One,
   StreamOptions,
   UnwrapOptions,
   Value,
-  Values
-} from './data'
-export {
-  Entities,
-  Entity,
-  InstanceSettings,
+  Values,
   createEntities,
   createEntity,
   readEntities,
