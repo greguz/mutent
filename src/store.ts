@@ -1,3 +1,5 @@
+import Ajv from 'ajv'
+
 import {
   Entities,
   Entity,
@@ -14,8 +16,10 @@ import { Writer } from './writer'
 export interface Driver<T, Q = any, O = any> extends Reader<T, Q, O>, Writer<T, O> {}
 
 export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
+  ajv?: Ajv.Ajv
   driver?: Driver<T, Q, O>
   migration?: Strategies
+  schema?: any
 }
 
 export interface Store<T, Q = any, O = any> {
@@ -44,10 +48,22 @@ function fromMethod<T, Q, O> (
     : readEntity(data, settings)
 }
 
+function compileSchema (
+  settings: StoreSettings<any, any, any>
+): Ajv.ValidateFunction | undefined {
+  const ajv: Ajv.Ajv = settings.ajv || new Ajv()
+  if (settings.schema) {
+    return ajv.compile(settings.schema)
+  }
+}
+
 export function createStore<T, Q, O> (
   settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
   const reader = settings.driver || {}
+  if (!settings.validate) {
+    settings.validate = compileSchema(settings)
+  }
   return {
     find: query => readEntity(
       options => findData(reader, query, options),

@@ -9,6 +9,7 @@ import {
   readify
 } from 'fluido'
 import Herry from 'herry'
+import Ajv from 'ajv'
 
 import { Strategies, migrateStatus } from './migration'
 import {
@@ -25,6 +26,7 @@ import {
   updateMethod
 } from './mutation'
 import { Status, createStatus, readStatus, shouldCommit } from './status'
+import { parseObject } from './schema'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, isUndefined, objectify, unlazy } from './utils'
 import { Writer, writeStatus } from './writer'
@@ -52,6 +54,8 @@ export interface InstanceSettings<T, O = any> extends MutationSettings {
   driver?: Writer<T, O>
   migration?: Strategies
   safe?: boolean
+  schema?: any
+  validate?: Ajv.ValidateFunction
   versionKey?: string
 }
 
@@ -95,11 +99,27 @@ async function unwrapStatus<T, O> (
   if (isNull(status.target)) {
     return status.target
   }
-  const { driver, migration, versionKey } = settings
+  const { driver, migration, schema, validate, versionKey } = settings
 
   // Apply migration strategies
   if (migration) {
     status = await migrateStatus(status, migration, versionKey)
+  }
+
+  // Validate data with JSON schema
+  if (validate) {
+    if (!validate(status.target)) {
+      throw new Herry(
+        'EMUT_INVALID_DATA',
+        'Invalid data detected',
+        { errors: validate.errors }
+      )
+    }
+  }
+
+  // Apply schema parsing
+  if (schema) {
+    status.target = parseObject(status.target, schema)
   }
 
   // Apply mutation tree to status
@@ -143,7 +163,7 @@ async function unwrapOne<T, O> (
 function streamOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
-  mutation: MutationTree<T>,
+  tree: MutationTree<T>,
   settings: InstanceSettings<T, O>,
   options: StreamOptions<O>
 ): stream.Readable {
@@ -151,7 +171,7 @@ function streamOne<T, O> (
     objectMode: true,
     async asyncRead () {
       const data = await unlazy(one, options)
-      const out = await unwrapStatus(build(data), mutation, settings, options)
+      const out = await unwrapStatus(build(data), tree, settings, options)
       if (!isNull(out)) {
         this.push(out)
       }
