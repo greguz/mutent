@@ -36,14 +36,24 @@ export async function migrateStatus<T> (
   let data: any = status.target
   for (let v = vCurr + 1; v <= vLast; v++) {
     const strategy = strategies[v]
-    if (!strategy) {
+    if (typeof strategy !== 'function') {
       throw new Herry(
         'EMUT_MISSING_STRATEGY',
-        'Expected migration strategy',
+        'Missing migration strategy',
         { version: v }
       )
     }
     data = await strategy(data)
+    if (getCurrentVersion(data) !== v) {
+      throw new Herry(
+        'EMUT_EXPECTED_UPGRADE',
+        'Expected version upgrade',
+        {
+          version: v,
+          data
+        }
+      )
+    }
   }
   return updateStatus(status, data)
 }
