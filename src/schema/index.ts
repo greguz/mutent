@@ -1,3 +1,5 @@
+import type { MutentSchema, PrivateSchema } from './definition-type'
+
 interface Key {
   match: string | RegExp
   schema: any
@@ -32,7 +34,7 @@ function getObjectValues (obj: any, schema: any): Value[] {
     if (item || schema.additionalProperties === true) {
       values.push({
         key,
-        schema: item ? item.schema : null,
+        schema: item ? item.schema : undefined,
         value: obj[key]
       })
     }
@@ -41,16 +43,16 @@ function getObjectValues (obj: any, schema: any): Value[] {
   return values
 }
 
-function getArrayValues (obj: any[], schema: any): Value[] {
+function getArrayValues (obj: any[], schema: PrivateSchema): Value[] {
   const length: number = schema.additionalItems === true
     ? obj.length
-    : schema.items.length
+    : (schema.items as MutentSchema[]).length
 
   const values: Value[] = []
   for (let i = 0; i < length; i++) {
     values.push({
       key: i.toString(),
-      schema: schema.items[i],
+      schema: (schema.items as MutentSchema[])[i],
       value: obj[i]
     })
   }
@@ -62,7 +64,10 @@ function set (obj: any, key: string, value: any): any {
   return obj
 }
 
-export function parseObject (obj: any, schema: any = {}): any {
+export function parseObject <R> (obj: any, schema: MutentSchema = {}): R {
+  if (typeof schema === 'boolean') {
+    return obj
+  }
   if (schema.parse) {
     return schema.parse(obj)
   } else if (schema.type === 'object') {
@@ -72,13 +77,15 @@ export function parseObject (obj: any, schema: any = {}): any {
         item.key,
         parseObject(item.value, item.schema)
       ),
-      {}
+      {} as any
     )
   } else if (schema.type === 'array') {
     return Array.isArray(schema.items)
       ? getArrayValues(obj, schema).map(item => parseObject(item.value, item.schema))
-      : obj.map((item: any) => parseObject(item, schema.items))
+      : obj.map((item: any) => parseObject(item, schema.items as MutentSchema))
   } else {
     return obj
   }
 }
+
+export { MutentSchema } from './definition-type'
