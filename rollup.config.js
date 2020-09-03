@@ -7,6 +7,7 @@ export default {
   external: [
     'fluente',
     'fluido',
-    'herry'
+    'herry',
+    'ajv'
   ]
 }

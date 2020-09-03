@@ -4,6 +4,9 @@
     "es6": true,
     "node": true
   },
+  "ignorePatterns": [
+    "types/**/*.d.ts"
+  ],
   "extends": [
     "standard"
   ],
@@ -21,6 +24,8 @@
   ],
   "rules": {
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error"]
+    "@typescript-eslint/no-unused-vars": [
+      "error"
+    ]
   }
 }

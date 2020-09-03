@@ -26,7 +26,7 @@ import {
   updateMethod
 } from './mutation'
 import { Status, createStatus, readStatus, shouldCommit } from './status'
-import { parseObject } from './schema'
+import { parseObject } from './schema/index'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, isUndefined, objectify, unlazy } from './utils'
 import { Writer, writeStatus } from './writer'
