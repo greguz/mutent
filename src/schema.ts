@@ -16,7 +16,7 @@ function getKeys (obj: any = {}, isPattern: boolean = false): Key[] {
   }))
 }
 
-function getValues (obj: any, schema: any): Value[] {
+function getObjectValues (obj: any, schema: any): Value[] {
   const items = getKeys(schema.properties)
     .concat(getKeys(schema.patternProperties, true))
 
@@ -41,25 +41,43 @@ function getValues (obj: any, schema: any): Value[] {
   return values
 }
 
+function getArrayValues (obj: any[], schema: any): Value[] {
+  const length: number = schema.additionalItems === true
+    ? obj.length
+    : schema.items.length
+
+  const values: Value[] = []
+  for (let i = 0; i < length; i++) {
+    values.push({
+      key: i.toString(),
+      schema: schema.items[i],
+      value: obj[i]
+    })
+  }
+  return values
+}
+
 function set (obj: any, key: string, value: any): any {
   obj[key] = value
   return obj
 }
 
-export function parseObject (obj: any, schema: any): any {
+export function parseObject (obj: any, schema: any = {}): any {
   if (schema.parse) {
     return schema.parse(obj)
   } else if (schema.type === 'object') {
-    return getValues(obj, schema).reduce(
+    return getObjectValues(obj, schema).reduce(
       (acc, item) => set(
         acc,
         item.key,
-        item.schema ? parseObject(item.value, item.schema) : item.value
+        parseObject(item.value, item.schema)
       ),
       {}
     )
   } else if (schema.type === 'array') {
-    return obj.map((value: any) => parseObject(value, schema.items))
+    return Array.isArray(schema.items)
+      ? getArrayValues(obj, schema).map(item => parseObject(item.value, item.schema))
+      : obj.map((item: any) => parseObject(item, schema.items))
   } else {
     return obj
   }
