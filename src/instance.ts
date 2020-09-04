@@ -9,7 +9,6 @@ import {
   readify
 } from 'fluido'
 import Herry from 'herry'
-import Ajv from 'ajv'
 
 import { Strategies, migrateStatus } from './migration'
 import {
@@ -26,7 +25,7 @@ import {
   updateMethod
 } from './mutation'
 import { Status, createStatus, readStatus, shouldCommit } from './status'
-import { MutentSchema, ParseFunctions, parseValues } from './schema/index'
+import { SchemaHandler } from './schema/index'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, isUndefined, objectify, unlazy } from './utils'
 import { Writer, writeStatus } from './writer'
@@ -52,11 +51,9 @@ export type StreamOptions<O = {}> = UnwrapOptions<O> & {
 export interface InstanceSettings<T, O = any> extends MutationSettings {
   autoCommit?: boolean
   driver?: Writer<T, O>
-  migration?: Strategies
-  parse?: ParseFunctions
+  migrationStrategies?: Strategies
   safe?: boolean
-  schema?: MutentSchema
-  validate?: Ajv.ValidateFunction
+  schemaHandler?: SchemaHandler
   versionKey?: string
 }
 
@@ -100,27 +97,16 @@ async function unwrapStatus<T, O> (
   if (isNull(status.target)) {
     return status.target
   }
-  const { driver, migration, parse, schema, validate, versionKey } = settings
+  const { driver, migrationStrategies, schemaHandler, versionKey } = settings
 
   // Apply migration strategies
-  if (migration) {
-    status = await migrateStatus(status, migration, versionKey)
+  if (migrationStrategies) {
+    status = await migrateStatus(status, migrationStrategies, versionKey)
   }
 
-  // Validate data with JSON schema
-  if (validate) {
-    if (!validate(status.target)) {
-      throw new Herry(
-        'EMUT_INVALID_DATA',
-        'Invalid data detected',
-        { errors: validate.errors }
-      )
-    }
-  }
-
-  // Apply schema parsing
-  if (schema) {
-    status.target = parseValues(status.target, schema, parse)
+  // Apply JSON schema validation/parsing
+  if (schemaHandler) {
+    status.target = schemaHandler.compute(status.target)
   }
 
   // Apply mutation tree to status

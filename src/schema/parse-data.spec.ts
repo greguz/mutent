@@ -1,53 +1,53 @@
 import test from 'ava'
 
 import { MutentSchema } from './definition-type'
-import { parseValues } from './parse-values'
+import { parseData } from './parse-data'
 
 test('parseObject: primitive values without schema', t => {
   t.deepEqual(
-    parseValues('foo'),
+    parseData('foo'),
     'foo'
   )
   t.deepEqual(
-    parseValues(5),
+    parseData(5),
     5
   )
   t.deepEqual(
-    parseValues(undefined),
+    parseData(undefined),
     undefined
   )
   t.deepEqual(
-    parseValues(true),
+    parseData(true),
     true
   )
   t.deepEqual(
-    parseValues(null),
+    parseData(null),
     null
   )
 })
 
 test('parseObject: primitive values with schema', t => {
   t.deepEqual(
-    parseValues('foo', { type: 'string' }),
+    parseData('foo', { type: 'string' }),
     'foo'
   )
   t.deepEqual(
-    parseValues(5, { type: 'number' }),
+    parseData(5, { type: 'number' }),
     5
   )
   t.deepEqual(
-    parseValues(true, { type: 'boolean' }),
+    parseData(true, { type: 'boolean' }),
     true
   )
   t.deepEqual(
-    parseValues(null, { type: 'null' }),
+    parseData(null, { type: 'null' }),
     null
   )
 })
 
 test('parseObject: object without schema', t => {
   t.deepEqual(
-    parseValues({ foo: 'bar' }),
+    parseData({ foo: 'bar' }),
     { foo: 'bar' }
   )
 })
@@ -57,7 +57,7 @@ test('parseObject: object with schema', t => {
     type: 'object'
   }
   t.deepEqual(
-    parseValues({ foo: 'bar' }, schema),
+    parseData({ foo: 'bar' }, schema),
     { foo: 'bar' }
   )
 
@@ -66,7 +66,7 @@ test('parseObject: object with schema', t => {
     additionalProperties: true
   }
   t.deepEqual(
-    parseValues({ foo: 'bar' }, schema2),
+    parseData({ foo: 'bar' }, schema2),
     { foo: 'bar' }
   )
 
@@ -79,7 +79,7 @@ test('parseObject: object with schema', t => {
     }
   }
   t.deepEqual(
-    parseValues({ foo: 'bar' }, schema3),
+    parseData({ foo: 'bar' }, schema3),
     { foo: 'bar' }
   )
 })
@@ -104,14 +104,14 @@ test('parseObject: object with schema and custom parse', t => {
     }
   }
   t.deepEqual(
-    parseValues({ foo: '5', bar: { deepBar: 'foo' }, notPassing: true }, schema),
+    parseData({ foo: '5', bar: { deepBar: 'foo' }, notPassing: true }, schema),
     { foo: 5, bar: { deepBar: '##foo##' }, notPassing: true }
   )
 })
 
 test('parseObject: array without schema', t => {
   t.deepEqual(
-    parseValues(['foo']),
+    parseData(['foo']),
     ['foo']
   )
 })
@@ -121,7 +121,7 @@ test('parseObject: array with schema', t => {
     type: 'array'
   }
   t.deepEqual(
-    parseValues(['foo'], schema),
+    parseData(['foo'], schema),
     ['foo']
   )
 
@@ -132,7 +132,7 @@ test('parseObject: array with schema', t => {
     }
   }
   t.deepEqual(
-    parseValues(['foo'], schema3),
+    parseData(['foo'], schema3),
     ['foo']
   )
 
@@ -152,7 +152,7 @@ test('parseObject: array with schema', t => {
     }
   }
   t.deepEqual(
-    parseValues<{ foo: string, bar: string }[]>([{ foo: 'bar', bar: 4 }], schema4),
+    parseData<{ foo: string, bar: string }[]>([{ foo: 'bar', bar: 4 }], schema4),
     [{ foo: 'bar', bar: '4' }]
   )
   const now = new Date().toISOString()
@@ -170,7 +170,7 @@ test('parseObject: array with schema', t => {
     }]
   }
   t.deepEqual(
-    parseValues([{ foo: 'bar', now }], schema5),
+    parseData([{ foo: 'bar', now }], schema5),
     [{ foo: 'bar', now: new Date(now) }]
   )
 })

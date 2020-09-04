@@ -1,4 +1,3 @@
-import Ajv from 'ajv'
 import fluente from 'fluente'
 
 import {
@@ -10,22 +9,14 @@ import {
   readEntities,
   readEntity
 } from './instance'
-import { Strategies } from './migration'
 import { Reader, filterData, findData, readData } from './reader'
-import { MutentSchema } from './schema/index'
+import { MutentSchema, ParseFunction, SchemaHandler, SchemaHandlerSettings } from './schema/index'
 import { Writer } from './writer'
 
 export interface Driver<T, Q = any, O = any> extends Reader<T, Q, O>, Writer<T, O> {}
 
-export interface Constructors {
-  [key: string]: Function
-}
-
-export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
-  ajv?: Ajv.Ajv
-  constructors?: Constructors
+export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O>, SchemaHandlerSettings {
   driver?: Driver<T, Q, O>
-  migration?: Strategies
   schema?: MutentSchema
 }
 
@@ -35,13 +26,13 @@ export interface Store<T, Q = any, O = any> {
   filter (query: Q): Entities<T, O>
   create<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
   from<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
+  defineConstructor (key: string, Constructor: Function) : this
+  defineParser (key: string, parser: ParseFunction) : this
 }
 
 interface StoreState<T, Q, O> {
-  constructors: Constructors
   reader: Reader<T, Q, O>
-  settings: StoreSettings<T, Q, O>
-  validate: Ajv.ValidateFunction | undefined
+  settings: InstanceSettings<T, O>
 }
 
 function findMethod<T, Q, O> (
@@ -50,7 +41,7 @@ function findMethod<T, Q, O> (
 ) {
   return readEntity(
     options => findData(reader, query, options),
-    settings as StoreSettings<T | null>
+    settings
   )
 }
 
@@ -92,68 +83,65 @@ function fromMethod<T, Q, O> (
     : readEntity(data, state.settings)
 }
 
-function compileSchema (
-  constructors: Constructors,
-  ajv?: Ajv.Ajv,
-  schema?: any
-): Ajv.ValidateFunction | undefined {
-  if (!schema) {
-    return
+function defineConstructorMethod<T, Q, O> (
+  state: StoreState<T, Q, O>,
+  key: string,
+  Constructor: Function
+): StoreState<T, Q, O> {
+  const { settings } = state
+  const { schemaHandler } = settings
+  return {
+    ...state,
+    settings: {
+      ...settings,
+      schemaHandler: schemaHandler
+        ? schemaHandler.defineConstructor(key, Constructor)
+        : schemaHandler
+    }
   }
+}
 
-  if (!ajv) {
-    ajv = new Ajv({
-      coerceTypes: true,
-      removeAdditional: true,
-      useDefaults: true
-    })
+function defineParserMethod<T, Q, O> (
+  state: StoreState<T, Q, O>,
+  key: string,
+  parser: ParseFunction
+): StoreState<T, Q, O> {
+  const { settings } = state
+  const { schemaHandler } = settings
+  return {
+    ...state,
+    settings: {
+      ...settings,
+      schemaHandler: schemaHandler
+        ? schemaHandler.defineParser(key, parser)
+        : schemaHandler
+    }
   }
-
-  if (!ajv.getKeyword('instanceof')) {
-    ajv.addKeyword('instanceof', {
-      errors: false,
-      metaSchema: {
-        type: 'string'
-      },
-      validate (schema: string, data: any): boolean {
-        return constructors.hasOwnProperty(schema)
-          ? data instanceof constructors[schema]
-          : false
-      }
-    })
-  }
-
-  return ajv.compile(schema)
 }
 
 export function createStore<T, Q, O> (
   settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
-  const constructors: Constructors = {
-    Array,
-    Buffer,
-    Date,
-    Function,
-    Number,
-    Object,
-    Promise,
-    RegExp,
-    String,
-    ...settings.constructors
-  }
+  const { schema, schemaHandler } = settings
 
   const state: StoreState<T, Q, O> = {
-    constructors,
     reader: settings.driver || {},
-    settings,
-    validate: compileSchema(constructors, settings.ajv, settings.schema)
+    settings: {
+      ...settings,
+      schemaHandler: schema && !schemaHandler
+        ? new SchemaHandler(schema, settings)
+        : schemaHandler
+    }
   }
 
   return fluente({
     historySize: settings.historySize,
     isMutable: settings.classy,
     state,
-    fluent: {},
+    fluent: {
+      defineConstructor: defineConstructorMethod,
+      defineParser: defineParserMethod
+    },
     methods: {
       find: findMethod,
       read: readMethod,

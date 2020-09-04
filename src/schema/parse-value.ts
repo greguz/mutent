@@ -16,51 +16,60 @@ export interface ParseFunctions {
   [key: string]: ParseFunction | undefined
 }
 
-function resolveKey (fncs: ParseFunctions, key: string): ParseFunction {
-  const fnc = fncs[key]
-  if (!fnc) {
+function bindFunction (fn: ParseFunction, ...args: any[]): ParseFunction {
+  return args.length > 0
+    ? value => fn(value, ...args)
+    : fn
+}
+
+function resolveKey (functions: ParseFunctions, key: string): ParseFunction {
+  const fn = functions[key]
+  if (!fn) {
     throw new Herry('EMUT_EXPECTED_PARSER', 'Expected parse function', { key })
   }
-  return fnc
+  return fn
 }
 
-function bindFunction (fnc: ParseFunction, ...args: any[]): ParseFunction {
-  return args.length > 0
-    ? value => fnc(value, ...args)
-    : fnc
-}
-
-function handleArray (fncs: ParseFunctions, parse: ParseArray): ParseFunction {
+function handleArray (
+  functions: ParseFunctions,
+  parse: ParseArray
+): ParseFunction {
   return bindFunction(
-    resolveKey(fncs, parse[0]),
+    resolveKey(functions, parse[0]),
     parse.slice(1)
   )
 }
 
-function handleObject (fncs: ParseFunctions, parse: ParseObject): ParseFunction {
+function handleObject (
+  functions: ParseFunctions,
+  parse: ParseObject
+): ParseFunction {
   const key = Object.keys(parse)[0]
   return bindFunction(
-    resolveKey(fncs, key),
+    resolveKey(functions, key),
     parse[key]
   )
 }
 
-function getParseFunction (fncs: ParseFunctions, parse: Parse): ParseFunction {
+function getParseFunction (
+  functions: ParseFunctions,
+  parse: Parse
+): ParseFunction {
   if (typeof parse === 'function') {
     return parse
   } else if (typeof parse === 'string') {
-    return resolveKey(fncs, parse)
+    return resolveKey(functions, parse)
   } else if (Array.isArray(parse)) {
-    return handleArray(fncs, parse)
+    return handleArray(functions, parse)
   } else {
-    return handleObject(fncs, parse)
+    return handleObject(functions, parse)
   }
 }
 
 export function parseValue (
   value: any,
   parse: Parse,
-  fncs: ParseFunctions = {}
+  functions: ParseFunctions = {}
 ): any {
-  return getParseFunction(fncs, parse)(value)
+  return getParseFunction(functions, parse)(value)
 }

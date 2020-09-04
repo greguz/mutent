@@ -9,7 +9,7 @@ function parseArray (array: any[], schema: PrivateSchema): any {
 
   const length = Array.isArray(items) ? items.length : array.length
   for (let i = 0; i < length; i++) {
-    array[i] = parseValues(
+    array[i] = parseData(
       array[i],
       Array.isArray(items) ? items[i] : items
     )
@@ -29,7 +29,7 @@ function parsePatternProperties (
 
     for (const objectKey of objectKeys) {
       if (regexp.test(objectKey)) {
-        object[objectKey] = parseValues(
+        object[objectKey] = parseData(
           object[objectKey],
           patternProperties[schemaKey]
         )
@@ -45,7 +45,7 @@ function parseProperties (
   properties: NonNullable<PrivateSchema['properties']>
 ): any {
   for (const key of Object.keys(properties)) {
-    object[key] = parseValues(object[key], properties[key])
+    object[key] = parseData(object[key], properties[key])
   }
   return object
 }
@@ -61,19 +61,19 @@ function parseObject (object: any, schema: PrivateSchema): any {
   return object
 }
 
-export function parseValues<T = any> (
-  value: any,
+export function parseData<T = any> (
+  data: any,
   schema?: MutentSchema,
   functions?: ParseFunctions
 ): T {
   if (typeof schema === 'object' && schema !== null) {
     if (schema.parse) {
-      return parseValue(value, schema.parse, functions)
+      return parseValue(data, schema.parse, functions)
     } else if (schema.type === 'object') {
-      return parseObject(value, schema)
+      return parseObject(data, schema)
     } else if (schema.type === 'array') {
-      return parseArray(value, schema)
+      return parseArray(data, schema)
     }
   }
-  return value
+  return data
 }

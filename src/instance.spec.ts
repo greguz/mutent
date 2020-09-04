@@ -560,7 +560,7 @@ test('migration', async t => {
   }
 
   const data = await readEntity(item, {
-    migration: {
+    migrationStrategies: {
       1: function (data) {
         return {
           ...data,
