@@ -129,7 +129,7 @@ test('schema', async t => {
       date: {
         anyOf: [
           { type: 'string', format: 'date-time' },
-          { type: 'object', instanceof: Date }
+          { type: 'object', instanceof: 'Date' }
         ],
         parse: (value: any) => new Date(value)
       }

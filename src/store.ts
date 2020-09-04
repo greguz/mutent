@@ -17,8 +17,13 @@ import { Writer } from './writer'
 
 export interface Driver<T, Q = any, O = any> extends Reader<T, Q, O>, Writer<T, O> {}
 
+export interface Constructors {
+  [key: string]: Function
+}
+
 export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, O> {
   ajv?: Ajv.Ajv
+  constructors?: Constructors
   driver?: Driver<T, Q, O>
   migration?: Strategies
   schema?: MutentSchema
@@ -33,6 +38,7 @@ export interface Store<T, Q = any, O = any> {
 }
 
 interface StoreState<T, Q, O> {
+  constructors: Constructors
   reader: Reader<T, Q, O>
   settings: StoreSettings<T, Q, O>
   validate: Ajv.ValidateFunction | undefined
@@ -87,22 +93,62 @@ function fromMethod<T, Q, O> (
 }
 
 function compileSchema (
-  settings: StoreSettings<any, any, any>
+  constructors: Constructors,
+  ajv?: Ajv.Ajv,
+  schema?: any
 ): Ajv.ValidateFunction | undefined {
-  const ajv: Ajv.Ajv = settings.ajv || new Ajv()
-  if (settings.schema) {
-    return ajv.compile(settings.schema)
+  if (!schema) {
+    return
   }
+
+  if (!ajv) {
+    ajv = new Ajv({
+      coerceTypes: true,
+      removeAdditional: true,
+      useDefaults: true
+    })
+  }
+
+  if (!ajv.getKeyword('instanceof')) {
+    ajv.addKeyword('instanceof', {
+      errors: false,
+      metaSchema: {
+        type: 'string'
+      },
+      validate (schema: string, data: any): boolean {
+        return constructors.hasOwnProperty(schema)
+          ? data instanceof constructors[schema]
+          : false
+      }
+    })
+  }
+
+  return ajv.compile(schema)
 }
 
 export function createStore<T, Q, O> (
   settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
+  const constructors: Constructors = {
+    Array,
+    Buffer,
+    Date,
+    Function,
+    Number,
+    Object,
+    Promise,
+    RegExp,
+    String,
+    ...settings.constructors
+  }
+
   const state: StoreState<T, Q, O> = {
+    constructors,
     reader: settings.driver || {},
     settings,
-    validate: settings.validate || compileSchema(settings)
+    validate: compileSchema(constructors, settings.ajv, settings.schema)
   }
+
   return fluente({
     historySize: settings.historySize,
     isMutable: settings.classy,
