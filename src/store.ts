@@ -11,6 +11,7 @@ import {
 } from './instance'
 import { Strategies } from './migration'
 import { Reader, filterData, findData, readData } from './reader'
+import { MutentSchema } from './schema/index'
 import { Writer } from './writer'
 
 export interface Driver<T, Q = any, O = any> extends Reader<T, Q, O>, Writer<T, O> {}
@@ -19,7 +20,7 @@ export interface StoreSettings<T, Q = any, O = any> extends InstanceSettings<T, 
   ajv?: Ajv.Ajv
   driver?: Driver<T, Q, O>
   migration?: Strategies
-  schema?: any
+  schema?: MutentSchema
 }
 
 export interface Store<T, Q = any, O = any> {

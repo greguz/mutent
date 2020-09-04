@@ -26,7 +26,7 @@ import {
   updateMethod
 } from './mutation'
 import { Status, createStatus, readStatus, shouldCommit } from './status'
-import { parseObject } from './schema/index'
+import { MutentSchema, parseValues } from './schema/index'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, isUndefined, objectify, unlazy } from './utils'
 import { Writer, writeStatus } from './writer'
@@ -54,7 +54,7 @@ export interface InstanceSettings<T, O = any> extends MutationSettings {
   driver?: Writer<T, O>
   migration?: Strategies
   safe?: boolean
-  schema?: any
+  schema?: MutentSchema
   validate?: Ajv.ValidateFunction
   versionKey?: string
 }
@@ -119,7 +119,7 @@ async function unwrapStatus<T, O> (
 
   // Apply schema parsing
   if (schema) {
-    status.target = parseObject(status.target, schema)
+    status.target = parseValues(status.target, schema)
   }
 
   // Apply mutation tree to status
