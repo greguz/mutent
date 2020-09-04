@@ -26,7 +26,7 @@ import {
   updateMethod
 } from './mutation'
 import { Status, createStatus, readStatus, shouldCommit } from './status'
-import { MutentSchema, parseValues } from './schema/index'
+import { MutentSchema, ParseFunctions, parseValues } from './schema/index'
 import { MutationTree, mutateStatus } from './tree'
 import { Lazy, isNull, isUndefined, objectify, unlazy } from './utils'
 import { Writer, writeStatus } from './writer'
@@ -53,6 +53,7 @@ export interface InstanceSettings<T, O = any> extends MutationSettings {
   autoCommit?: boolean
   driver?: Writer<T, O>
   migration?: Strategies
+  parse?: ParseFunctions
   safe?: boolean
   schema?: MutentSchema
   validate?: Ajv.ValidateFunction
@@ -99,7 +100,7 @@ async function unwrapStatus<T, O> (
   if (isNull(status.target)) {
     return status.target
   }
-  const { driver, migration, schema, validate, versionKey } = settings
+  const { driver, migration, parse, schema, validate, versionKey } = settings
 
   // Apply migration strategies
   if (migration) {
@@ -119,7 +120,7 @@ async function unwrapStatus<T, O> (
 
   // Apply schema parsing
   if (schema) {
-    status.target = parseValues(status.target, schema)
+    status.target = parseValues(status.target, schema, parse)
   }
 
   // Apply mutation tree to status

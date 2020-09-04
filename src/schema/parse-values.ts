@@ -1,4 +1,5 @@
 import { MutentSchema, PrivateSchema } from './definition-type'
+import { ParseFunctions, parseValue } from './parse-value'
 
 function parseArray (array: any[], schema: PrivateSchema): any {
   const { items } = schema
@@ -60,10 +61,14 @@ function parseObject (object: any, schema: PrivateSchema): any {
   return object
 }
 
-export function parseValues<T = any> (value: any, schema?: MutentSchema): T {
+export function parseValues<T = any> (
+  value: any,
+  schema?: MutentSchema,
+  functions?: ParseFunctions
+): T {
   if (typeof schema === 'object' && schema !== null) {
     if (schema.parse) {
-      return schema.parse(value)
+      return parseValue(value, schema.parse, functions)
     } else if (schema.type === 'object') {
       return parseObject(value, schema)
     } else if (schema.type === 'array') {

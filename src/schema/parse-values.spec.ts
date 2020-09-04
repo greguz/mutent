@@ -1,7 +1,7 @@
 import test from 'ava'
 
 import { MutentSchema } from './definition-type'
-import { parseValues } from './parse'
+import { parseValues } from './parse-values'
 
 test('parseObject: primitive values without schema', t => {
   t.deepEqual(

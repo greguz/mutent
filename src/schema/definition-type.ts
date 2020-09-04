@@ -1,7 +1,9 @@
+import { Parse } from './parse-value'
+
 // This interfaces are taken from https://www.npmjs.com/package/@types/json-schema and extended with custom keywords
 
 type CustomKeywords = {
-  parse?: (obj: any) => any
+  parse?: Parse
 }
 
 /**
