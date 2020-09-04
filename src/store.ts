@@ -1,4 +1,5 @@
 import Ajv from 'ajv'
+import fluente from 'fluente'
 
 import {
   Entities,
@@ -31,22 +32,58 @@ export interface Store<T, Q = any, O = any> {
   from<F extends T[] | T> (data: F): F extends T[] ? Entities<T, O> : Entity<T, O>
 }
 
-function createMethod<T, Q, O> (
-  data: any,
+interface StoreState<T, Q, O> {
+  reader: Reader<T, Q, O>
   settings: StoreSettings<T, Q, O>
+  validate: Ajv.ValidateFunction | undefined
+}
+
+function findMethod<T, Q, O> (
+  { reader, settings }: StoreState<T, Q, O>,
+  query: Q
+) {
+  return readEntity(
+    options => findData(reader, query, options),
+    settings as StoreSettings<T | null>
+  )
+}
+
+function readMethod<T, Q, O> (
+  { reader, settings }: StoreState<T, Q, O>,
+  query: Q
+) {
+  return readEntity(
+    options => readData(reader, query, options),
+    settings
+  )
+}
+
+function filterMethod<T, Q, O> (
+  { reader, settings }: StoreState<T, Q, O>,
+  query: Q
+) {
+  return readEntities(
+    options => filterData(reader, query, options),
+    settings
+  )
+}
+
+function createMethod<T, Q, O> (
+  state: StoreState<T, Q, O>,
+  data: any
 ): any {
   return Array.isArray(data)
-    ? createEntities(data, settings)
-    : createEntity(data, settings)
+    ? createEntities(data, state.settings)
+    : createEntity(data, state.settings)
 }
 
 function fromMethod<T, Q, O> (
-  data: any,
-  settings: StoreSettings<T, Q, O>
+  state: StoreState<T, Q, O>,
+  data: any
 ): any {
   return Array.isArray(data)
-    ? readEntities(data, settings)
-    : readEntity(data, settings)
+    ? readEntities(data, state.settings)
+    : readEntity(data, state.settings)
 }
 
 function compileSchema (
@@ -61,24 +98,23 @@ function compileSchema (
 export function createStore<T, Q, O> (
   settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
-  const reader = settings.driver || {}
-  if (!settings.validate) {
-    settings.validate = compileSchema(settings)
+  const state: StoreState<T, Q, O> = {
+    reader: settings.driver || {},
+    settings,
+    validate: settings.validate || compileSchema(settings)
   }
-  return {
-    find: query => readEntity(
-      options => findData(reader, query, options),
-      settings as StoreSettings<T | null>
-    ),
-    read: query => readEntity(
-      options => readData(reader, query, options),
-      settings
-    ),
-    filter: query => readEntities(
-      options => filterData(reader, query, options),
-      settings
-    ),
-    create: data => createMethod(data, settings),
-    from: data => fromMethod(data, settings)
-  }
+  return fluente({
+    historySize: settings.historySize,
+    isMutable: settings.classy,
+    state,
+    fluent: {},
+    methods: {
+      find: findMethod,
+      read: readMethod,
+      filter: filterMethod,
+      create: createMethod,
+      from: fromMethod
+    },
+    constants: {}
+  })
 }
