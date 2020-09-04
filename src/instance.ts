@@ -153,8 +153,8 @@ async function unwrapStatus<T, O> (
 async function unwrapOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
-  tree: MutationTree<T>,
   settings: InstanceSettings<T, O>,
+  tree: MutationTree<T>,
   options: UnwrapOptions<O>
 ): Promise<T> {
   const data = await unlazy(one, options)
@@ -164,8 +164,8 @@ async function unwrapOne<T, O> (
 function streamOne<T, O> (
   one: One<T, O>,
   build: (data: T) => Status<T>,
-  tree: MutationTree<T>,
   settings: InstanceSettings<T, O>,
+  tree: MutationTree<T>,
   options: StreamOptions<O>
 ): stream.Readable {
   return new Readable({
@@ -188,8 +188,8 @@ function toStream<T> (values: Values<T>): stream.Readable {
 function unwrapMany<T, O> (
   many: Many<T, O>,
   build: (data: T) => Status<T>,
-  tree: MutationTree<T>,
   settings: InstanceSettings<T, O>,
+  tree: MutationTree<T>,
   options: UnwrapOptions<O>
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
@@ -218,8 +218,8 @@ function unwrapMany<T, O> (
 function streamMany<T, O> (
   many: Many<T, O>,
   build: (data: T) => Status<T>,
-  tree: MutationTree<T>,
   settings: InstanceSettings<T, O>,
+  tree: MutationTree<T>,
   options: StreamOptions<O>
 ): stream.Readable {
   return readify(
@@ -292,8 +292,8 @@ export function createEntity<T, O = any> (
   settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
   return createInstance(
-    (tree, options) => unwrapOne(one, createStatus, tree, settings, options),
-    (tree, options) => streamOne(one, createStatus, tree, settings, options),
+    (tree, options) => unwrapOne(one, createStatus, settings, tree, options),
+    (tree, options) => streamOne(one, createStatus, settings, tree, options),
     settings
   )
 }
@@ -303,8 +303,8 @@ export function readEntity<T, O = any> (
   settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
   return createInstance(
-    (tree, options) => unwrapOne(one, readStatus, tree, settings, options),
-    (tree, options) => streamOne(one, readStatus, tree, settings, options),
+    (tree, options) => unwrapOne(one, readStatus, settings, tree, options),
+    (tree, options) => streamOne(one, readStatus, settings, tree, options),
     settings
   )
 }
@@ -314,8 +314,8 @@ export function createEntities<T, O = any> (
   settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
   return createInstance(
-    (tree, options) => unwrapMany(many, createStatus, tree, settings, options),
-    (tree, options) => streamMany(many, createStatus, tree, settings, options),
+    (tree, options) => unwrapMany(many, createStatus, settings, tree, options),
+    (tree, options) => streamMany(many, createStatus, settings, tree, options),
     settings
   )
 }
@@ -325,8 +325,8 @@ export function readEntities<T, O = any> (
   settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
   return createInstance(
-    (tree, options) => unwrapMany(many, readStatus, tree, settings, options),
-    (tree, options) => streamMany(many, readStatus, tree, settings, options),
+    (tree, options) => unwrapMany(many, readStatus, settings, tree, options),
+    (tree, options) => streamMany(many, readStatus, settings, tree, options),
     settings
   )
 }
