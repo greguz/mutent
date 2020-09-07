@@ -65,6 +65,20 @@ export class SchemaHandler {
       })
     }
 
+    this._ajv.addKeyword('parse', {
+      errors: false,
+      validate (schema: any) {
+        if (Array.isArray(schema)) {
+          return schema.length >= 1 && typeof schema[0] === 'string'
+        } else if (typeof schema === 'object' && schema !== null) {
+          const keys = Object.keys(schema)
+          return keys.length === 1 && Array.isArray(schema[keys[0]])
+        } else {
+          return typeof schema === 'function' || typeof schema === 'string'
+        }
+      }
+    })
+
     this._validate = this._ajv.compile(schema)
   }
 
