@@ -1,6 +1,5 @@
 node_modules
 .vscode
-.out
 types
 mutent.js
 .nyc_output

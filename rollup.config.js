@@ -1,3 +1,6 @@
+import pluginTypeScript from '@rollup/plugin-typescript'
+import tsc from 'typescript'
+
 export default {
   input: '.out/index.js',
   output: {
@@ -5,9 +8,14 @@ export default {
     format: 'cjs'
   },
   external: [
+    'ajv',
     'fluente',
     'fluido',
-    'herry',
-    'ajv'
+    'herry'
+  ],
+  plugins: [
+    pluginTypeScript({
+      typescript: tsc
+    })
   ]
 }
