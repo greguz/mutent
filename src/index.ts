@@ -21,8 +21,19 @@ export {
   createMutation
 } from './mutation'
 export { Reader } from './reader'
+export {
+  Constructors,
+  MutentSchema,
+  Parse,
+  ParseArray,
+  ParseFunction,
+  ParseFunctions,
+  ParseObject,
+  ParseString,
+  SchemaHandler,
+  SchemaHandlerSettings
+} from './schema/index'
 export { Driver, Store, StoreSettings, createStore } from './store'
 export { Condition } from './tree'
 export { Lazy, Result } from './utils'
 export { WriteResult, Writer } from './writer'
-export type { MutentSchema } from './schema'
