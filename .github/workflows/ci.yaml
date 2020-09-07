@@ -38,10 +38,6 @@ jobs:
         run: |
           npm run test
 
-      - name: Run coverage
-        run: |
-          npm run coverage
-
   coverage:
     needs: test
     runs-on: ubuntu-latest
