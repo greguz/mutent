@@ -1,6 +1,6 @@
 import Herry from 'herry'
 
-import { Value, Values } from './instance'
+import { Value, Values } from './producers'
 import { isNull, isUndefined } from './utils'
 
 export interface Reader<T, Q = any, O = any> {

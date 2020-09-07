@@ -2,12 +2,6 @@ export {
   Entities,
   Entity,
   InstanceSettings,
-  Many,
-  One,
-  StreamOptions,
-  UnwrapOptions,
-  Value,
-  Values,
   createEntities,
   createEntity,
   readEntities,
@@ -20,6 +14,14 @@ export {
   MutationSettings,
   createMutation
 } from './mutation'
+export {
+  Many,
+  One,
+  StreamOptions,
+  UnwrapOptions,
+  Value,
+  Values,
+} from './producers'
 export { Reader } from './reader'
 export {
   Constructors,
