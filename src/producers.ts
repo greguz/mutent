@@ -8,15 +8,8 @@ import {
   readify
 } from 'fluido'
 
+import { Value, Values } from './reader'
 import { Lazy, isNull, unlazy } from './utils'
-
-export type Value<T> = Promise<T> | T
-
-export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
-
-export type One<T, O = any> = Lazy<Value<T>, StreamOptions<O>>
-
-export type Many<T, O = any> = Lazy<Values<T>, StreamOptions<O>>
 
 export type UnwrapOptions<O = {}> = Partial<O> & {
   autoCommit?: boolean
@@ -27,6 +20,10 @@ export type StreamOptions<O = {}> = UnwrapOptions<O> & {
   concurrency?: number
   highWaterMark?: number
 }
+
+export type One<T, O = any> = Lazy<Value<T>, UnwrapOptions<O>>
+
+export type Many<T, O = any> = Lazy<Values<T>, StreamOptions<O>>
 
 export async function unwrapOne<T, O> (
   one: One<T, O>,

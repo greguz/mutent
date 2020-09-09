@@ -1,7 +1,11 @@
 import Herry from 'herry'
+import stream from 'stream'
 
-import { Value, Values } from './producers'
 import { isNull, isUndefined } from './utils'
+
+export type Value<T> = Promise<T> | T
+
+export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
 
 export interface Reader<T, Q = any, O = any> {
   find? (query: Q, options: Partial<O>, isRequired: boolean): Value<T | null | undefined>

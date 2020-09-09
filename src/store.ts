@@ -83,10 +83,9 @@ function fromMethod<T, Q, O> (
     : readEntity(data, state.settings)
 }
 
-function defineConstructorMethod<T, Q, O> (
+function updateSchemaHandler<T, Q, O> (
   state: StoreState<T, Q, O>,
-  key: string,
-  Constructor: Function
+  update: (handler: SchemaHandler) => SchemaHandler
 ): StoreState<T, Q, O> {
   const { settings } = state
   const { schemaHandler } = settings
@@ -94,11 +93,20 @@ function defineConstructorMethod<T, Q, O> (
     ...state,
     settings: {
       ...settings,
-      schemaHandler: schemaHandler
-        ? schemaHandler.defineConstructor(key, Constructor)
-        : schemaHandler
+      schemaHandler: schemaHandler ? update(schemaHandler) : schemaHandler
     }
   }
+}
+
+function defineConstructorMethod<T, Q, O> (
+  state: StoreState<T, Q, O>,
+  key: string,
+  Constructor: Function
+): StoreState<T, Q, O> {
+  return updateSchemaHandler(
+    state,
+    schemaHandler => schemaHandler.defineConstructor(key, Constructor)
+  )
 }
 
 function defineParserMethod<T, Q, O> (
@@ -106,31 +114,22 @@ function defineParserMethod<T, Q, O> (
   key: string,
   parser: ParseFunction
 ): StoreState<T, Q, O> {
-  const { settings } = state
-  const { schemaHandler } = settings
-  return {
-    ...state,
-    settings: {
-      ...settings,
-      schemaHandler: schemaHandler
-        ? schemaHandler.defineParser(key, parser)
-        : schemaHandler
-    }
-  }
+  return updateSchemaHandler(
+    state,
+    schemaHandler => schemaHandler.defineParser(key, parser)
+  )
 }
 
 export function createStore<T, Q, O> (
   settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O> {
-  const { schema, schemaHandler } = settings
+  const { schema } = settings
 
   const state: StoreState<T, Q, O> = {
     reader: settings.driver || {},
     settings: {
       ...settings,
-      schemaHandler: schema && !schemaHandler
-        ? new SchemaHandler(schema, settings)
-        : schemaHandler
+      schemaHandler: schema ? new SchemaHandler(schema, settings) : undefined
     }
   }
 

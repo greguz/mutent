@@ -8,21 +8,9 @@ export {
   readEntity
 } from './instance'
 export { Strategies, Strategy } from './migration'
-export {
-  Mutation,
-  Mutator,
-  MutationSettings,
-  createMutation
-} from './mutation'
-export {
-  Many,
-  One,
-  StreamOptions,
-  UnwrapOptions,
-  Value,
-  Values,
-} from './producers'
-export { Reader } from './reader'
+export { Mutation, Mutator, MutationSettings, createMutation } from './mutation'
+export { Many, One, StreamOptions, UnwrapOptions } from './producers'
+export { Reader, Value, Values } from './reader'
 export {
   Constructors,
   MutentSchema,
