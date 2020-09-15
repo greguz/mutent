@@ -2,7 +2,7 @@ import pluginTypeScript from '@rollup/plugin-typescript'
 import tsc from 'typescript'
 
 export default {
-  input: '.out/index.js',
+  input: 'src/index.ts',
   output: {
     file: 'mutent.js',
     format: 'cjs'
