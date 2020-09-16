@@ -14,23 +14,23 @@ export interface MutationSettings {
 }
 
 export interface Mutation<T> {
-  update<A extends any[]> (mutator: Mutator<T, A>, ...args: A): this
-  assign (object: Partial<T>): this
-  delete (): this
-  commit (): this
-  if (condition: Condition<T>, mutation: Mutation<T>): this
-  unless (condition: Condition<T>, mutation: Mutation<T>): this
-  mutate (mutation: Mutation<T>): this
-  render (): MutationTree<T>
-  undo (steps?: number): this
-  redo (steps?: number): this
+  update<A extends any[]>(mutator: Mutator<T, A>, ...args: A): this
+  assign(object: Partial<T>): this
+  delete(): this
+  commit(): this
+  if(condition: Condition<T>, mutation: Mutation<T>): this
+  unless(condition: Condition<T>, mutation: Mutation<T>): this
+  mutate(mutation: Mutation<T>): this
+  render(): MutationTree<T>
+  undo(steps?: number): this
+  redo(steps?: number): this
 }
 
 export interface MutationState<T> {
   tree: MutationTree<T>
 }
 
-function pushNode<T> (
+function pushNode<T>(
   state: MutationState<T>,
   node: MutationNode<T>
 ): MutationState<T> {
@@ -40,7 +40,7 @@ function pushNode<T> (
   }
 }
 
-export function updateMethod<T, A extends any[]> (
+export function updateMethod<T, A extends any[]>(
   state: MutationState<T>,
   mutator: Mutator<T, A>,
   ...args: A
@@ -51,7 +51,7 @@ export function updateMethod<T, A extends any[]> (
   })
 }
 
-export function assignMethod<T> (
+export function assignMethod<T>(
   state: MutationState<T>,
   object: Partial<T>
 ): MutationState<T> {
@@ -61,19 +61,15 @@ export function assignMethod<T> (
   })
 }
 
-export function deleteMethod<T> (
-  state: MutationState<T>
-): MutationState<T> {
+export function deleteMethod<T>(state: MutationState<T>): MutationState<T> {
   return pushNode(state, { type: 'DELETE' })
 }
 
-export function commitMethod<T> (
-  state: MutationState<T>
-): MutationState<T> {
+export function commitMethod<T>(state: MutationState<T>): MutationState<T> {
   return pushNode(state, { type: 'COMMIT' })
 }
 
-export function ifMethod<T> (
+export function ifMethod<T>(
   state: MutationState<T>,
   condition: Condition<T>,
   mutation: Mutation<T>
@@ -85,19 +81,15 @@ export function ifMethod<T> (
   })
 }
 
-export function unlessMethod<T> (
+export function unlessMethod<T>(
   state: MutationState<T>,
   condition: Condition<T>,
   mutation: Mutation<T>
 ): MutationState<T> {
-  return ifMethod(
-    state,
-    data => !unlazy(condition, data),
-    mutation
-  )
+  return ifMethod(state, data => !unlazy(condition, data), mutation)
 }
 
-export function mutateMethod<T> (
+export function mutateMethod<T>(
   state: MutationState<T>,
   mutation: Mutation<T>
 ): MutationState<T> {
@@ -107,13 +99,11 @@ export function mutateMethod<T> (
   }
 }
 
-export function renderMethod<T> (
-  state: MutationState<T>
-): MutationTree<T> {
+export function renderMethod<T>(state: MutationState<T>): MutationTree<T> {
   return state.tree
 }
 
-export function createMutation<T> (
+export function createMutation<T>(
   settings: MutationSettings = {}
 ): Mutation<T> {
   const state: MutationState<T> = {

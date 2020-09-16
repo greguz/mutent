@@ -25,25 +25,22 @@ export type One<T, O = any> = Lazy<Value<T>, UnwrapOptions<O>>
 
 export type Many<T, O = any> = Lazy<Values<T>, StreamOptions<O>>
 
-export async function unwrapOne<T, O> (
+export async function unwrapOne<T, O>(
   one: One<T, O>,
   handle: (data: T, options: UnwrapOptions<O>) => Promise<T>,
   options: UnwrapOptions<O>
 ): Promise<T> {
-  return handle(
-    await unlazy(one, options),
-    options
-  )
+  return handle(await unlazy(one, options), options)
 }
 
-export function streamOne<T, O> (
+export function streamOne<T, O>(
   one: One<T, O>,
   handle: (data: T, options: StreamOptions<O>) => Promise<T>,
   options: StreamOptions<O>
 ): stream.Readable {
   return new Readable({
     objectMode: true,
-    async asyncRead () {
+    async asyncRead() {
       const data = await unwrapOne(one, handle, options)
       if (!isNull(data)) {
         this.push(data)
@@ -53,11 +50,11 @@ export function streamOne<T, O> (
   })
 }
 
-function toStream<T> (values: Values<T>): stream.Readable {
+function toStream<T>(values: Values<T>): stream.Readable {
   return isReadable(values) ? values : Readable.from(values)
 }
 
-export function unwrapMany<T, O> (
+export function unwrapMany<T, O>(
   many: Many<T, O>,
   handle: (data: T, options: UnwrapOptions<O>) => Promise<T>,
   options: UnwrapOptions<O>
@@ -68,10 +65,8 @@ export function unwrapMany<T, O> (
       toStream(unlazy(many, options)),
       new Writable<T>({
         objectMode: true,
-        async write (chunk) {
-          results.push(
-            await handle(chunk, options)
-          )
+        async write(chunk) {
+          results.push(await handle(chunk, options))
         }
       }),
       err => {
@@ -85,7 +80,7 @@ export function unwrapMany<T, O> (
   })
 }
 
-export function streamMany<T, O> (
+export function streamMany<T, O>(
   many: Many<T, O>,
   handle: (data: T, options: StreamOptions<O>) => Promise<T>,
   options: StreamOptions<O>
@@ -100,10 +95,8 @@ export function streamMany<T, O> (
       concurrency: options.concurrency,
       highWaterMark: options.highWaterMark,
       objectMode: true,
-      async transform (chunk) {
-        this.push(
-          await handle(chunk, options)
-        )
+      async transform(chunk) {
+        this.push(await handle(chunk, options))
       }
     })
   )

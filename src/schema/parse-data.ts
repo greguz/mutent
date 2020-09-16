@@ -1,7 +1,7 @@
 import { MutentSchema, PrivateSchema } from './definition-type'
 import { ParseFunctions, parseValue } from './parse-value'
 
-function parseArray (array: any[], schema: PrivateSchema): any {
+function parseArray(array: any[], schema: PrivateSchema): any {
   const { items } = schema
   if (!items) {
     return array
@@ -9,16 +9,13 @@ function parseArray (array: any[], schema: PrivateSchema): any {
 
   const length = Array.isArray(items) ? items.length : array.length
   for (let i = 0; i < length; i++) {
-    array[i] = parseData(
-      array[i],
-      Array.isArray(items) ? items[i] : items
-    )
+    array[i] = parseData(array[i], Array.isArray(items) ? items[i] : items)
   }
 
   return array
 }
 
-function parsePatternProperties (
+function parsePatternProperties(
   object: any,
   patternProperties: NonNullable<PrivateSchema['patternProperties']>
 ): any {
@@ -40,7 +37,7 @@ function parsePatternProperties (
   return object
 }
 
-function parseProperties (
+function parseProperties(
   object: any,
   properties: NonNullable<PrivateSchema['properties']>
 ): any {
@@ -50,7 +47,7 @@ function parseProperties (
   return object
 }
 
-function parseObject (object: any, schema: PrivateSchema): any {
+function parseObject(object: any, schema: PrivateSchema): any {
   const { patternProperties, properties } = schema
   if (patternProperties) {
     object = parsePatternProperties(object, patternProperties)
@@ -61,7 +58,7 @@ function parseObject (object: any, schema: PrivateSchema): any {
   return object
 }
 
-export function parseData<T = any> (
+export function parseData<T = any>(
   data: any,
   schema?: MutentSchema,
   functions?: ParseFunctions

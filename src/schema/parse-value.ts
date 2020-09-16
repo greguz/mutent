@@ -16,13 +16,11 @@ export interface ParseFunctions {
   [key: string]: ParseFunction | undefined
 }
 
-function bindFunction (fn: ParseFunction, ...args: any[]): ParseFunction {
-  return args.length > 0
-    ? value => fn(value, ...args)
-    : fn
+function bindFunction(fn: ParseFunction, ...args: any[]): ParseFunction {
+  return args.length > 0 ? value => fn(value, ...args) : fn
 }
 
-function resolveKey (functions: ParseFunctions, key: string): ParseFunction {
+function resolveKey(functions: ParseFunctions, key: string): ParseFunction {
   const fn = functions[key]
   if (!fn) {
     throw new Herry('EMUT_EXPECTED_PARSER', 'Expected parse function', { key })
@@ -30,28 +28,22 @@ function resolveKey (functions: ParseFunctions, key: string): ParseFunction {
   return fn
 }
 
-function handleArray (
+function handleArray(
   functions: ParseFunctions,
   parse: ParseArray
 ): ParseFunction {
-  return bindFunction(
-    resolveKey(functions, parse[0]),
-    parse.slice(1)
-  )
+  return bindFunction(resolveKey(functions, parse[0]), parse.slice(1))
 }
 
-function handleObject (
+function handleObject(
   functions: ParseFunctions,
   parse: ParseObject
 ): ParseFunction {
   const key = Object.keys(parse)[0]
-  return bindFunction(
-    resolveKey(functions, key),
-    parse[key]
-  )
+  return bindFunction(resolveKey(functions, key), parse[key])
 }
 
-function getParseFunction (
+function getParseFunction(
   functions: ParseFunctions,
   parse: Parse
 ): ParseFunction {
@@ -66,7 +58,7 @@ function getParseFunction (
   }
 }
 
-export function parseValue (
+export function parseValue(
   value: any,
   parse: Parse,
   functions: ParseFunctions = {}

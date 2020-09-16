@@ -1,17 +1,22 @@
 import test, { ExecutionContext } from 'ava'
 import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
-import { createEntities, createEntity, readEntities, readEntity } from './instance'
+import {
+  createEntities,
+  createEntity,
+  readEntities,
+  readEntity
+} from './instance'
 import { createMutation } from './mutation'
 import { Writer } from './writer'
 
 interface Item {
   version?: number
-  id: number,
+  id: number
   value?: any
 }
 
-function next (item: Item): Item {
+function next(item: Item): Item {
   return {
     ...item,
     id: item.id + 1
@@ -76,10 +81,7 @@ test('instance#conditional-mutation', async t => {
   const mDelete = createMutation<Item>().assign({ value: 'DELETE' })
   const mUpdate = createMutation<Item>().assign({ value: 'UPDATE' })
 
-  const a = await entity
-    .if(true, mDelete)
-    .unless(true, mUpdate)
-    .unwrap()
+  const a = await entity.if(true, mDelete).unless(true, mUpdate).unwrap()
   t.deepEqual(a, { id: 0, value: 'DELETE' })
 
   const b = await entity
@@ -100,17 +102,17 @@ test('create one', async t => {
   t.plan(3)
 
   const writer: Writer<Item> = {
-    async create (target, options) {
+    async create(target, options) {
       t.deepEqual(target, {
         id: 1,
         value: 'CREATE'
       })
       t.is(options.hello, 'world')
     },
-    async update () {
+    async update() {
       t.fail()
     },
-    async delete () {
+    async delete() {
       t.fail()
     }
   }
@@ -131,10 +133,10 @@ test('update one', async t => {
   t.plan(4)
 
   const writer: Writer<Item> = {
-    async create () {
+    async create() {
       t.fail()
     },
-    async update (source, target, options) {
+    async update(source, target, options) {
       t.deepEqual(source, {
         id: 0
       })
@@ -144,7 +146,7 @@ test('update one', async t => {
       })
       t.is(options.hello, 'world')
     },
-    async delete () {
+    async delete() {
       t.fail()
     }
   }
@@ -165,13 +167,13 @@ test('delete one', async t => {
   t.plan(3)
 
   const writer: Writer<Item> = {
-    async create () {
+    async create() {
       t.fail()
     },
-    async update () {
+    async update() {
       t.fail()
     },
-    async delete (source, options) {
+    async delete(source, options) {
       t.deepEqual(source, {
         id: 0
       })
@@ -236,10 +238,7 @@ test('skip nulls', async t => {
 })
 
 test('classy entity', async t => {
-  const entity = createEntity<Item>(
-    { id: 0 },
-    { classy: true }
-  )
+  const entity = createEntity<Item>({ id: 0 }, { classy: true })
   entity.update(next)
   entity.update(next)
   entity.update(next)
@@ -250,20 +249,20 @@ test('classy entity', async t => {
 
 test('entity autoCommit override', async t => {
   t.plan(1)
-  function entity (autoCommit: boolean) {
+  function entity(autoCommit: boolean) {
     return createEntity<Item>(
       { id: 0 },
       {
         autoCommit,
         safe: false,
         driver: {
-          create () {
+          create() {
             t.pass()
           },
-          update () {
+          update() {
             t.fail()
           },
-          delete () {
+          delete() {
             t.fail()
           }
         }
@@ -276,20 +275,20 @@ test('entity autoCommit override', async t => {
 
 test('entity safe override', async t => {
   t.plan(1)
-  function entity (safe: boolean) {
+  function entity(safe: boolean) {
     return createEntity<Item>(
       { id: 0 },
       {
         autoCommit: false,
         safe,
         driver: {
-          create () {
+          create() {
             t.pass()
           },
-          update () {
+          update() {
             t.pass()
           },
-          delete () {
+          delete() {
             t.pass()
           }
         }
@@ -297,26 +296,22 @@ test('entity safe override', async t => {
     )
   }
   await entity(true).unwrap({ safe: false })
-  await t.throwsAsync(
-    entity(false).unwrap({ safe: true }),
-    { code: 'EMUT_UNSAFE' }
-  )
+  await t.throwsAsync(entity(false).unwrap({ safe: true }), {
+    code: 'EMUT_UNSAFE'
+  })
 })
 
 test('safe create', async t => {
   t.plan(4)
 
   const writer: Writer<Item> = {
-    create () {
+    create() {
       t.pass()
     }
   }
 
-  function entity (autoCommit?: boolean, safe?: boolean) {
-    return createEntity<Item>(
-      { id: 0 },
-      { autoCommit, driver: writer, safe }
-    )
+  function entity(autoCommit?: boolean, safe?: boolean) {
+    return createEntity<Item>({ id: 0 }, { autoCommit, driver: writer, safe })
   }
 
   await entity().unwrap()
@@ -330,12 +325,12 @@ test('safe update', async t => {
   t.plan(4)
 
   const writer: Writer<Item> = {
-    update () {
+    update() {
       t.pass()
     }
   }
 
-  function entity (autoCommit?: boolean, safe?: boolean) {
+  function entity(autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
       { autoCommit, driver: writer, safe }
@@ -353,12 +348,12 @@ test('safe delete', async t => {
   t.plan(4)
 
   const writer: Writer<Item> = {
-    delete () {
+    delete() {
       t.pass()
     }
   }
 
-  function entity (autoCommit?: boolean, safe?: boolean) {
+  function entity(autoCommit?: boolean, safe?: boolean) {
     return readEntity<Item>(
       { id: 0 },
       { autoCommit, driver: writer, safe }
@@ -378,9 +373,9 @@ interface CommitMode {
   delete?: boolean
 }
 
-function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
+function bind(t: ExecutionContext, mode: Partial<CommitMode> = {}) {
   const writer: Writer<Item> = {
-    async create (target, options) {
+    async create(target, options) {
       if (mode.create === true) {
         t.pass()
       } else {
@@ -388,7 +383,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       }
       t.is(options.db, 'test')
     },
-    async update (source, target, options) {
+    async update(source, target, options) {
       if (mode.update === true) {
         t.pass()
       } else {
@@ -396,7 +391,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
       }
       t.is(options.db, 'test')
     },
-    async delete (source, options) {
+    async delete(source, options) {
       if (mode.delete === true) {
         t.pass()
       } else {
@@ -408,7 +403,7 @@ function bind (t: ExecutionContext, mode: Partial<CommitMode> = {}) {
   return { driver: writer }
 }
 
-function getItems (count: number = 16) {
+function getItems(count: number = 16) {
   const items: Item[] = []
   for (let i = 0; i < count; i++) {
     items.push({ id: i * 2 })
@@ -464,7 +459,9 @@ test('delete many', async t => {
 test('insert-error', async t => {
   await t.throwsAsync(async () => {
     await createEntities([1])
-      .update(async () => { throw new Error('TEST') })
+      .update(async () => {
+        throw new Error('TEST')
+      })
       .unwrap()
   })
 })
@@ -479,7 +476,7 @@ test('stream many', async t => {
         .stream({ db: 'test' }),
       new Writable({
         objectMode: true,
-        write (data: Item, encoding, callback) {
+        write(data: Item, encoding, callback) {
           t.is(data.id, index++ * 2)
           callback()
         }
@@ -496,9 +493,9 @@ test('stream many', async t => {
 })
 
 test('stream-error', async t => {
-  function getErroredStream (err: any) {
+  function getErroredStream(err: any) {
     return new Readable({
-      read () {
+      read() {
         this.emit('error', err)
       }
     })
@@ -510,7 +507,7 @@ test('stream-error', async t => {
         createEntities(getErroredStream(new Error())).stream(),
         new Writable({
           objectMode: true,
-          write (chunk, encoding, callback) {
+          write(chunk, encoding, callback) {
             callback()
           }
         }),

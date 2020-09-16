@@ -39,7 +39,8 @@ interface JSONSchema7Object {
 
 // Workaround for infinite type recursion
 // https://github.com/Microsoft/TypeScript/issues/3496#issuecomment-128553540
-interface JSONSchema7Array extends Array<JSONSchema7Type> { }
+// eslint-disable-next-line
+interface JSONSchema7Array extends Array<JSONSchema7Type> {}
 
 /**
  * Meta schema
@@ -53,7 +54,7 @@ interface JSONSchema7Array extends Array<JSONSchema7Type> { }
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-5
  */
 type JSONSchema7Version = string
-export type PrivateSchema = (JSONSchema7 & CustomKeywords)
+export type PrivateSchema = JSONSchema7 & CustomKeywords
 
 /**
  * JSON Schema v7

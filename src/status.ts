@@ -25,14 +25,14 @@ export interface Status<T> {
   target: T
 }
 
-function noUndef<T> (value: T): T {
+function noUndef<T>(value: T): T {
   if (isUndefined(value)) {
     throw new Herry('EMUT_UNDEFINED', 'Undefined values are not valid')
   }
   return value
 }
 
-export function commitStatus<T> (status: Status<T>): Status<T> {
+export function commitStatus<T>(status: Status<T>): Status<T> {
   return {
     created: false,
     updated: false,
@@ -42,7 +42,7 @@ export function commitStatus<T> (status: Status<T>): Status<T> {
   }
 }
 
-export function createStatus<T> (data: T): Status<T> {
+export function createStatus<T>(data: T): Status<T> {
   return {
     created: true,
     updated: false,
@@ -52,11 +52,11 @@ export function createStatus<T> (data: T): Status<T> {
   }
 }
 
-export function readStatus<T> (data: T): Status<T> {
+export function readStatus<T>(data: T): Status<T> {
   return commitStatus(createStatus(data))
 }
 
-export function updateStatus<T> (status: Status<T>, data: T): Status<T> {
+export function updateStatus<T>(status: Status<T>, data: T): Status<T> {
   return {
     ...status,
     updated: true,
@@ -64,13 +64,13 @@ export function updateStatus<T> (status: Status<T>, data: T): Status<T> {
   }
 }
 
-export function deleteStatus<T> (status: Status<T>): Status<T> {
+export function deleteStatus<T>(status: Status<T>): Status<T> {
   return {
     ...status,
     deleted: true
   }
 }
 
-export function shouldCommit (status: Status<any>) {
+export function shouldCommit(status: Status<any>): boolean {
   return status.created || status.updated || status.deleted
 }

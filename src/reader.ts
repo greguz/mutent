@@ -8,11 +8,15 @@ export type Value<T> = Promise<T> | T
 export type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
 
 export interface Reader<T, Q = any, O = any> {
-  find? (query: Q, options: Partial<O>, isRequired: boolean): Value<T | null | undefined>
-  filter? (query: Q, options: Partial<O>): Values<T>
+  find?(
+    query: Q,
+    options: Partial<O>,
+    isRequired: boolean
+  ): Value<T | null | undefined>
+  filter?(query: Q, options: Partial<O>): Values<T>
 }
 
-async function find<T, Q, O> (
+async function find<T, Q, O>(
   reader: Reader<T, Q, O>,
   query: Q,
   options: Partial<O>,
@@ -24,7 +28,7 @@ async function find<T, Q, O> (
   return isUndefined(data) ? null : data
 }
 
-export function findData<T, Q, O> (
+export function findData<T, Q, O>(
   reader: Reader<T, Q, O>,
   query: Q,
   options: Partial<O>
@@ -32,7 +36,7 @@ export function findData<T, Q, O> (
   return find(reader, query, options, false)
 }
 
-export async function readData<T, Q, O> (
+export async function readData<T, Q, O>(
   reader: Reader<T, Q, O>,
   query: Q,
   options: Partial<O>
@@ -44,12 +48,10 @@ export async function readData<T, Q, O> (
   return data
 }
 
-export function filterData<T, Q, O> (
+export function filterData<T, Q, O>(
   reader: Reader<T, Q, O>,
   query: Q,
   options: Partial<O>
 ): Values<T> {
-  return reader.filter
-    ? reader.filter(query, options)
-    : []
+  return reader.filter ? reader.filter(query, options) : []
 }

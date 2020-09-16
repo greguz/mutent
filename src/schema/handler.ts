@@ -10,7 +10,7 @@ export interface Constructors {
 }
 
 export interface SchemaHandlerSettings {
-  ajv?: Ajv. Ajv
+  ajv?: Ajv.Ajv
   constructors?: Constructors
   parseFunctions?: ParseFunctions
 }
@@ -23,7 +23,7 @@ export class SchemaHandler {
   private _schema: MutentSchema
   private _validate: Ajv.ValidateFunction
 
-  constructor (
+  constructor(
     schema: MutentSchema,
     { ajv, constructors, parseFunctions }: SchemaHandlerSettings
   ) {
@@ -44,11 +44,13 @@ export class SchemaHandler {
 
     this._schema = schema
 
-    this._ajv = ajv || new Ajv({
-      coerceTypes: true,
-      removeAdditional: true,
-      useDefaults: true
-    })
+    this._ajv =
+      ajv ||
+      new Ajv({
+        coerceTypes: true,
+        removeAdditional: true,
+        useDefaults: true
+      })
 
     this._permitConstructors = !this._ajv.getKeyword('instanceof')
     if (this._permitConstructors) {
@@ -58,7 +60,10 @@ export class SchemaHandler {
           type: 'string'
         },
         validate: (schema: string, data: any) => {
-          return Object.prototype.hasOwnProperty.call(this._constructors, schema)
+          return Object.prototype.hasOwnProperty.call(
+            this._constructors,
+            schema
+          )
             ? data instanceof this._constructors[schema]
             : false
         }
@@ -67,7 +72,7 @@ export class SchemaHandler {
 
     this._ajv.addKeyword('parse', {
       errors: false,
-      validate (schema: any) {
+      validate(schema: any) {
         if (Array.isArray(schema)) {
           return schema.length >= 1 && typeof schema[0] === 'string'
         } else if (typeof schema === 'object' && schema !== null) {
@@ -82,7 +87,7 @@ export class SchemaHandler {
     this._validate = this._ajv.compile(schema)
   }
 
-  public defineConstructor (key: string, Constructor: Function): this {
+  public defineConstructor(key: string, Constructor: Function): this {
     if (!this._permitConstructors) {
       throw new Herry(
         'EMUT_CONSTRUCTORS_DISABLED',
@@ -100,25 +105,21 @@ export class SchemaHandler {
     return this
   }
 
-  public defineParser (key: string, parser: ParseFunction): this {
+  public defineParser(key: string, parser: ParseFunction): this {
     if (Object.prototype.hasOwnProperty.call(this._parseFunctions, key)) {
-      throw new Herry(
-        'EMUT_PARSER_EXISTS',
-        'This parser is already defined',
-        { key }
-      )
+      throw new Herry('EMUT_PARSER_EXISTS', 'This parser is already defined', {
+        key
+      })
     }
     this._parseFunctions[key] = parser
     return this
   }
 
-  public compute (data: any) {
+  public compute(data: any): any {
     if (!this._validate(data)) {
-      throw new Herry(
-        'EMUT_INVALID_DATA',
-        'Invalid data detected',
-        { errors: this._validate.errors }
-      )
+      throw new Herry('EMUT_INVALID_DATA', 'Invalid data detected', {
+        errors: this._validate.errors
+      })
     }
     return parseData(data, this._schema, this._parseFunctions)
   }

@@ -7,34 +7,32 @@ interface Item {
   value?: string
 }
 
-function match (item: Item, value: number | string) {
-  return typeof value === 'number'
-    ? item.id === value
-    : item.value === value
+function match(item: Item, value: number | string) {
+  return typeof value === 'number' ? item.id === value : item.value === value
 }
 
-function createSettings (): StoreSettings<Item, number | string> {
+function createSettings(): StoreSettings<Item, number | string> {
   const items: Item[] = []
 
   return {
     driver: {
-      find (query) {
+      find(query) {
         return items.find(item => match(item, query))
       },
-      filter (query) {
+      filter(query) {
         return items.filter(item => match(item, query))
       },
-      create (target) {
+      create(target) {
         items.push(target)
       },
-      update (source, target) {
+      update(source, target) {
         const index = items.findIndex(item => item.id === source.id)
         if (index < 0) {
           throw new Error()
         }
         items.splice(index, 1, target)
       },
-      delete (source) {
+      delete(source) {
         const index = items.findIndex(item => item.id === source.id)
         if (index < 0) {
           throw new Error()
@@ -53,10 +51,7 @@ test('plugin', async t => {
 
   await t.throwsAsync(store.read(0).unwrap())
 
-  await store
-    .create({ id: 42 })
-    .commit()
-    .unwrap()
+  await store.create({ id: 42 }).commit().unwrap()
 
   const b = await store.read(42).unwrap()
   t.deepEqual(b, { id: 42 })
@@ -72,9 +67,7 @@ test('plugin', async t => {
     .commit()
     .unwrap()
 
-  const c = await store
-    .filter('YES')
-    .unwrap()
+  const c = await store.filter('YES').unwrap()
   t.deepEqual(c, [
     { id: 0, value: 'YES' },
     { id: 4, value: 'YES' }
@@ -106,20 +99,16 @@ test('store missing', async t => {
   t.plan(3)
   const store = createStore<any, string, any>({
     driver: {
-      find (query, options, isRequired) {
+      find(query, options, isRequired) {
         t.true(isRequired)
         throw new Error('STOP')
       }
     }
   })
-  await t.throwsAsync(
-    store.read('STOP').unwrap(),
-    { message: 'STOP' }
-  )
-  await t.throwsAsync(
-    createStore({}).read({}).unwrap(),
-    { code: 'EMUT_NOT_FOUND' }
-  )
+  await t.throwsAsync(store.read('STOP').unwrap(), { message: 'STOP' })
+  await t.throwsAsync(createStore({}).read({}).unwrap(), {
+    code: 'EMUT_NOT_FOUND'
+  })
 })
 
 test('schema', async t => {
@@ -144,9 +133,7 @@ test('schema', async t => {
     date: '2020-09-02T16:29:34.070Z'
   }
 
-  const output = await store
-    .create(input)
-    .unwrap()
+  const output = await store.create(input).unwrap()
 
   t.is(output.date.toISOString(), '2020-09-02T16:29:34.070Z')
 })

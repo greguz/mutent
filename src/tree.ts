@@ -1,4 +1,10 @@
-import { Status, commitStatus, deleteStatus, shouldCommit, updateStatus } from './status'
+import {
+  Status,
+  commitStatus,
+  deleteStatus,
+  shouldCommit,
+  updateStatus
+} from './status'
 import { Lazy, Result, unlazy } from './utils'
 import { Writer, writeStatus } from './writer'
 
@@ -31,17 +37,14 @@ export type MutationNode<T> =
 
 export type MutationTree<T> = Array<MutationNode<T>>
 
-async function handleUpdateNode<T> (
+async function handleUpdateNode<T>(
   status: Status<T>,
   node: UpdateNode<T>
 ): Promise<Status<T>> {
-  return updateStatus(
-    status,
-    await node.mutate(status.target)
-  )
+  return updateStatus(status, await node.mutate(status.target))
 }
 
-async function handleConditionalNode<T, O> (
+async function handleConditionalNode<T, O>(
   status: Status<T>,
   node: ConditionalNode<T>,
   writer?: Writer<T, O>,
@@ -55,7 +58,7 @@ async function handleConditionalNode<T, O> (
   }
 }
 
-export async function mutateStatus<T, O> (
+export async function mutateStatus<T, O>(
   status: Status<T>,
   tree: MutationTree<T>,
   writer?: Writer<T, O>,

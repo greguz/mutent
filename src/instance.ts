@@ -42,18 +42,18 @@ export interface InstanceSettings<T, O = any> extends MutationSettings {
 }
 
 interface Instance<T, O, U> extends Mutation<T> {
-  unwrap (options?: UnwrapOptions<O>): Promise<U>
-  stream (options?: StreamOptions<O>): stream.Readable
+  unwrap(options?: UnwrapOptions<O>): Promise<U>
+  stream(options?: StreamOptions<O>): stream.Readable
 }
 
 export interface Entity<T, O = any> extends Mutation<T> {
-  unwrap (options?: UnwrapOptions<O>): Promise<T>
-  stream (options?: StreamOptions<O>): stream.Readable
+  unwrap(options?: UnwrapOptions<O>): Promise<T>
+  stream(options?: StreamOptions<O>): stream.Readable
 }
 
 export interface Entities<T, O = any> extends Mutation<T> {
-  unwrap (options?: UnwrapOptions<O>): Promise<T[]>
-  stream (options?: StreamOptions<O>): stream.Readable
+  unwrap(options?: UnwrapOptions<O>): Promise<T[]>
+  stream(options?: StreamOptions<O>): stream.Readable
 }
 
 type Handler<T, O> = (data: any, options: Partial<O>) => Promise<T>
@@ -67,7 +67,7 @@ interface InstanceState<T, O, U> extends MutationState<T> {
   toStream: Producer<T, O, stream.Readable>
 }
 
-async function unwrapState<T, O> (
+async function unwrapState<T, O>(
   { settings, toStatus, tree }: InstanceState<T, O, any>,
   data: T,
   options: StreamOptions<O>
@@ -115,7 +115,7 @@ async function unwrapState<T, O> (
   return status.target
 }
 
-async function unwrapMethod<T, U, O> (
+async function unwrapMethod<T, U, O>(
   state: InstanceState<T, O, U>,
   options?: UnwrapOptions<O>
 ): Promise<U> {
@@ -125,7 +125,7 @@ async function unwrapMethod<T, U, O> (
   )
 }
 
-function streamMethod<T, U, O> (
+function streamMethod<T, U, O>(
   state: InstanceState<T, O, U>,
   options?: StreamOptions<O>
 ): stream.Readable {
@@ -135,7 +135,7 @@ function streamMethod<T, U, O> (
   )
 }
 
-function createInstance<T, O, U> (
+function createInstance<T, O, U>(
   toStatus: InstanceState<T, O, U>['toStatus'],
   toPromise: InstanceState<T, O, U>['toPromise'],
   toStream: InstanceState<T, O, U>['toStream'],
@@ -146,7 +146,7 @@ function createInstance<T, O, U> (
     toPromise,
     toStatus,
     toStream,
-    tree: [],
+    tree: []
   }
   return fluente({
     historySize: settings.historySize,
@@ -170,7 +170,7 @@ function createInstance<T, O, U> (
   })
 }
 
-export function createEntity<T, O = any> (
+export function createEntity<T, O = any>(
   one: One<T, O>,
   settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
@@ -182,7 +182,7 @@ export function createEntity<T, O = any> (
   )
 }
 
-export function readEntity<T, O = any> (
+export function readEntity<T, O = any>(
   one: One<T, O>,
   settings: InstanceSettings<T, O> = {}
 ): Entity<T, O> {
@@ -194,7 +194,7 @@ export function readEntity<T, O = any> (
   )
 }
 
-export function createEntities<T, O = any> (
+export function createEntities<T, O = any>(
   many: Many<T, O>,
   settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
@@ -206,7 +206,7 @@ export function createEntities<T, O = any> (
   )
 }
 
-export function readEntities<T, O = any> (
+export function readEntities<T, O = any>(
   many: Many<T, O>,
   settings: InstanceSettings<T, O> = {}
 ): Entities<T, O> {
