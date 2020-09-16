@@ -5,7 +5,7 @@
     "module": "commonjs",
     "strict": true,
     "noUnusedLocals": true,
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": ["node_modules/@types"],
     "esModuleInterop": true,
     "rootDir": "src",
     "outDir": ".out",
