@@ -1,7 +1,11 @@
 import { MutentSchema, PrivateSchema } from './definition-type'
 import { ParseFunctions, parseValue } from './parse-value'
 
-function parseArray(array: any[], schema: PrivateSchema): any {
+function parseArray(
+  array: any[],
+  schema: PrivateSchema,
+  functions?: ParseFunctions
+): any {
   const { items } = schema
   if (!items) {
     return array
@@ -9,7 +13,11 @@ function parseArray(array: any[], schema: PrivateSchema): any {
 
   const length = Array.isArray(items) ? items.length : array.length
   for (let i = 0; i < length; i++) {
-    array[i] = parseData(array[i], Array.isArray(items) ? items[i] : items)
+    array[i] = parseData(
+      array[i],
+      Array.isArray(items) ? items[i] : items,
+      functions
+    )
   }
 
   return array
@@ -17,7 +25,8 @@ function parseArray(array: any[], schema: PrivateSchema): any {
 
 function parsePatternProperties(
   object: any,
-  patternProperties: NonNullable<PrivateSchema['patternProperties']>
+  patternProperties: NonNullable<PrivateSchema['patternProperties']>,
+  functions?: ParseFunctions
 ): any {
   const objectKeys = Object.keys(object)
 
@@ -28,7 +37,8 @@ function parsePatternProperties(
       if (regexp.test(objectKey)) {
         object[objectKey] = parseData(
           object[objectKey],
-          patternProperties[schemaKey]
+          patternProperties[schemaKey],
+          functions
         )
       }
     }
@@ -39,21 +49,26 @@ function parsePatternProperties(
 
 function parseProperties(
   object: any,
-  properties: NonNullable<PrivateSchema['properties']>
+  properties: NonNullable<PrivateSchema['properties']>,
+  functions?: ParseFunctions
 ): any {
   for (const key of Object.keys(properties)) {
-    object[key] = parseData(object[key], properties[key])
+    object[key] = parseData(object[key], properties[key], functions)
   }
   return object
 }
 
-function parseObject(object: any, schema: PrivateSchema): any {
+function parseObject(
+  object: any,
+  schema: PrivateSchema,
+  functions?: ParseFunctions
+): any {
   const { patternProperties, properties } = schema
   if (patternProperties) {
-    object = parsePatternProperties(object, patternProperties)
+    object = parsePatternProperties(object, patternProperties, functions)
   }
   if (properties) {
-    object = parseProperties(object, properties)
+    object = parseProperties(object, properties, functions)
   }
   return object
 }
@@ -67,9 +82,9 @@ export function parseData<T = any>(
     if (schema.parse) {
       return parseValue(data, schema.parse, functions)
     } else if (schema.type === 'object') {
-      return parseObject(data, schema)
+      return parseObject(data, schema, functions)
     } else if (schema.type === 'array') {
-      return parseArray(data, schema)
+      return parseArray(data, schema, functions)
     }
   }
   return data

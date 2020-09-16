@@ -25,7 +25,7 @@ export class SchemaHandler {
 
   constructor(
     schema: MutentSchema,
-    { ajv, constructors, parseFunctions }: SchemaHandlerSettings
+    { ajv, constructors, parseFunctions }: SchemaHandlerSettings = {}
   ) {
     this._constructors = {
       Array,
@@ -60,10 +60,7 @@ export class SchemaHandler {
           type: 'string'
         },
         validate: (schema: string, data: any) => {
-          return Object.prototype.hasOwnProperty.call(
-            this._constructors,
-            schema
-          )
+          return this._constructors.hasOwnProperty(schema)
             ? data instanceof this._constructors[schema]
             : false
         }
@@ -94,7 +91,7 @@ export class SchemaHandler {
         'Custom constructors definition disabled'
       )
     }
-    if (Object.prototype.hasOwnProperty.call(this._constructors, key)) {
+    if (this._constructors.hasOwnProperty(key)) {
       throw new Herry(
         'EMUT_CONSTRUCTOR_EXISTS',
         'This constructor is already defined',
@@ -106,7 +103,7 @@ export class SchemaHandler {
   }
 
   public defineParser(key: string, parser: ParseFunction): this {
-    if (Object.prototype.hasOwnProperty.call(this._parseFunctions, key)) {
+    if (this._parseFunctions.hasOwnProperty(key)) {
       throw new Herry('EMUT_PARSER_EXISTS', 'This parser is already defined', {
         key
       })
