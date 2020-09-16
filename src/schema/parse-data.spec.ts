@@ -130,3 +130,26 @@ test('parseObject: array with schema', t => {
     { foo: 'bar', now: new Date(now) }
   ])
 })
+
+test('parseData:patternProperties', t => {
+  const data = parseData(
+    {
+      aDate: '2020-09-16T10:07:09.517Z',
+      bDate: '2020-07-16T10:07:09.517Z',
+      aValue: true,
+      bValue: true
+    },
+    {
+      type: 'object',
+      patternProperties: {
+        Date$: {
+          type: 'string',
+          format: 'date-time',
+          parse: value => new Date(value)
+        }
+      }
+    }
+  )
+  t.true(data.aDate instanceof Date)
+  t.true(data.bDate instanceof Date)
+})
