@@ -24,7 +24,7 @@
     "test": "npm run test:ts && npm run test:lint && npm run test:coverage",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "build:types": "rimraf types && tsc --declaration --emitDeclarationOnly --declarationDir types",
-    "build:js": "rollup -c && prettier --write mutent.js",
+    "build:js": "rimraf .out && tsc --module es6 && rollup -c && prettier --write mutent.js",
     "build": "npm run build:types && npm run build:js",
     "prepublishOnly": "npm run test && npm run build"
   },
@@ -37,7 +37,6 @@
     "herry": "^1.0.0"
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^6.0.0",
     "@types/node": "^14.10.2",
     "@typescript-eslint/eslint-plugin": "^4.1.1",
     "@typescript-eslint/parser": "^4.1.1",
@@ -51,7 +50,6 @@
     "rimraf": "^3.0.2",
     "rollup": "^2.27.0",
     "ts-node": "^9.0.0",
-    "tslib": "^2.0.1",
     "typescript": "^4.0.2"
   },
   "repository": {

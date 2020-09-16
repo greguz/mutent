@@ -5,3 +5,4 @@ mutent.js
 .nyc_output
 coverage
 .coveralls.yml
+.out
