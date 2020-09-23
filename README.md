@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/mutent.svg)](https://badge.fury.io/js/mutent)
 [![Dependencies Status](https://david-dm.org/greguz/mutent.svg)](https://david-dm.org/greguz/mutent.svg)
-[![Build Status](https://travis-ci.com/greguz/mutent.svg?branch=master)](https://travis-ci.com/greguz/mutent)
+[![Actions Status](https://github.com/greguz/mutent/workflows/ci/badge.svg)](https://github.com/greguz/mutent/actions)
 [![Coverage Status](https://coveralls.io/repos/github/greguz/mutent/badge.svg?branch=master)](https://coveralls.io/github/greguz/mutent?branch=master)
 
 While working with a database, It's common to write a lot of code to interact with the retrieved data. It's also common to write some specific queries (both to read and write) to interact with the database. When a project reaches a medium size, It's easy to spot more than one way to do the same thing: one that leverages to the programming language features, and another one that uses the database capabilities.
@@ -20,33 +20,31 @@ npm install --save mutent
 Firstly, we need to write a [driver](docs/driver.md). The driver describes the communication protocol used by the JavaScript environment and the external data source to communicate.
 
 ```javascript
-function toRegExp (query) {
-  return typeof query === 'string'
-    ? new RegExp(`^${query}$`)
-    : query
+function toRegExp(query) {
+  return typeof query === 'string' ? new RegExp(`^${query}$`) : query
 }
 
-function createDriver (array) {
+function createDriver(array) {
   return {
-    find (query) {
+    find(query) {
       const reg = toRegExp(query)
       return array.find(item => reg.test(item.name))
     },
-    filter (query) {
+    filter(query) {
       const reg = toRegExp(query)
       return array.filter(item => reg.test(item.name))
     },
-    create (data) {
+    create(data) {
       array.push(data)
     },
-    update (oldData, newData) {
+    update(oldData, newData) {
       array.splice(
         array.findIndex(item => item === oldData),
         1,
         newData
       )
     },
-    delete (data) {
+    delete(data) {
       array.splice(
         array.findIndex(item => item === data),
         1
@@ -89,7 +87,7 @@ The variable `createSteven` It's an `Entity` instance and represents the intent 
 We can also describe how the entity mutates.
 
 ```javascript
-function setAge (data, age) {
+function setAge(data, age) {
   return {
     ...data,
     age
@@ -146,10 +144,7 @@ const happyBirthdaySteven = await store
 Deleting is similar to an update: declare the entity, call the `delete` method and unwrap It.
 
 ```javascript
-const deadSteven = await store
-  .read('steven')
-  .delete()
-  .unwrap()
+const deadSteven = await store.read('steven').delete().unwrap()
 ```
 
 ## Entities
@@ -158,17 +153,11 @@ It is also possible to manage multiple records as a single group of entities.
 
 ```javascript
 const newPeople = await store
-  .create([
-    { name: 'jack' },
-    { name: 'jacob' },
-    { name: 'george' }
-  ])
+  .create([{ name: 'jack' }, { name: 'jacob' }, { name: 'george' }])
   .assign({ age: 27 })
   .unwrap()
 
-const jaGuys = await store
-  .filter(/^ja/i)
-  .unwrap()
+const jaGuys = await store.filter(/^ja/i).unwrap()
 ```
 
 Passing an array to the `create` method, or using the filter method, will be returned an [Entities](docs/entities.md) instance. This object shares the same APIs of its single counterpart. The only difference is that the `unwrap` method will resolve to an array of objects instead of a single one.
@@ -191,7 +180,7 @@ Conditional mutations are also supported.
 ```javascript
 const { createMutation } = require('mutent')
 
-function isTeenager (data) {
+function isTeenager(data) {
   return data.age >= 13 && data.age < 20
 }
 

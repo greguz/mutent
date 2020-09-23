@@ -1,14 +1,6 @@
 name: ci
 
-on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
+on: [push, pull_request]
 
 env:
   CI: true
@@ -31,18 +23,27 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install
-        run: |
-          npm install --ignore-scripts
+        run: npm install
 
-      - name: Run tests
-        run: |
-          npm run test
+      - name: Build
+        run: npm run build --if-present
 
-  coverage:
+      - name: Test
+        run: npm test
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          parallel: true
+          flag-name: run-${{ matrix.test_number }}
+
+  finish:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.github_token }}
+          parallel-finished: true
