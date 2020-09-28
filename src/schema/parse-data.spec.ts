@@ -1,38 +1,45 @@
 import test from 'ava'
+import Ajv from 'ajv'
 
 import { MutentSchema } from './definition-type'
 import { parseData } from './parse-data'
 
+const ajv = new Ajv()
+
+function parse<T = any>(data: any, schema?: MutentSchema, functions?: any) {
+  return parseData<T>(ajv, data, schema, functions)
+}
+
 test('parseObject: primitive values without schema', t => {
-  t.deepEqual(parseData('foo'), 'foo')
-  t.deepEqual(parseData(5), 5)
-  t.deepEqual(parseData(undefined), undefined)
-  t.deepEqual(parseData(true), true)
-  t.deepEqual(parseData(null), null)
+  t.deepEqual(parse('foo'), 'foo')
+  t.deepEqual(parse(5), 5)
+  t.deepEqual(parse(undefined), undefined)
+  t.deepEqual(parse(true), true)
+  t.deepEqual(parse(null), null)
 })
 
 test('parseObject: primitive values with schema', t => {
-  t.deepEqual(parseData('foo', { type: 'string' }), 'foo')
-  t.deepEqual(parseData(5, { type: 'number' }), 5)
-  t.deepEqual(parseData(true, { type: 'boolean' }), true)
-  t.deepEqual(parseData(null, { type: 'null' }), null)
+  t.deepEqual(parse('foo', { type: 'string' }), 'foo')
+  t.deepEqual(parse(5, { type: 'number' }), 5)
+  t.deepEqual(parse(true, { type: 'boolean' }), true)
+  t.deepEqual(parse(null, { type: 'null' }), null)
 })
 
 test('parseObject: object without schema', t => {
-  t.deepEqual(parseData({ foo: 'bar' }), { foo: 'bar' })
+  t.deepEqual(parse({ foo: 'bar' }), { foo: 'bar' })
 })
 
 test('parseObject: object with schema', t => {
   const schema: MutentSchema = {
     type: 'object'
   }
-  t.deepEqual(parseData({ foo: 'bar' }, schema), { foo: 'bar' })
+  t.deepEqual(parse({ foo: 'bar' }, schema), { foo: 'bar' })
 
   const schema2: MutentSchema = {
     type: 'object',
     additionalProperties: true
   }
-  t.deepEqual(parseData({ foo: 'bar' }, schema2), { foo: 'bar' })
+  t.deepEqual(parse({ foo: 'bar' }, schema2), { foo: 'bar' })
 
   const schema3: MutentSchema = {
     type: 'object',
@@ -42,7 +49,7 @@ test('parseObject: object with schema', t => {
       }
     }
   }
-  t.deepEqual(parseData({ foo: 'bar' }, schema3), { foo: 'bar' })
+  t.deepEqual(parse({ foo: 'bar' }, schema3), { foo: 'bar' })
 })
 
 test('parseObject: object with schema and custom parse', t => {
@@ -65,20 +72,20 @@ test('parseObject: object with schema and custom parse', t => {
     }
   }
   t.deepEqual(
-    parseData({ foo: '5', bar: { deepBar: 'foo' }, notPassing: true }, schema),
+    parse({ foo: '5', bar: { deepBar: 'foo' }, notPassing: true }, schema),
     { foo: 5, bar: { deepBar: '##foo##' }, notPassing: true }
   )
 })
 
 test('parseObject: array without schema', t => {
-  t.deepEqual(parseData(['foo']), ['foo'])
+  t.deepEqual(parse(['foo']), ['foo'])
 })
 
 test('parseObject: array with schema', t => {
   const schema: MutentSchema = {
     type: 'array'
   }
-  t.deepEqual(parseData(['foo'], schema), ['foo'])
+  t.deepEqual(parse(['foo'], schema), ['foo'])
 
   const schema3: MutentSchema = {
     type: 'array',
@@ -86,7 +93,7 @@ test('parseObject: array with schema', t => {
       type: 'string'
     }
   }
-  t.deepEqual(parseData(['foo'], schema3), ['foo'])
+  t.deepEqual(parse(['foo'], schema3), ['foo'])
 
   const schema4: MutentSchema = {
     type: 'array',
@@ -104,10 +111,7 @@ test('parseObject: array with schema', t => {
     }
   }
   t.deepEqual(
-    parseData<{ foo: string; bar: string }[]>(
-      [{ foo: 'bar', bar: 4 }],
-      schema4
-    ),
+    parse<{ foo: string; bar: string }[]>([{ foo: 'bar', bar: 4 }], schema4),
     [{ foo: 'bar', bar: '4' }]
   )
   const now = new Date().toISOString()
@@ -126,13 +130,13 @@ test('parseObject: array with schema', t => {
       }
     ]
   }
-  t.deepEqual(parseData([{ foo: 'bar', now }], schema5), [
+  t.deepEqual(parse([{ foo: 'bar', now }], schema5), [
     { foo: 'bar', now: new Date(now) }
   ])
 })
 
 test('parseData:patternProperties', t => {
-  const data = parseData(
+  const data = parse(
     {
       aDate: '2020-09-16T10:07:09.517Z',
       bDate: '2020-07-16T10:07:09.517Z',
@@ -152,4 +156,41 @@ test('parseData:patternProperties', t => {
   )
   t.true(data.aDate instanceof Date)
   t.true(data.bDate instanceof Date)
+})
+
+test('parseData:oneOf', t => {
+  const schema: MutentSchema = {
+    type: 'object',
+    properties: {
+      value: {
+        oneOf: [
+          {
+            type: 'object',
+            instanceof: 'Date'
+          },
+          {
+            type: 'string',
+            format: 'date-time',
+            parse: (value: string) => new Date(value)
+          }
+        ]
+      }
+    }
+  }
+
+  const a = parse(
+    {
+      value: '2020-09-16T10:07:09.517Z'
+    },
+    schema
+  )
+  t.true(a.value instanceof Date)
+
+  const b = parse(
+    {
+      value: new Date()
+    },
+    schema
+  )
+  t.true(b.value instanceof Date)
 })

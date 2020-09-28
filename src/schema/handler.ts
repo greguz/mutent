@@ -118,6 +118,6 @@ export class SchemaHandler {
         errors: this._validate.errors
       })
     }
-    return parseData(data, this._schema, this._parseFunctions)
+    return parseData(this._ajv, data, this._schema, this._parseFunctions)
   }
 }
