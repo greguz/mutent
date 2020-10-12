@@ -1,12 +1,12 @@
 import Ajv from 'ajv'
 
-import { MutentSchema, PrivateSchema } from './definition-type'
+import { JSONSchema7, JSONSchema7Definition } from './definition-type'
 import { ParseFunctions, parseValue } from './parse-value'
 
 function parseArray(
   ajv: Ajv.Ajv,
   array: any[],
-  schema: PrivateSchema,
+  schema: JSONSchema7,
   functions?: ParseFunctions
 ): any {
   const { items } = schema
@@ -30,7 +30,7 @@ function parseArray(
 function parsePatternProperties(
   ajv: Ajv.Ajv,
   object: any,
-  patternProperties: NonNullable<PrivateSchema['patternProperties']>,
+  patternProperties: JSONSchema7['patternProperties'] = {},
   functions?: ParseFunctions
 ): any {
   const objectKeys = Object.keys(object)
@@ -56,7 +56,7 @@ function parsePatternProperties(
 function parseProperties(
   ajv: Ajv.Ajv,
   object: any,
-  properties: NonNullable<PrivateSchema['properties']>,
+  properties: JSONSchema7['properties'] = {},
   functions?: ParseFunctions
 ): any {
   for (const key of Object.keys(properties)) {
@@ -68,7 +68,7 @@ function parseProperties(
 function parseObject(
   ajv: Ajv.Ajv,
   object: any,
-  schema: PrivateSchema,
+  schema: JSONSchema7,
   functions?: ParseFunctions
 ): any {
   const { patternProperties, properties } = schema
@@ -84,7 +84,7 @@ function parseObject(
 function parseConditions(
   ajv: Ajv.Ajv,
   data: any,
-  conditions: MutentSchema[],
+  conditions: JSONSchema7Definition[],
   functions?: ParseFunctions
 ) {
   for (const schema of conditions) {
@@ -97,7 +97,7 @@ function parseConditions(
 export function parseData<T = any>(
   ajv: Ajv.Ajv,
   data: any,
-  schema?: MutentSchema,
+  schema?: JSONSchema7Definition,
   functions?: ParseFunctions
 ): T {
   if (typeof schema === 'object' && schema !== null) {

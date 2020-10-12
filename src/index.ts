@@ -13,7 +13,6 @@ export { Many, One, StreamOptions, UnwrapOptions } from './producers'
 export { Reader, Value, Values } from './reader'
 export {
   Constructors,
-  MutentSchema,
   Parse,
   ParseArray,
   ParseFunction,
@@ -23,6 +22,7 @@ export {
   SchemaHandler,
   SchemaHandlerSettings
 } from './schema/index'
+export * from './schema/definition-type'
 export { Driver, Store, StoreSettings, createStore } from './store'
 export { Condition } from './tree'
 export { Lazy, Result } from './utils'

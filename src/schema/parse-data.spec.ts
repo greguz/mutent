@@ -1,12 +1,16 @@
 import test from 'ava'
 import Ajv from 'ajv'
 
-import { MutentSchema } from './definition-type'
+import { JSONSchema7Definition } from './definition-type'
 import { parseData } from './parse-data'
 
 const ajv = new Ajv()
 
-function parse<T = any>(data: any, schema?: MutentSchema, functions?: any) {
+function parse<T = any>(
+  data: any,
+  schema?: JSONSchema7Definition,
+  functions?: any
+) {
   return parseData<T>(ajv, data, schema, functions)
 }
 
@@ -30,18 +34,18 @@ test('parseObject: object without schema', t => {
 })
 
 test('parseObject: object with schema', t => {
-  const schema: MutentSchema = {
+  const schema: JSONSchema7Definition = {
     type: 'object'
   }
   t.deepEqual(parse({ foo: 'bar' }, schema), { foo: 'bar' })
 
-  const schema2: MutentSchema = {
+  const schema2: JSONSchema7Definition = {
     type: 'object',
     additionalProperties: true
   }
   t.deepEqual(parse({ foo: 'bar' }, schema2), { foo: 'bar' })
 
-  const schema3: MutentSchema = {
+  const schema3: JSONSchema7Definition = {
     type: 'object',
     properties: {
       foo: {
@@ -53,7 +57,7 @@ test('parseObject: object with schema', t => {
 })
 
 test('parseObject: object with schema and custom parse', t => {
-  const schema: MutentSchema = {
+  const schema: JSONSchema7Definition = {
     type: 'object',
     properties: {
       foo: {
@@ -82,12 +86,12 @@ test('parseObject: array without schema', t => {
 })
 
 test('parseObject: array with schema', t => {
-  const schema: MutentSchema = {
+  const schema: JSONSchema7Definition = {
     type: 'array'
   }
   t.deepEqual(parse(['foo'], schema), ['foo'])
 
-  const schema3: MutentSchema = {
+  const schema3: JSONSchema7Definition = {
     type: 'array',
     items: {
       type: 'string'
@@ -95,7 +99,7 @@ test('parseObject: array with schema', t => {
   }
   t.deepEqual(parse(['foo'], schema3), ['foo'])
 
-  const schema4: MutentSchema = {
+  const schema4: JSONSchema7Definition = {
     type: 'array',
     items: {
       type: 'object',
@@ -115,7 +119,7 @@ test('parseObject: array with schema', t => {
     [{ foo: 'bar', bar: '4' }]
   )
   const now = new Date().toISOString()
-  const schema5: MutentSchema = {
+  const schema5: JSONSchema7Definition = {
     type: 'array',
     items: [
       {
@@ -159,7 +163,7 @@ test('parseData:patternProperties', t => {
 })
 
 test('parseData:oneOf', t => {
-  const schema: MutentSchema = {
+  const schema: JSONSchema7Definition = {
     type: 'object',
     properties: {
       value: {

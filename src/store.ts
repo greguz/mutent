@@ -11,7 +11,7 @@ import {
 } from './instance'
 import { Reader, filterData, findData, readData } from './reader'
 import {
-  MutentSchema,
+  JSONSchema7Definition,
   ParseFunction,
   SchemaHandler,
   SchemaHandlerSettings
@@ -26,7 +26,7 @@ export interface StoreSettings<T, Q = any, O = any>
   extends InstanceSettings<T, O>,
     SchemaHandlerSettings {
   driver?: Driver<T, Q, O>
-  schema?: MutentSchema
+  schema?: JSONSchema7Definition
 }
 
 export interface Store<T, Q = any, O = any> {

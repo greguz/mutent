@@ -1,17 +1,10 @@
 import { Parse } from './parse-value'
 
-// This interfaces are taken from https://www.npmjs.com/package/@types/json-schema and extended with custom keywords
-
-type CustomKeywords = {
-  instanceof?: string
-  parse?: Parse
-}
-
 /**
  * Primitive type
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.1.1
  */
-type JSONSchema7TypeName =
+export type JSONSchema7TypeName =
   | 'string'
   | 'number'
   | 'integer'
@@ -24,7 +17,7 @@ type JSONSchema7TypeName =
  * Primitive type
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.1.1
  */
-type JSONSchema7Type =
+export type JSONSchema7Type =
   | string
   | number
   | boolean
@@ -33,14 +26,14 @@ type JSONSchema7Type =
   | null
 
 // Workaround for infinite type recursion
-interface JSONSchema7Object {
+export interface JSONSchema7Object {
   [key: string]: JSONSchema7Type
 }
 
 // Workaround for infinite type recursion
 // https://github.com/Microsoft/TypeScript/issues/3496#issuecomment-128553540
 // eslint-disable-next-line
-interface JSONSchema7Array extends Array<JSONSchema7Type> {}
+export interface JSONSchema7Array extends Array<JSONSchema7Type> {}
 
 /**
  * Meta schema
@@ -53,15 +46,14 @@ interface JSONSchema7Array extends Array<JSONSchema7Type> {}
  *
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-5
  */
-type JSONSchema7Version = string
-export type PrivateSchema = JSONSchema7 & CustomKeywords
+export type JSONSchema7Version = string
 
 /**
  * JSON Schema v7
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01
  */
-type JSONSchema7Definition = PrivateSchema | boolean
-interface JSONSchema7 {
+export type JSONSchema7Definition = JSONSchema7 | boolean
+export interface JSONSchema7 {
   $id?: string
   $ref?: string
   $schema?: JSONSchema7Version
@@ -160,6 +152,19 @@ interface JSONSchema7 {
   readOnly?: boolean
   writeOnly?: boolean
   examples?: JSONSchema7Type
+
+  /**
+   * @custom
+   */
+  instanceof?: string
+
+  /**
+   * @custom
+   */
+  parse?: Parse
 }
 
+/**
+ * @deprecated
+ */
 export type MutentSchema = JSONSchema7Definition

@@ -1,7 +1,7 @@
 import Ajv from 'ajv'
 import Herry from 'herry'
 
-import { MutentSchema } from './definition-type'
+import { JSONSchema7Definition } from './definition-type'
 import { parseData } from './parse-data'
 import { ParseFunction, ParseFunctions } from './parse-value'
 
@@ -20,11 +20,11 @@ export class SchemaHandler {
   private _constructors: Constructors
   private _parseFunctions: ParseFunctions
   private _permitConstructors: boolean
-  private _schema: MutentSchema
+  private _schema: JSONSchema7Definition
   private _validate: Ajv.ValidateFunction
 
   constructor(
-    schema: MutentSchema,
+    schema: JSONSchema7Definition,
     { ajv, constructors, parseFunctions }: SchemaHandlerSettings = {}
   ) {
     this._constructors = {
