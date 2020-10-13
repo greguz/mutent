@@ -91,23 +91,11 @@ export class SchemaHandler {
         'Custom constructors definition disabled'
       )
     }
-    if (this._constructors.hasOwnProperty(key)) {
-      throw new Herry(
-        'EMUT_CONSTRUCTOR_EXISTS',
-        'This constructor is already defined',
-        { key }
-      )
-    }
     this._constructors[key] = Constructor
     return this
   }
 
   public defineParser(key: string, parser: ParseFunction): this {
-    if (this._parseFunctions.hasOwnProperty(key)) {
-      throw new Herry('EMUT_PARSER_EXISTS', 'This parser is already defined', {
-        key
-      })
-    }
     this._parseFunctions[key] = parser
     return this
   }

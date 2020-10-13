@@ -20,9 +20,6 @@ test('SchemaHandler:defineConstructor', t => {
   })
 
   schema.defineConstructor('Teapot', Teapot)
-  t.throws(() => schema.defineConstructor('Teapot', RegExp), {
-    code: 'EMUT_CONSTRUCTOR_EXISTS'
-  })
 
   schema.compute({
     a: new Date(),
@@ -45,9 +42,6 @@ test('SchemaHandler:defineParser', t => {
   })
 
   schema.defineParser('round', value => Math.round(value))
-  t.throws(() => schema.defineParser('round', value => value), {
-    code: 'EMUT_PARSER_EXISTS'
-  })
 
   t.deepEqual(schema.compute({ value: 42.4 }), { value: 42 })
   t.deepEqual(schema.compute({ value: 41.5 }), { value: 42 })
