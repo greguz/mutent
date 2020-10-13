@@ -103,7 +103,9 @@ export class SchemaHandler {
   public compute(data: any): any {
     if (!this._validate(data)) {
       throw new Herry('EMUT_INVALID_DATA', 'Invalid data detected', {
-        errors: this._validate.errors
+        data,
+        errors: this._validate.errors,
+        schema: this._schema
       })
     }
     return parseData(this._ajv, data, this._schema, this._parseFunctions)
