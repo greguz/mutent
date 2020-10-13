@@ -5,44 +5,44 @@ import { ParseFunctions, parseValue } from './parse-value'
 
 function parseArray(
   ajv: Ajv.Ajv,
-  array: any[],
+  data: any[],
   schema: JSONSchema7,
   functions?: ParseFunctions
 ): any {
   const { items } = schema
   if (!items) {
-    return array
+    return data
   }
 
-  const length = Array.isArray(items) ? items.length : array.length
+  const length = Array.isArray(items) ? items.length : data.length
   for (let i = 0; i < length; i++) {
-    array[i] = parseData(
+    data[i] = parseData(
       ajv,
-      array[i],
+      data[i],
       Array.isArray(items) ? items[i] : items,
       functions
     )
   }
 
-  return array
+  return data
 }
 
 function parsePatternProperties(
   ajv: Ajv.Ajv,
-  object: any,
+  data: any,
   patternProperties: JSONSchema7['patternProperties'] = {},
   functions?: ParseFunctions
 ): any {
-  const objectKeys = Object.keys(object)
+  const objectKeys = Object.keys(data)
 
   for (const schemaKey of Object.keys(patternProperties)) {
     const regexp = new RegExp(schemaKey)
 
     for (const objectKey of objectKeys) {
       if (regexp.test(objectKey)) {
-        object[objectKey] = parseData(
+        data[objectKey] = parseData(
           ajv,
-          object[objectKey],
+          data[objectKey],
           patternProperties[schemaKey],
           functions
         )
@@ -50,35 +50,35 @@ function parsePatternProperties(
     }
   }
 
-  return object
+  return data
 }
 
 function parseProperties(
   ajv: Ajv.Ajv,
-  object: any,
+  data: any,
   properties: JSONSchema7['properties'] = {},
   functions?: ParseFunctions
 ): any {
   for (const key of Object.keys(properties)) {
-    object[key] = parseData(ajv, object[key], properties[key], functions)
+    data[key] = parseData(ajv, data[key], properties[key], functions)
   }
-  return object
+  return data
 }
 
 function parseObject(
   ajv: Ajv.Ajv,
-  object: any,
+  data: any,
   schema: JSONSchema7,
   functions?: ParseFunctions
 ): any {
   const { patternProperties, properties } = schema
   if (patternProperties) {
-    object = parsePatternProperties(ajv, object, patternProperties, functions)
+    data = parsePatternProperties(ajv, data, patternProperties, functions)
   }
   if (properties) {
-    object = parseProperties(ajv, object, properties, functions)
+    data = parseProperties(ajv, data, properties, functions)
   }
-  return object
+  return data
 }
 
 function parseConditions(
@@ -94,13 +94,13 @@ function parseConditions(
   }
 }
 
-export function parseData<T = any>(
+export function parseData(
   ajv: Ajv.Ajv,
   data: any,
   schema?: JSONSchema7Definition,
   functions?: ParseFunctions
-): T {
-  if (typeof schema === 'object' && schema !== null) {
+): any {
+  if (typeof schema === 'object' && schema !== null && data !== undefined) {
     if (schema.parse) {
       return parseValue(data, schema.parse, functions)
     }

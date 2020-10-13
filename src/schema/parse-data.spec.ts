@@ -10,8 +10,8 @@ function parse<T = any>(
   data: any,
   schema?: JSONSchema7Definition,
   functions?: any
-) {
-  return parseData<T>(ajv, data, schema, functions)
+): T {
+  return parseData(ajv, data, schema, functions)
 }
 
 test('parseObject: primitive values without schema', t => {
