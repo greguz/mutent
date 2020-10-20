@@ -48,6 +48,7 @@ export class SchemaHandler {
       ajv ||
       new Ajv({
         coerceTypes: true,
+        nullable: true,
         removeAdditional: true,
         useDefaults: true
       })
