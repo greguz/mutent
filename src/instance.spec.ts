@@ -581,3 +581,28 @@ test('migration', async t => {
     value: 'MIGRATED'
   })
 })
+
+test('prepare', async t => {
+  t.plan(3)
+
+  const b = await readEntity(
+    { value: 0 },
+    {
+      prepare() {
+        t.fail()
+      }
+    }
+  ).unwrap({ option: true })
+  t.deepEqual(b, { value: 0 })
+
+  const a = await createEntity(
+    { value: 0 },
+    {
+      prepare(data, options) {
+        data.value++
+        t.is(options.option, true)
+      }
+    }
+  ).unwrap({ option: true })
+  t.deepEqual(a, { value: 1 })
+})
