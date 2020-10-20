@@ -29,13 +29,14 @@ import {
 import { Status, createStatus, readStatus, shouldCommit } from './status'
 import { SchemaHandler } from './schema/index'
 import { mutateStatus } from './tree'
-import { isNull, isUndefined, objectify } from './utils'
+import { isNil, isNull, isUndefined, objectify } from './utils'
 import { Writer, writeStatus } from './writer'
 
 export interface InstanceSettings<T, O = any> extends MutationSettings {
   autoCommit?: boolean
   driver?: Writer<T, O>
   migrationStrategies?: Strategies
+  prepare?: (data: any, options: Partial<O>) => T | null | undefined | void
   safe?: boolean
   schemaHandler?: SchemaHandler
   versionKey?: string
@@ -75,8 +76,22 @@ async function unwrapState<T, O>(
   if (isNull(data)) {
     return data
   }
-  const { driver, migrationStrategies, schemaHandler, versionKey } = settings
+  const {
+    driver,
+    migrationStrategies,
+    prepare,
+    schemaHandler,
+    versionKey
+  } = settings
+
+  // Initialize status
   let status = toStatus(data)
+  if (status.created && prepare) {
+    const out = prepare(status.target, options)
+    if (!isNil(out)) {
+      status.target = out
+    }
+  }
 
   // Apply migration strategies
   if (migrationStrategies) {
