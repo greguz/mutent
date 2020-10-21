@@ -19,7 +19,6 @@ export class SchemaHandler {
   private _ajv: Ajv.Ajv
   private _constructors: Constructors
   private _parseFunctions: ParseFunctions
-  private _permitConstructors: boolean
   private _schema: JSONSchema7Definition
   private _validate: Ajv.ValidateFunction
 
@@ -53,20 +52,17 @@ export class SchemaHandler {
         useDefaults: true
       })
 
-    this._permitConstructors = !this._ajv.getKeyword('instanceof')
-    if (this._permitConstructors) {
-      this._ajv.addKeyword('instanceof', {
-        errors: false,
-        metaSchema: {
-          type: 'string'
-        },
-        validate: (schema: string, data: any) => {
-          return this._constructors.hasOwnProperty(schema)
-            ? data instanceof this._constructors[schema]
-            : false
-        }
-      })
-    }
+    this._ajv.addKeyword('instanceof', {
+      errors: false,
+      metaSchema: {
+        type: 'string'
+      },
+      validate: (schema: string, data: any) => {
+        return this._constructors.hasOwnProperty(schema)
+          ? data instanceof this._constructors[schema]
+          : false
+      }
+    })
 
     this._ajv.addKeyword('parse', {
       errors: false,
@@ -86,12 +82,6 @@ export class SchemaHandler {
   }
 
   public defineConstructor(key: string, Constructor: Function): this {
-    if (!this._permitConstructors) {
-      throw new Herry(
-        'EMUT_CONSTRUCTORS_DISABLED',
-        'Custom constructors definition disabled'
-      )
-    }
     this._constructors[key] = Constructor
     return this
   }
