@@ -40,12 +40,15 @@ function parsePatternProperties(
 
     for (const objectKey of objectKeys) {
       if (regexp.test(objectKey)) {
-        data[objectKey] = parseData(
-          ajv,
-          data[objectKey],
-          patternProperties[schemaKey],
-          functions
-        )
+        const value = data[objectKey]
+        if (value !== undefined) {
+          data[objectKey] = parseData(
+            ajv,
+            value,
+            patternProperties[schemaKey],
+            functions
+          )
+        }
       }
     }
   }
@@ -60,7 +63,10 @@ function parseProperties(
   functions?: ParseFunctions
 ): any {
   for (const key of Object.keys(properties)) {
-    data[key] = parseData(ajv, data[key], properties[key], functions)
+    const value = data[key]
+    if (value !== undefined) {
+      data[key] = parseData(ajv, data[key], properties[key], functions)
+    }
   }
   return data
 }
