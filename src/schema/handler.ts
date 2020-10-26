@@ -4,6 +4,7 @@ import Herry from 'herry'
 import { JSONSchema7Definition } from './definition-type'
 import { parseData } from './parse-data'
 import { ParseFunction, ParseFunctions } from './parse-value'
+import { createPartialSchema } from './partial'
 
 export interface Constructors {
   [key: string]: Function
@@ -15,12 +16,17 @@ export interface SchemaHandlerSettings {
   parseFunctions?: ParseFunctions
 }
 
+export interface SchemaHandlerOptions {
+  isPartial?: boolean
+}
+
 export class SchemaHandler {
   private _ajv: Ajv.Ajv
   private _constructors: Constructors
   private _parseFunctions: ParseFunctions
   private _schema: JSONSchema7Definition
-  private _validate: Ajv.ValidateFunction
+  private _validatePartial: Ajv.ValidateFunction
+  private _validateRequired: Ajv.ValidateFunction
 
   constructor(
     schema: JSONSchema7Definition,
@@ -78,7 +84,8 @@ export class SchemaHandler {
       }
     })
 
-    this._validate = this._ajv.compile(schema)
+    this._validatePartial = this._ajv.compile(createPartialSchema(schema))
+    this._validateRequired = this._ajv.compile(schema)
   }
 
   public defineConstructor(key: string, Constructor: Function): this {
@@ -91,14 +98,27 @@ export class SchemaHandler {
     return this
   }
 
-  public compute(data: any): any {
-    if (!this._validate(data)) {
-      throw new Herry('EMUT_INVALID_DATA', 'Invalid data detected', {
-        data,
-        errors: this._validate.errors,
-        schema: this._schema
-      })
+  public compute(data: any, { isPartial }: SchemaHandlerOptions = {}): any {
+    if (isPartial) {
+      if (!this._validatePartial(data)) {
+        throw new Herry('EMUT_INVALID_DATA', 'Invalid data detected', {
+          data,
+          partial: true,
+          errors: this._validatePartial.errors,
+          schema: this._schema
+        })
+      }
+    } else {
+      if (!this._validateRequired(data)) {
+        throw new Herry('EMUT_INVALID_DATA', 'Invalid data detected', {
+          data,
+          partial: false,
+          errors: this._validateRequired.errors,
+          schema: this._schema
+        })
+      }
     }
+
     return parseData(this._ajv, data, this._schema, this._parseFunctions)
   }
 }

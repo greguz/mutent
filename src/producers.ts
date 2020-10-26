@@ -13,6 +13,7 @@ import { Lazy, isNull, unlazy } from './utils'
 
 export type UnwrapOptions<O = {}> = Partial<O> & {
   autoCommit?: boolean
+  isPartial?: boolean
   safe?: boolean
 }
 
