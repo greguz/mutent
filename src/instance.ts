@@ -98,13 +98,20 @@ async function unwrapState<T, O>(
     status = await migrateStatus(status, migrationStrategies, versionKey)
   }
 
-  // Apply JSON schema validation/parsing
+  // Apply JSON schema validation/parsing (before any mutation)
   if (schemaHandler) {
     status.target = schemaHandler.compute(status.target, options)
   }
 
-  // Apply mutation tree to status
-  status = await mutateStatus(status, tree, driver, options)
+  // Apply mutations
+  if (tree.length > 0) {
+    status = await mutateStatus(status, tree, driver, options)
+
+    // Apply JSON schema validation/parsing (post mutations)
+    if (schemaHandler) {
+      status.target = schemaHandler.compute(status.target, options)
+    }
+  }
 
   // Handle autoCommit/safe features
   if (driver && shouldCommit(status)) {
