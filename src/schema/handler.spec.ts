@@ -49,22 +49,3 @@ test('SchemaHandler:defineParser', t => {
     code: 'EMUT_INVALID_DATA'
   })
 })
-
-test('SchemaHandler:isPartial', t => {
-  const schema = new SchemaHandler({
-    type: 'object',
-    properties: {
-      a: {
-        type: 'number'
-      },
-      b: {
-        type: 'boolean',
-        parse: value => value === true
-      }
-    },
-    required: ['a', 'b']
-  })
-
-  t.deepEqual(schema.compute({ a: 42 }, { isPartial: true }), { a: 42 })
-  t.deepEqual(schema.compute({ b: null }, { isPartial: true }), { b: false })
-})

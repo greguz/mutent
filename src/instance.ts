@@ -100,7 +100,7 @@ async function unwrapState<T, O>(
 
   // Apply JSON schema validation/parsing (before any mutation)
   if (schemaHandler) {
-    status.target = schemaHandler.compute(status.target, options)
+    status.target = schemaHandler.compute(status.target)
   }
 
   // Apply mutations
@@ -109,7 +109,7 @@ async function unwrapState<T, O>(
 
     // Apply JSON schema validation/parsing (post mutations)
     if (schemaHandler) {
-      status.target = schemaHandler.compute(status.target, options)
+      status.target = schemaHandler.compute(status.target)
     }
   }
 
