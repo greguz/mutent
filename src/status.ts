@@ -32,13 +32,13 @@ function noUndef<T>(value: T): T {
   return value
 }
 
-export function commitStatus<T>(status: Status<T>): Status<T> {
+export function commitStatus<T>({ deleted, target }: Status<T>): Status<T> {
   return {
     created: false,
     updated: false,
     deleted: false,
-    source: status.deleted ? null : status.target,
-    target: status.target
+    source: deleted ? null : target,
+    target
   }
 }
 
@@ -56,18 +56,31 @@ export function readStatus<T>(data: T): Status<T> {
   return commitStatus(createStatus(data))
 }
 
-export function updateStatus<T>(status: Status<T>, data: T): Status<T> {
+export function updateStatus<T>(
+  { created, deleted, source }: Status<T>,
+  data: T
+): Status<T> {
   return {
-    ...status,
+    created,
     updated: true,
+    deleted,
+    source,
     target: noUndef(data)
   }
 }
 
-export function deleteStatus<T>(status: Status<T>): Status<T> {
+export function deleteStatus<T>({
+  created,
+  updated,
+  source,
+  target
+}: Status<T>): Status<T> {
   return {
-    ...status,
-    deleted: true
+    created,
+    updated,
+    deleted: true,
+    source,
+    target
   }
 }
 
