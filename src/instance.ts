@@ -34,7 +34,6 @@ export interface InstanceSettings<T, O> extends MutationSettings {
   migrationStrategies?: Strategies
   prepare?: (data: any, options: Partial<O>) => T | null | undefined | void
   safe?: boolean
-  schemaHandler?: SchemaHandler
   versionKey?: string
 }
 
@@ -59,6 +58,7 @@ type Producer<T, O, U> = (
 ) => U
 
 interface InstanceState<T, O, U> extends MutationState<T> {
+  schema: SchemaHandler | undefined
   settings: InstanceSettings<T, O>
   toPromise: Producer<T, O, Promise<U>>
   toStatus: (data: T) => Status<T>
@@ -66,20 +66,14 @@ interface InstanceState<T, O, U> extends MutationState<T> {
 }
 
 async function unwrapState<T, O>(
-  { settings, toStatus, tree }: InstanceState<T, O, any>,
+  { schema, settings, toStatus, tree }: InstanceState<T, O, any>,
   data: T,
   options: Options<O>
 ): Promise<T> {
   if (isNull(data)) {
     return data
   }
-  const {
-    driver,
-    migrationStrategies,
-    prepare,
-    schemaHandler,
-    versionKey
-  } = settings
+  const { driver, migrationStrategies, prepare, versionKey } = settings
 
   // Initialize status
   let status = toStatus(data)
@@ -96,8 +90,8 @@ async function unwrapState<T, O>(
   }
 
   // Apply JSON schema validation/parsing (before any mutation)
-  if (schemaHandler) {
-    status.target = schemaHandler.compute(status.target)
+  if (schema) {
+    status.target = schema.compute(status.target)
   }
 
   // Apply mutations
@@ -105,8 +99,8 @@ async function unwrapState<T, O>(
     status = await mutateStatus(status, tree, driver, options)
 
     // Apply JSON schema validation/parsing (post mutations)
-    if (schemaHandler) {
-      status.target = schemaHandler.compute(status.target)
+    if (schema) {
+      status.target = schema.compute(status.target)
     }
   }
 
@@ -152,9 +146,11 @@ function createInstance<T, O, U>(
   toStatus: InstanceState<T, O, U>['toStatus'],
   toPromise: InstanceState<T, O, U>['toPromise'],
   toStream: InstanceState<T, O, U>['toStream'],
-  settings: InstanceSettings<T, O>
+  settings: InstanceSettings<T, O> = {},
+  schema: SchemaHandler | undefined
 ): Instance<T, O, U> {
   const state: InstanceState<T, O, U> = {
+    schema,
     settings,
     toPromise,
     toStatus,
@@ -185,48 +181,56 @@ function createInstance<T, O, U>(
 
 export function createEntity<T, O = any>(
   one: One<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>,
+  schema?: SchemaHandler
 ): Entity<T, O> {
   return createInstance(
     createStatus,
     (mutate, options) => unwrapOne(unlazy(one, options), mutate),
     (mutate, options) => streamOne(unlazy(one, options), mutate),
-    settings
+    settings,
+    schema
   )
 }
 
 export function readEntity<T, O = any>(
   one: One<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>,
+  schema?: SchemaHandler
 ): Entity<T, O> {
   return createInstance(
     readStatus,
     (mutate, options) => unwrapOne(unlazy(one, options), mutate),
     (mutate, options) => streamOne(unlazy(one, options), mutate),
-    settings
+    settings,
+    schema
   )
 }
 
 export function createEntities<T, O = any>(
   many: Many<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>,
+  schema?: SchemaHandler
 ): Entities<T, O> {
   return createInstance(
     createStatus,
     (mutate, options) => unwrapMany(unlazy(many, options), mutate),
     (mutate, options) => streamMany(unlazy(many, options), mutate, options),
-    settings
+    settings,
+    schema
   )
 }
 
 export function readEntities<T, O = any>(
   many: Many<T, O>,
-  settings: InstanceSettings<T, O> = {}
+  settings?: InstanceSettings<T, O>,
+  schema?: SchemaHandler
 ): Entities<T, O> {
   return createInstance(
     readStatus,
     (mutate, options) => unwrapMany(unlazy(many, options), mutate),
     (mutate, options) => streamMany(unlazy(many, options), mutate, options),
-    settings
+    settings,
+    schema
   )
 }

@@ -40,55 +40,67 @@ export interface Store<T, Q = any, O = any> {
 
 interface StoreState<T, Q, O> {
   reader: Reader<T, Q, O>
+  schema: SchemaHandler | undefined
   settings: InstanceSettings<T, O>
 }
 
 function findMethod<T, Q, O>(
-  { reader, settings }: StoreState<T, Q, O>,
+  { reader, schema, settings }: StoreState<T, Q, O>,
   query: Q
 ) {
-  return readEntity(options => findData(reader, query, options), settings)
+  return readEntity(
+    options => findData(reader, query, options),
+    settings,
+    schema
+  )
 }
 
 function readMethod<T, Q, O>(
-  { reader, settings }: StoreState<T, Q, O>,
+  { reader, schema, settings }: StoreState<T, Q, O>,
   query: Q
 ) {
-  return readEntity(options => readData(reader, query, options), settings)
+  return readEntity(
+    options => readData(reader, query, options),
+    settings,
+    schema
+  )
 }
 
 function filterMethod<T, Q, O>(
-  { reader, settings }: StoreState<T, Q, O>,
+  { reader, schema, settings }: StoreState<T, Q, O>,
   query: Q
 ) {
-  return readEntities(options => filterData(reader, query, options), settings)
+  return readEntities(
+    options => filterData(reader, query, options),
+    settings,
+    schema
+  )
 }
 
-function createMethod<T, Q, O>(state: StoreState<T, Q, O>, data: any): any {
+function createMethod<T, Q, O>(
+  { schema, settings }: StoreState<T, Q, O>,
+  data: any
+): any {
   return Array.isArray(data)
-    ? createEntities(data, state.settings)
-    : createEntity(data, state.settings)
+    ? createEntities(data, settings, schema)
+    : createEntity(data, settings, schema)
 }
 
-function fromMethod<T, Q, O>(state: StoreState<T, Q, O>, data: any): any {
+function fromMethod<T, Q, O>(
+  { schema, settings }: StoreState<T, Q, O>,
+  data: any
+): any {
   return Array.isArray(data)
-    ? readEntities(data, state.settings)
-    : readEntity(data, state.settings)
+    ? readEntities(data, settings, schema)
+    : readEntity(data, settings, schema)
 }
 
 function updateSchemaHandler<T, Q, O>(
   state: StoreState<T, Q, O>,
   update: (handler: SchemaHandler) => SchemaHandler
 ): StoreState<T, Q, O> {
-  const { settings } = state
-  const { schemaHandler } = settings
-  return {
-    ...state,
-    settings: {
-      ...settings,
-      schemaHandler: schemaHandler ? update(schemaHandler) : schemaHandler
-    }
-  }
+  const { schema } = state
+  return !schema ? state : { ...state, schema: update(schema) }
 }
 
 function defineConstructorMethod<T, Q, O>(
@@ -118,10 +130,8 @@ export function createStore<T, Q, O>(
 
   const state: StoreState<T, Q, O> = {
     reader: settings.driver || {},
-    settings: {
-      ...settings,
-      schemaHandler: schema ? new SchemaHandler(schema, settings) : undefined
-    }
+    schema: schema ? new SchemaHandler(schema, settings) : undefined,
+    settings
   }
 
   return fluente({
