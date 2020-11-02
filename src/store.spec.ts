@@ -11,7 +11,7 @@ function match(item: Item, value: number | string) {
   return typeof value === 'number' ? item.id === value : item.value === value
 }
 
-function createSettings(): StoreSettings<Item, number | string> {
+function createSettings(): StoreSettings<Item, number | string, any> {
   const items: Item[] = []
 
   return {

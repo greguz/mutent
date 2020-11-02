@@ -1,5 +1,6 @@
 import fluente from 'fluente'
 
+import { Driver, Reader, filterData, findData, readData } from './driver/index'
 import {
   Entities,
   Entity,
@@ -9,18 +10,12 @@ import {
   readEntities,
   readEntity
 } from './instance'
-import { Reader, filterData, findData, readData } from './reader'
 import {
   JSONSchema7Definition,
   ParseFunction,
   SchemaHandler,
   SchemaHandlerSettings
 } from './schema/index'
-import { Writer } from './writer'
-
-export interface Driver<T, Q = any, O = any>
-  extends Reader<T, Q, O>,
-    Writer<T, O> {}
 
 export interface StoreSettings<T, Q = any, O = any>
   extends InstanceSettings<T, O>,

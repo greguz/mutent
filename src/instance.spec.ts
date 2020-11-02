@@ -1,6 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
+import { Writer } from './driver/index'
 import {
   createEntities,
   createEntity,
@@ -8,7 +9,6 @@ import {
   readEntity
 } from './instance'
 import { createMutation } from './mutation'
-import { Writer } from './writer'
 
 interface Item {
   version?: number
@@ -101,7 +101,7 @@ test('instance#mutate', async t => {
 test('create one', async t => {
   t.plan(3)
 
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     async create(target, options) {
       t.deepEqual(target, {
         id: 1,
@@ -117,7 +117,7 @@ test('create one', async t => {
     }
   }
 
-  const item = await createEntity({ id: 0 }, { driver: writer })
+  const item = await createEntity<Item>({ id: 0 }, { driver: writer })
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -132,7 +132,7 @@ test('create one', async t => {
 test('update one', async t => {
   t.plan(4)
 
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     async create() {
       t.fail()
     },
@@ -166,7 +166,7 @@ test('update one', async t => {
 test('delete one', async t => {
   t.plan(3)
 
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     async create() {
       t.fail()
     },
@@ -304,7 +304,7 @@ test('entity safe override', async t => {
 test('safe create', async t => {
   t.plan(4)
 
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     create() {
       t.pass()
     }
@@ -324,7 +324,7 @@ test('safe create', async t => {
 test('safe update', async t => {
   t.plan(4)
 
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     update() {
       t.pass()
     }
@@ -347,7 +347,7 @@ test('safe update', async t => {
 test('safe delete', async t => {
   t.plan(4)
 
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     delete() {
       t.pass()
     }
@@ -374,7 +374,7 @@ interface CommitMode {
 }
 
 function bind(t: ExecutionContext, mode: Partial<CommitMode> = {}) {
-  const writer: Writer<Item> = {
+  const writer: Writer<Item, any> = {
     async create(target, options) {
       if (mode.create === true) {
         t.pass()

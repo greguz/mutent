@@ -1,7 +1,7 @@
 import Herry from 'herry'
 import stream from 'stream'
 
-import { isNull, isUndefined } from './utils'
+import { isNull, isUndefined } from '../utils'
 
 export type Value<T> = Promise<T> | T
 

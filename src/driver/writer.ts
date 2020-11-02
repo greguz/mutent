@@ -1,5 +1,5 @@
-import { Status, commitStatus, updateStatus } from './status'
-import { Result, isNil, isNull } from './utils'
+import { Status, commitStatus, updateStatus } from '../status'
+import { Result, isNil, isNull } from '../utils'
 
 export type WriteResult<T> = Result<T | null | undefined | void>
 

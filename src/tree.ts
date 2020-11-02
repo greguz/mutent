@@ -1,3 +1,4 @@
+import { Writer, writeStatus } from './driver/index'
 import {
   Status,
   commitStatus,
@@ -6,7 +7,6 @@ import {
   updateStatus
 } from './status'
 import { Lazy, Result, unlazy } from './utils'
-import { Writer, writeStatus } from './writer'
 
 export type Condition<T> = Lazy<boolean, T>
 

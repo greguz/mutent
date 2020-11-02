@@ -1,7 +1,17 @@
 export {
+  Driver,
+  Reader,
+  Value,
+  Values,
+  WriteResult,
+  Writer
+} from './driver/index'
+export {
   Entities,
   Entity,
   InstanceSettings,
+  Many,
+  One,
   createEntities,
   createEntity,
   readEntities,
@@ -9,8 +19,7 @@ export {
 } from './instance'
 export { Strategies, Strategy } from './migration'
 export { Mutation, Mutator, MutationSettings, createMutation } from './mutation'
-export { Many, One, StreamOptions, UnwrapOptions } from './producers'
-export { Reader, Value, Values } from './reader'
+export { StreamOptions, UnwrapOptions } from './producers'
 export {
   Constructors,
   Parse,
@@ -23,7 +32,6 @@ export {
   SchemaHandlerSettings
 } from './schema/index'
 export * from './schema/definition-type'
-export { Driver, Store, StoreSettings, createStore } from './store'
+export { Store, StoreSettings, createStore } from './store'
 export { Condition } from './tree'
 export { Lazy, Result } from './utils'
-export { WriteResult, Writer } from './writer'
