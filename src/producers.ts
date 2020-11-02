@@ -9,26 +9,17 @@ import {
 } from 'fluido'
 
 import { Value, Values } from './driver/index'
+import { MutentOptions } from './options'
 import { isNull } from './utils'
 
-export type UnwrapOptions<O = {}> = Partial<O> & {
-  autoCommit?: boolean
-  safe?: boolean
-}
-
-export type StreamOptions<O = {}> = UnwrapOptions<O> & {
-  concurrency?: number
-  highWaterMark?: number
-}
-
-export async function unwrapOne<T, O>(
+export async function unwrapOne<T>(
   value: Value<T>,
   mutate: (data: any) => Promise<T>
 ): Promise<T> {
   return mutate(await value)
 }
 
-export function streamOne<T, O>(
+export function streamOne<T>(
   one: Value<T>,
   mutate: (data: any) => Promise<T>
 ): stream.Readable {
@@ -48,7 +39,7 @@ function toStream<T>(values: Values<T>): stream.Readable {
   return isReadable(values) ? values : Readable.from(values)
 }
 
-export function unwrapMany<T, O>(
+export function unwrapMany<T>(
   values: Values<T>,
   mutate: (data: any) => Promise<T>
 ): Promise<T[]> {
@@ -73,10 +64,10 @@ export function unwrapMany<T, O>(
   })
 }
 
-export function streamMany<T, O>(
+export function streamMany<T>(
   values: Values<T>,
   mutate: (data: any) => Promise<T>,
-  options: StreamOptions<O>
+  options: MutentOptions = {}
 ): stream.Readable {
   return readify(
     {

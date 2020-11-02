@@ -17,22 +17,16 @@ import {
   unlessMethod,
   updateMethod
 } from './mutation'
-import {
-  StreamOptions,
-  UnwrapOptions,
-  streamMany,
-  streamOne,
-  unwrapMany,
-  unwrapOne
-} from './producers'
+import { Options } from './options'
+import { streamMany, streamOne, unwrapMany, unwrapOne } from './producers'
 import { Status, createStatus, readStatus, shouldCommit } from './status'
 import { SchemaHandler } from './schema/index'
 import { mutateStatus } from './tree'
-import { Lazy, isNil, isNull, isUndefined, objectify, unlazy } from './utils'
+import { Lazy, isNil, isNull, isUndefined, unlazy } from './utils'
 
-export type One<T, O> = Lazy<Value<T>, UnwrapOptions<O>>
+export type One<T, O> = Lazy<Value<T>, Options<O>>
 
-export type Many<T, O> = Lazy<Values<T>, StreamOptions<O>>
+export type Many<T, O> = Lazy<Values<T>, Options<O>>
 
 export interface InstanceSettings<T, O> extends MutationSettings {
   autoCommit?: boolean
@@ -45,18 +39,18 @@ export interface InstanceSettings<T, O> extends MutationSettings {
 }
 
 interface Instance<T, O, U> extends Mutation<T> {
-  unwrap(options?: UnwrapOptions<O>): Promise<U>
-  stream(options?: StreamOptions<O>): stream.Readable
+  unwrap(options?: Options<O>): Promise<U>
+  stream(options?: Options<O>): stream.Readable
 }
 
 export interface Entity<T, O> extends Mutation<T> {
-  unwrap(options?: UnwrapOptions<O>): Promise<T>
-  stream(options?: StreamOptions<O>): stream.Readable
+  unwrap(options?: Options<O>): Promise<T>
+  stream(options?: Options<O>): stream.Readable
 }
 
 export interface Entities<T, O> extends Mutation<T> {
-  unwrap(options?: UnwrapOptions<O>): Promise<T[]>
-  stream(options?: StreamOptions<O>): stream.Readable
+  unwrap(options?: Options<O>): Promise<T[]>
+  stream(options?: Options<O>): stream.Readable
 }
 
 type Producer<T, O, U> = (
@@ -74,7 +68,7 @@ interface InstanceState<T, O, U> extends MutationState<T> {
 async function unwrapState<T, O>(
   { settings, toStatus, tree }: InstanceState<T, O, any>,
   data: T,
-  options: StreamOptions<O>
+  options: Options<O>
 ): Promise<T> {
   if (isNull(data)) {
     return data
@@ -142,18 +136,16 @@ async function unwrapState<T, O>(
 
 async function unwrapMethod<T, U, O>(
   state: InstanceState<T, O, U>,
-  options?: UnwrapOptions<O>
+  options: Options<O> = {}
 ): Promise<U> {
-  const o = objectify(options)
-  return state.toPromise(data => unwrapState(state, data, o), o)
+  return state.toPromise(data => unwrapState(state, data, options), options)
 }
 
 function streamMethod<T, U, O>(
   state: InstanceState<T, O, U>,
-  options?: StreamOptions<O>
+  options: Options<O> = {}
 ): stream.Readable {
-  const o = objectify(options)
-  return state.toStream(data => unwrapState(state, data, o), o)
+  return state.toStream(data => unwrapState(state, data, options), options)
 }
 
 function createInstance<T, O, U>(

@@ -19,7 +19,7 @@ export {
 } from './instance'
 export { Strategies, Strategy } from './migration'
 export { Mutation, Mutator, MutationSettings, createMutation } from './mutation'
-export { StreamOptions, UnwrapOptions } from './producers'
+export { MutentOptions, Options, StreamOptions, UnwrapOptions } from './options'
 export {
   Constructors,
   Parse,
