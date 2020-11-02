@@ -1,18 +1,13 @@
 import test from 'ava'
 
-import { StoreSettings, createStore } from './store'
+import { createStore } from './store'
 
-interface Item {
-  id: number
-  value?: string
-}
-
-function match(item: Item, value: number | string) {
+function match(item, value) {
   return typeof value === 'number' ? item.id === value : item.value === value
 }
 
-function createSettings(): StoreSettings<Item, number | string, any> {
-  const items: Item[] = []
+function createSettings() {
+  const items = []
 
   return {
     driver: {
@@ -97,7 +92,7 @@ test('default store', async t => {
 
 test('store missing', async t => {
   t.plan(3)
-  const store = createStore<any, string, any>({
+  const store = createStore({
     driver: {
       find(query, options, isRequired) {
         t.true(isRequired)
@@ -112,7 +107,7 @@ test('store missing', async t => {
 })
 
 test('schema', async t => {
-  const schema: any = {
+  const schema = {
     type: 'object',
     properties: {
       date: {
@@ -120,7 +115,7 @@ test('schema', async t => {
           {
             type: 'string',
             format: 'date-time',
-            parse: (value: string) => new Date(value)
+            parse: value => new Date(value)
           },
           {
             type: 'object',
@@ -131,11 +126,11 @@ test('schema', async t => {
     }
   }
 
-  const store = createStore<any, any, any>({
+  const store = createStore({
     schema
   })
 
-  const input: any = {
+  const input = {
     date: '2020-09-02T16:29:34.070Z'
   }
 

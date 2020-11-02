@@ -1,28 +1,18 @@
 {
   "env": {
     "browser": true,
-    "es6": true,
+    "es2021": true,
     "node": true
   },
-  "ignorePatterns": [
-    "types/**/*.d.ts"
-  ],
   "extends": [
-    "plugin:@typescript-eslint/recommended",
-    "prettier/@typescript-eslint",
-    "plugin:prettier/recommended"
+    "standard",
+    "prettier"
   ],
-  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2020,
+    "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
   "rules": {
-    "@typescript-eslint/ban-types": 0,
-    "@typescript-eslint/no-explicit-any": 0,
-    "@typescript-eslint/no-inferrable-types": 0
+    "default-param-last": 0
   }
 }

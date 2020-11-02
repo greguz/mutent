@@ -1,10 +1,21 @@
-import { Parse } from './parse-value'
+export declare type ParseFunction = (value: any, ...args: any[]) => any
+export declare type ParseString = string
+export declare type ParseArray = [string, ...any[]]
+export interface ParseObject {
+  [key: string]: any[]
+}
+
+export declare type Parse =
+  | ParseFunction
+  | ParseString
+  | ParseArray
+  | ParseObject
 
 /**
  * Primitive type
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.1.1
  */
-export type JSONSchema7TypeName =
+export declare type JSONSchema7TypeName =
   | 'string'
   | 'number'
   | 'integer'
@@ -17,7 +28,7 @@ export type JSONSchema7TypeName =
  * Primitive type
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.1.1
  */
-export type JSONSchema7Type =
+export declare type JSONSchema7Type =
   | string
   | number
   | boolean
@@ -25,14 +36,10 @@ export type JSONSchema7Type =
   | JSONSchema7Array
   | null
 
-// Workaround for infinite type recursion
 export interface JSONSchema7Object {
   [key: string]: JSONSchema7Type
 }
 
-// Workaround for infinite type recursion
-// https://github.com/Microsoft/TypeScript/issues/3496#issuecomment-128553540
-// eslint-disable-next-line
 export interface JSONSchema7Array extends Array<JSONSchema7Type> {}
 
 /**
@@ -46,13 +53,13 @@ export interface JSONSchema7Array extends Array<JSONSchema7Type> {}
  *
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-5
  */
-export type JSONSchema7Version = string
+export declare type JSONSchema7Version = string
 
 /**
  * JSON Schema v7
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01
  */
-export type JSONSchema7Definition = JSONSchema7 | boolean
+export declare type JSONSchema7Definition = JSONSchema7 | boolean
 export interface JSONSchema7 {
   $id?: string
   $ref?: string
@@ -163,8 +170,3 @@ export interface JSONSchema7 {
    */
   parse?: Parse
 }
-
-/**
- * @deprecated
- */
-export type MutentSchema = JSONSchema7Definition

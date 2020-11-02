@@ -1,55 +1,49 @@
 import test from 'ava'
 
-import { Writer, writeStatus } from './writer'
+import { writeStatus } from './writer'
 import {
-  Status,
   commitStatus,
   createStatus,
   deleteStatus,
   updateStatus
 } from '../status'
 
-interface Item {
-  id: number
-  value?: any
-}
-
-function sCreate(id: number): Status<Item> {
+function sCreate(id) {
   return createStatus({ id })
 }
 
-function sVoid(id: number) {
+function sVoid(id) {
   return commitStatus(sCreate(id))
 }
 
-function sUpdate(id: number, value: any): Status<Item> {
+function sUpdate(id, value) {
   return updateStatus(sVoid(id), { id, value })
 }
 
-function sDelete(id: number): Status<Item> {
+function sDelete(id) {
   return deleteStatus(sVoid(id))
 }
 
-function sCreateUpdate(id: number, value: any): Status<Item> {
+function sCreateUpdate(id, value) {
   return updateStatus(sCreate(id), { id, value })
 }
 
-function sCreateDelete(id: number): Status<Item> {
+function sCreateDelete(id) {
   return deleteStatus(sCreate(id))
 }
 
-function sUpdateDelete(id: number, value: any): Status<Item> {
+function sUpdateDelete(id, value) {
   return deleteStatus(sUpdate(id, value))
 }
 
-function sCreateUpdateDelete(id: number, value: any): Status<Item> {
+function sCreateUpdateDelete(id, value) {
   return deleteStatus(sCreateUpdate(id, value))
 }
 
 test('sCreate', async t => {
   t.plan(3)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create(data, options) {
       t.deepEqual(data, {
         id: 0
@@ -88,7 +82,7 @@ test('sCreate', async t => {
 test('sVoid', async t => {
   t.plan(2)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create() {
       t.fail()
     },
@@ -120,7 +114,7 @@ test('sVoid', async t => {
 test('sUpdate', async t => {
   t.plan(4)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create() {
       t.fail()
     },
@@ -167,7 +161,7 @@ test('sUpdate', async t => {
 test('sDelete', async t => {
   t.plan(3)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create() {
       t.fail()
     },
@@ -200,7 +194,7 @@ test('sDelete', async t => {
 test('sCreateUpdate', async t => {
   t.plan(4)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create(data, options) {
       t.deepEqual(data, {
         id: 0,
@@ -242,7 +236,7 @@ test('sCreateUpdate', async t => {
 test('sCreateDelete', async t => {
   t.plan(2)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create() {
       t.fail()
     },
@@ -272,7 +266,7 @@ test('sCreateDelete', async t => {
 test('sUpdateDelete', async t => {
   t.plan(4)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create() {
       t.fail()
     },
@@ -310,7 +304,7 @@ test('sUpdateDelete', async t => {
 test('sCreateUpdateDelete', async t => {
   t.plan(2)
 
-  const writer: Writer<Item, any> = {
+  const writer = {
     create() {
       t.fail()
     },
@@ -341,7 +335,7 @@ test('sCreateUpdateDelete', async t => {
 })
 
 test('writer defaults', async t => {
-  const writer: Writer<Item, any> = {}
+  const writer = {}
 
   const a = await writeStatus(sCreate(0), writer)
   t.deepEqual(a.target, { id: 0 })

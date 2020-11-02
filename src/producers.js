@@ -1,4 +1,3 @@
-import stream from 'stream'
 import {
   Readable,
   Transform,
@@ -8,21 +7,13 @@ import {
   readify
 } from 'fluido'
 
-import { Value, Values } from './driver/index'
-import { MutentOptions } from './options'
 import { isNull } from './utils'
 
-export async function unwrapOne<T>(
-  value: Value<T>,
-  mutate: (data: any) => Promise<T>
-): Promise<T> {
+export async function unwrapOne(value, mutate) {
   return mutate(await value)
 }
 
-export function streamOne<T>(
-  one: Value<T>,
-  mutate: (data: any) => Promise<T>
-): stream.Readable {
+export function streamOne(one, mutate) {
   return new Readable({
     objectMode: true,
     async asyncRead() {
@@ -35,19 +26,16 @@ export function streamOne<T>(
   })
 }
 
-function toStream<T>(values: Values<T>): stream.Readable {
+function toStream(values) {
   return isReadable(values) ? values : Readable.from(values)
 }
 
-export function unwrapMany<T>(
-  values: Values<T>,
-  mutate: (data: any) => Promise<T>
-): Promise<T[]> {
+export function unwrapMany(values, mutate) {
   return new Promise((resolve, reject) => {
-    const results: T[] = []
+    const results = []
     pipeline(
       toStream(values),
-      new Writable<T>({
+      new Writable({
         objectMode: true,
         async write(chunk) {
           results.push(await mutate(chunk))
@@ -64,18 +52,14 @@ export function unwrapMany<T>(
   })
 }
 
-export function streamMany<T>(
-  values: Values<T>,
-  mutate: (data: any) => Promise<T>,
-  options: MutentOptions = {}
-): stream.Readable {
+export function streamMany(values, mutate, options = {}) {
   return readify(
     {
       highWaterMark: options.highWaterMark,
       objectMode: true
     },
     toStream(values),
-    new Transform<T, T>({
+    new Transform({
       concurrency: options.concurrency,
       highWaterMark: options.highWaterMark,
       objectMode: true,

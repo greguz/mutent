@@ -1,16 +1,11 @@
 import test from 'ava'
 import Ajv from 'ajv'
 
-import { JSONSchema7Definition } from './definition-type'
 import { parseData } from './parse-data'
 
 const ajv = new Ajv()
 
-function parse<T = any>(
-  data: any,
-  schema?: JSONSchema7Definition,
-  functions?: any
-): T {
+function parse(data, schema, functions) {
   return parseData(ajv, data, schema, functions)
 }
 
@@ -34,18 +29,18 @@ test('parseObject: object without schema', t => {
 })
 
 test('parseObject: object with schema', t => {
-  const schema: JSONSchema7Definition = {
+  const schema = {
     type: 'object'
   }
   t.deepEqual(parse({ foo: 'bar' }, schema), { foo: 'bar' })
 
-  const schema2: JSONSchema7Definition = {
+  const schema2 = {
     type: 'object',
     additionalProperties: true
   }
   t.deepEqual(parse({ foo: 'bar' }, schema2), { foo: 'bar' })
 
-  const schema3: JSONSchema7Definition = {
+  const schema3 = {
     type: 'object',
     properties: {
       foo: {
@@ -57,7 +52,7 @@ test('parseObject: object with schema', t => {
 })
 
 test('parseObject: object with schema and custom parse', t => {
-  const schema: JSONSchema7Definition = {
+  const schema = {
     type: 'object',
     properties: {
       foo: {
@@ -86,12 +81,12 @@ test('parseObject: array without schema', t => {
 })
 
 test('parseObject: array with schema', t => {
-  const schema: JSONSchema7Definition = {
+  const schema = {
     type: 'array'
   }
   t.deepEqual(parse(['foo'], schema), ['foo'])
 
-  const schema3: JSONSchema7Definition = {
+  const schema3 = {
     type: 'array',
     items: {
       type: 'string'
@@ -99,7 +94,7 @@ test('parseObject: array with schema', t => {
   }
   t.deepEqual(parse(['foo'], schema3), ['foo'])
 
-  const schema4: JSONSchema7Definition = {
+  const schema4 = {
     type: 'array',
     items: {
       type: 'object',
@@ -114,12 +109,11 @@ test('parseObject: array with schema', t => {
       }
     }
   }
-  t.deepEqual(
-    parse<{ foo: string; bar: string }[]>([{ foo: 'bar', bar: 4 }], schema4),
-    [{ foo: 'bar', bar: '4' }]
-  )
+  t.deepEqual(parse([{ foo: 'bar', bar: 4 }], schema4), [
+    { foo: 'bar', bar: '4' }
+  ])
   const now = new Date().toISOString()
-  const schema5: JSONSchema7Definition = {
+  const schema5 = {
     type: 'array',
     items: [
       {
@@ -163,7 +157,7 @@ test('parseData:patternProperties', t => {
 })
 
 test('parseData:oneOf', t => {
-  const schema: JSONSchema7Definition = {
+  const schema = {
     type: 'object',
     properties: {
       value: {
@@ -175,7 +169,7 @@ test('parseData:oneOf', t => {
           {
             type: 'string',
             format: 'date-time',
-            parse: (value: string) => new Date(value)
+            parse: value => new Date(value)
           }
         ]
       }

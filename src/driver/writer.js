@@ -1,23 +1,11 @@
-import { Status, commitStatus, updateStatus } from '../status'
-import { Result, isNil, isNull } from '../utils'
+import { commitStatus, updateStatus } from '../status'
+import { isNil, isNull } from '../utils'
 
-export type WriteResult<T> = Result<T | null | undefined | void>
-
-export interface Writer<T, O = any> {
-  create?(data: T, options: Partial<O>): WriteResult<T>
-  update?(oldData: T, newData: T, options: Partial<O>): WriteResult<T>
-  delete?(data: T, options: Partial<O>): WriteResult<T>
-}
-
-function close<T>(status: Status<T>, data?: T | null | undefined | void) {
+function close(status, data) {
   return commitStatus(isNil(data) ? status : updateStatus(status, data))
 }
 
-export async function writeStatus<T, O>(
-  status: Status<T>,
-  writer: Writer<T, O>,
-  options: Partial<O> = {}
-): Promise<Status<T>> {
+export async function writeStatus(status, writer, options = {}) {
   if (isNull(status.source) && status.created && !status.deleted) {
     if (writer.create) {
       return close(status, await writer.create(status.target, options))

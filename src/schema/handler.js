@@ -1,31 +1,10 @@
 import Ajv from 'ajv'
 import Herry from 'herry'
 
-import { JSONSchema7Definition } from './definition-type'
 import { parseData } from './parse-data'
-import { ParseFunction, ParseFunctions } from './parse-value'
-
-export interface Constructors {
-  [key: string]: Function
-}
-
-export interface SchemaHandlerSettings {
-  ajv?: Ajv.Ajv
-  constructors?: Constructors
-  parseFunctions?: ParseFunctions
-}
 
 export class SchemaHandler {
-  private _ajv: Ajv.Ajv
-  private _constructors: Constructors
-  private _parseFunctions: ParseFunctions
-  private _schema: JSONSchema7Definition
-  private _validate: Ajv.ValidateFunction
-
-  constructor(
-    schema: JSONSchema7Definition,
-    { ajv, constructors, parseFunctions }: SchemaHandlerSettings = {}
-  ) {
+  constructor(schema, { ajv, constructors, parseFunctions } = {}) {
     this._constructors = {
       Array,
       Buffer,
@@ -57,8 +36,8 @@ export class SchemaHandler {
       metaSchema: {
         type: 'string'
       },
-      validate: (schema: string, data: any) => {
-        return this._constructors.hasOwnProperty(schema)
+      validate: (schema, data) => {
+        return Object.prototype.hasOwnProperty.call(this._constructors, schema)
           ? data instanceof this._constructors[schema]
           : false
       }
@@ -66,7 +45,7 @@ export class SchemaHandler {
 
     this._ajv.addKeyword('parse', {
       errors: false,
-      validate(schema: any) {
+      validate(schema) {
         if (Array.isArray(schema)) {
           return schema.length >= 1 && typeof schema[0] === 'string'
         } else if (typeof schema === 'object' && schema !== null) {
@@ -81,17 +60,17 @@ export class SchemaHandler {
     this._validate = this._ajv.compile(schema)
   }
 
-  public defineConstructor(key: string, Constructor: Function): this {
+  defineConstructor(key, Constructor) {
     this._constructors[key] = Constructor
     return this
   }
 
-  public defineParser(key: string, parser: ParseFunction): this {
+  defineParser(key, parser) {
     this._parseFunctions[key] = parser
     return this
   }
 
-  public compute(data: any): any {
+  compute(data) {
     if (!this._validate(data)) {
       throw new Herry('EMUT_INVALID_DATA', 'Invalid data detected', {
         data,

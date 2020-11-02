@@ -1,13 +1,9 @@
-import stream from 'stream'
 import fluente from 'fluente'
 import Herry from 'herry'
 
-import { Value, Values, Writer, writeStatus } from './driver/index'
-import { Strategies, migrateStatus } from './migration'
+import { writeStatus } from './driver/writer'
+import { migrateStatus } from './migration'
 import {
-  Mutation,
-  MutationSettings,
-  MutationState,
   assignMethod,
   commitMethod,
   deleteMethod,
@@ -17,59 +13,16 @@ import {
   unlessMethod,
   updateMethod
 } from './mutation'
-import { Options } from './options'
 import { streamMany, streamOne, unwrapMany, unwrapOne } from './producers'
-import { Status, createStatus, readStatus, shouldCommit } from './status'
-import { SchemaHandler } from './schema/index'
+import { createStatus, readStatus, shouldCommit } from './status'
 import { mutateStatus } from './tree'
-import { Lazy, isNil, isNull, isUndefined, unlazy } from './utils'
+import { isNil, isNull, isUndefined, unlazy } from './utils'
 
-export type One<T, O> = Lazy<Value<T>, Options<O>>
-
-export type Many<T, O> = Lazy<Values<T>, Options<O>>
-
-export interface InstanceSettings<T, O> extends MutationSettings {
-  autoCommit?: boolean
-  driver?: Writer<T, O>
-  migrationStrategies?: Strategies
-  prepare?: (data: any, options: Partial<O>) => T | null | undefined | void
-  safe?: boolean
-  versionKey?: string
-}
-
-interface Instance<T, O, U> extends Mutation<T> {
-  unwrap(options?: Options<O>): Promise<U>
-  stream(options?: Options<O>): stream.Readable
-}
-
-export interface Entity<T, O> extends Mutation<T> {
-  unwrap(options?: Options<O>): Promise<T>
-  stream(options?: Options<O>): stream.Readable
-}
-
-export interface Entities<T, O> extends Mutation<T> {
-  unwrap(options?: Options<O>): Promise<T[]>
-  stream(options?: Options<O>): stream.Readable
-}
-
-type Producer<T, O, U> = (
-  mutate: (data: any) => Promise<T>,
-  options: Partial<O>
-) => U
-
-interface InstanceState<T, O, U> extends MutationState<T> {
-  schema: SchemaHandler | undefined
-  settings: InstanceSettings<T, O>
-  toPromise: Producer<T, O, Promise<U>>
-  toStatus: (data: T) => Status<T>
-  toStream: Producer<T, O, stream.Readable>
-}
-
-async function unwrapState<T, O>(
-  { schema, settings, toStatus, tree }: InstanceState<T, O, any>,
-  data: T,
-  options: Options<O>
-): Promise<T> {
+async function unwrapState(
+  { schema, settings, toStatus, tree },
+  data,
+  options
+) {
   if (isNull(data)) {
     return data
   }
@@ -128,28 +81,16 @@ async function unwrapState<T, O>(
   return status.target
 }
 
-async function unwrapMethod<T, U, O>(
-  state: InstanceState<T, O, U>,
-  options: Options<O> = {}
-): Promise<U> {
+async function unwrapMethod(state, options = {}) {
   return state.toPromise(data => unwrapState(state, data, options), options)
 }
 
-function streamMethod<T, U, O>(
-  state: InstanceState<T, O, U>,
-  options: Options<O> = {}
-): stream.Readable {
+function streamMethod(state, options = {}) {
   return state.toStream(data => unwrapState(state, data, options), options)
 }
 
-function createInstance<T, O, U>(
-  toStatus: InstanceState<T, O, U>['toStatus'],
-  toPromise: InstanceState<T, O, U>['toPromise'],
-  toStream: InstanceState<T, O, U>['toStream'],
-  settings: InstanceSettings<T, O> = {},
-  schema: SchemaHandler | undefined
-): Instance<T, O, U> {
-  const state: InstanceState<T, O, U> = {
+function createInstance(toStatus, toPromise, toStream, settings = {}, schema) {
+  const state = {
     schema,
     settings,
     toPromise,
@@ -157,6 +98,7 @@ function createInstance<T, O, U>(
     toStream,
     tree: []
   }
+
   return fluente({
     historySize: settings.historySize,
     isMutable: settings.classy,
@@ -179,11 +121,7 @@ function createInstance<T, O, U>(
   })
 }
 
-export function createEntity<T, O = any>(
-  one: One<T, O>,
-  settings?: InstanceSettings<T, O>,
-  schema?: SchemaHandler
-): Entity<T, O> {
+export function createEntity(one, settings, schema) {
   return createInstance(
     createStatus,
     (mutate, options) => unwrapOne(unlazy(one, options), mutate),
@@ -193,11 +131,7 @@ export function createEntity<T, O = any>(
   )
 }
 
-export function readEntity<T, O = any>(
-  one: One<T, O>,
-  settings?: InstanceSettings<T, O>,
-  schema?: SchemaHandler
-): Entity<T, O> {
+export function readEntity(one, settings, schema) {
   return createInstance(
     readStatus,
     (mutate, options) => unwrapOne(unlazy(one, options), mutate),
@@ -207,11 +141,7 @@ export function readEntity<T, O = any>(
   )
 }
 
-export function createEntities<T, O = any>(
-  many: Many<T, O>,
-  settings?: InstanceSettings<T, O>,
-  schema?: SchemaHandler
-): Entities<T, O> {
+export function createEntities(many, settings, schema) {
   return createInstance(
     createStatus,
     (mutate, options) => unwrapMany(unlazy(many, options), mutate),
@@ -221,11 +151,7 @@ export function createEntities<T, O = any>(
   )
 }
 
-export function readEntities<T, O = any>(
-  many: Many<T, O>,
-  settings?: InstanceSettings<T, O>,
-  schema?: SchemaHandler
-): Entities<T, O> {
+export function readEntities(many, settings, schema) {
   return createInstance(
     readStatus,
     (mutate, options) => unwrapMany(unlazy(many, options), mutate),

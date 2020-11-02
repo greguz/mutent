@@ -4,7 +4,7 @@ import { migrateStatus } from './migration'
 import { readStatus } from './status'
 
 test('migration: default', async t => {
-  const out = await migrateStatus<any>(
+  const out = await migrateStatus(
     readStatus({
       value: '42'
     }),
@@ -38,15 +38,13 @@ test('migration: default', async t => {
 })
 
 test('migration: missing stratery', async t => {
-  await t.throwsAsync(
-    migrateStatus<any>(readStatus({}), { 2: data => data }),
-    { code: 'EMUT_MISSING_STRATEGY' }
-  )
+  await t.throwsAsync(migrateStatus(readStatus({}), { 2: data => data }), {
+    code: 'EMUT_MISSING_STRATEGY'
+  })
 })
 
 test('migration: no upgrade', async t => {
-  await t.throwsAsync(
-    migrateStatus<any>(readStatus({}), { 1: data => data }),
-    { code: 'EMUT_EXPECTED_UPGRADE' }
-  )
+  await t.throwsAsync(migrateStatus(readStatus({}), { 1: data => data }), {
+    code: 'EMUT_EXPECTED_UPGRADE'
+  })
 })

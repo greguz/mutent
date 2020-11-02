@@ -1,19 +1,10 @@
-import Ajv from 'ajv'
+import { parseValue } from './parse-value'
 
-import { JSONSchema7, JSONSchema7Definition } from './definition-type'
-import { ParseFunctions, parseValue } from './parse-value'
-
-function parseArray(
-  ajv: Ajv.Ajv,
-  data: any[],
-  schema: JSONSchema7,
-  functions?: ParseFunctions
-): any {
+function parseArray(ajv, data, schema, functions) {
   const { items } = schema
   if (!items) {
     return data
   }
-
   const length = Array.isArray(items) ? items.length : data.length
   for (let i = 0; i < length; i++) {
     data[i] = parseData(
@@ -23,21 +14,13 @@ function parseArray(
       functions
     )
   }
-
   return data
 }
 
-function parsePatternProperties(
-  ajv: Ajv.Ajv,
-  data: any,
-  patternProperties: JSONSchema7['patternProperties'] = {},
-  functions?: ParseFunctions
-): any {
+function parsePatternProperties(ajv, data, patternProperties = {}, functions) {
   const objectKeys = Object.keys(data)
-
   for (const schemaKey of Object.keys(patternProperties)) {
     const regexp = new RegExp(schemaKey)
-
     for (const objectKey of objectKeys) {
       if (regexp.test(objectKey)) {
         const value = data[objectKey]
@@ -52,16 +35,10 @@ function parsePatternProperties(
       }
     }
   }
-
   return data
 }
 
-function parseProperties(
-  ajv: Ajv.Ajv,
-  data: any,
-  properties: JSONSchema7['properties'] = {},
-  functions?: ParseFunctions
-): any {
+function parseProperties(ajv, data, properties = {}, functions) {
   for (const key of Object.keys(properties)) {
     const value = data[key]
     if (value !== undefined) {
@@ -71,12 +48,7 @@ function parseProperties(
   return data
 }
 
-function parseObject(
-  ajv: Ajv.Ajv,
-  data: any,
-  schema: JSONSchema7,
-  functions?: ParseFunctions
-): any {
+function parseObject(ajv, data, schema, functions) {
   const { patternProperties, properties } = schema
   if (patternProperties) {
     data = parsePatternProperties(ajv, data, patternProperties, functions)
@@ -87,12 +59,7 @@ function parseObject(
   return data
 }
 
-function parseConditions(
-  ajv: Ajv.Ajv,
-  data: any,
-  conditions: JSONSchema7Definition[],
-  functions?: ParseFunctions
-) {
+function parseConditions(ajv, data, conditions, functions) {
   for (const schema of conditions) {
     if (ajv.validate(schema, data)) {
       return parseData(ajv, data, schema, functions)
@@ -100,12 +67,7 @@ function parseConditions(
   }
 }
 
-export function parseData(
-  ajv: Ajv.Ajv,
-  data: any,
-  schema?: JSONSchema7Definition,
-  functions?: ParseFunctions
-): any {
+export function parseData(ajv, data, schema, functions) {
   if (typeof schema === 'object' && schema !== null && data !== undefined) {
     if (schema.parse) {
       return parseValue(data, schema.parse, functions)
