@@ -1,9 +1,5 @@
 import Herry from 'herry'
 
-function bindFunction(fn, ...args) {
-  return args.length > 0 ? value => fn(value, ...args) : fn
-}
-
 function resolveKey(functions, key) {
   const fn = functions[key]
   if (!fn) {
@@ -12,27 +8,28 @@ function resolveKey(functions, key) {
   return fn
 }
 
-function handleArray(functions, parse) {
-  return bindFunction(resolveKey(functions, parse[0]), parse.slice(1))
-}
-
-function handleObject(functions, parse) {
-  const key = Object.keys(parse)[0]
-  return bindFunction(resolveKey(functions, key), parse[key])
-}
-
-function getParseFunction(functions, parse) {
-  if (typeof parse === 'function') {
-    return parse
-  } else if (typeof parse === 'string') {
-    return resolveKey(functions, parse)
+function describeParser(parse) {
+  if (typeof parse === 'string') {
+    return {
+      key: parse,
+      args: []
+    }
   } else if (Array.isArray(parse)) {
-    return handleArray(functions, parse)
+    return {
+      key: parse[0],
+      args: parse.slice(1)
+    }
   } else {
-    return handleObject(functions, parse)
+    const key = Object.keys(parse)[0]
+    return {
+      key,
+      args: parse[key]
+    }
   }
 }
 
 export function parseValue(value, parse, functions = {}) {
-  return getParseFunction(functions, parse)(value)
+  const { key, args } = describeParser(parse)
+  const fn = resolveKey(functions, key)
+  return fn(value, ...args)
 }

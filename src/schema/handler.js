@@ -3,9 +3,9 @@ import Herry from 'herry'
 import { parseData } from './parse-data'
 
 export class SchemaHandler {
-  constructor(ajv, parseFunctions, schema) {
+  constructor(ajv, parsers, schema) {
     this._ajv = ajv
-    this._parseFunctions = parseFunctions
+    this._parsers = parsers
     this._schema = schema
 
     this._validate = this._ajv.compile(schema)
@@ -19,6 +19,6 @@ export class SchemaHandler {
         schema: this._schema
       })
     }
-    return parseData(this._ajv, data, this._schema, this._parseFunctions)
+    return parseData(this._ajv, data, this._schema, this._parsers)
   }
 }

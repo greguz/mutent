@@ -6,7 +6,11 @@ import { parseData } from './parse-data'
 const ajv = new Ajv()
 
 function parse(data, schema, functions) {
-  return parseData(ajv, data, schema, functions)
+  return parseData(ajv, data, schema, {
+    toDate: value => new Date(value),
+    toString: value => value.toString(),
+    ...functions
+  })
 }
 
 test('parseObject: primitive values without schema', t => {
@@ -57,22 +61,41 @@ test('parseObject: object with schema and custom parse', t => {
     properties: {
       foo: {
         type: 'string',
-        parse: Number
+        parse: 'toNumber'
       },
       bar: {
         type: 'object',
         properties: {
           deepBar: {
             type: 'string',
-            parse: value => `##${value}##`
+            parse: 'custom'
           }
         }
       }
     }
   }
   t.deepEqual(
-    parse({ foo: '5', bar: { deepBar: 'foo' }, notPassing: true }, schema),
-    { foo: 5, bar: { deepBar: '##foo##' }, notPassing: true }
+    parse(
+      {
+        foo: '5',
+        bar: {
+          deepBar: 'foo'
+        },
+        notPassing: true
+      },
+      schema,
+      {
+        toNumber: Number,
+        custom: value => `##${value}##`
+      }
+    ),
+    {
+      foo: 5,
+      bar: {
+        deepBar: '##foo##'
+      },
+      notPassing: true
+    }
   )
 })
 
@@ -104,7 +127,7 @@ test('parseObject: array with schema', t => {
         },
         bar: {
           type: 'number',
-          parse: value => value.toString()
+          parse: 'toString'
         }
       }
     }
@@ -122,7 +145,7 @@ test('parseObject: array with schema', t => {
           now: {
             type: 'string',
             format: 'date-time',
-            parse: value => new Date(value)
+            parse: 'toDate'
           }
         }
       }
@@ -147,7 +170,7 @@ test('parseData:patternProperties', t => {
         Date$: {
           type: 'string',
           format: 'date-time',
-          parse: value => new Date(value)
+          parse: 'toDate'
         }
       }
     }
@@ -169,7 +192,7 @@ test('parseData:oneOf', t => {
           {
             type: 'string',
             format: 'date-time',
-            parse: value => new Date(value)
+            parse: 'toDate'
           }
         ]
       }

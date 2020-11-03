@@ -1,5 +1,6 @@
 import test from 'ava'
 
+import { createEngine } from './schema/engine'
 import { createStore } from './store'
 
 function match(item, value) {
@@ -115,7 +116,7 @@ test('schema', async t => {
           {
             type: 'string',
             format: 'date-time',
-            parse: value => new Date(value)
+            parse: 'toDate'
           },
           {
             type: 'object',
@@ -126,7 +127,14 @@ test('schema', async t => {
     }
   }
 
+  const engine = createEngine({
+    parsers: {
+      toDate: value => new Date(value)
+    }
+  })
+
   const store = createStore({
+    engine,
     schema
   })
 

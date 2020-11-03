@@ -7,9 +7,10 @@ import {
 } from './instance'
 import { createEngine } from './schema/engine'
 
-function compileSchema({ engine, schema }) {
+function compileSchema(settings) {
+  let { engine, schema } = settings
   if (schema) {
-    engine = engine || createEngine()
+    engine = engine || createEngine(settings)
     return engine.compile(schema)
   }
 }

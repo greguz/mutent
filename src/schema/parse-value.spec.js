@@ -2,13 +2,6 @@ import test from 'ava'
 
 import { parseValue } from './parse-value'
 
-test('parseValue:function', t => {
-  t.is(
-    parseValue('42', value => parseInt(value, 10)),
-    42
-  )
-})
-
 test('parseValue:string', t => {
   t.is(
     parseValue('42', 'test', {

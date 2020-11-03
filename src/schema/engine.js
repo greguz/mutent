@@ -11,8 +11,10 @@ function defaultAjv() {
   })
 }
 
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
 class Engine {
-  constructor({ ajv, constructors, parseFunctions } = {}) {
+  constructor({ ajv, constructors, parsers } = {}) {
     this._constructors = {
       Array,
       Buffer,
@@ -26,7 +28,7 @@ class Engine {
       ...constructors
     }
 
-    this._parseFunctions = parseFunctions || {}
+    this._parsers = parsers || {}
 
     this._ajv = ajv || defaultAjv()
 
@@ -36,7 +38,7 @@ class Engine {
         type: 'string'
       },
       validate: (schema, data) => {
-        return Object.prototype.hasOwnProperty.call(this._constructors, schema)
+        return hasOwnProperty.call(this._constructors, schema)
           ? data instanceof this._constructors[schema]
           : false
       }
@@ -44,21 +46,20 @@ class Engine {
 
     this._ajv.addKeyword('parse', {
       errors: false,
-      validate(schema) {
-        if (Array.isArray(schema)) {
-          return schema.length >= 1 && typeof schema[0] === 'string'
-        } else if (typeof schema === 'object' && schema !== null) {
-          const keys = Object.keys(schema)
-          return keys.length === 1 && Array.isArray(schema[keys[0]])
-        } else {
-          return typeof schema === 'function' || typeof schema === 'string'
-        }
+      metaSchema: {
+        type: ['array', 'string', 'object'],
+        items: [{ type: 'string' }],
+        minItems: 1,
+        additionalItems: true,
+        additionalProperties: { type: 'array' },
+        minProperties: 1,
+        maxProperties: 1
       }
     })
   }
 
   compile(schema) {
-    return new SchemaHandler(this._ajv, this._parseFunctions, schema)
+    return new SchemaHandler(this._ajv, this._parsers, schema)
   }
 
   defineConstructor(key, fn) {
@@ -67,7 +68,7 @@ class Engine {
   }
 
   defineParser(key, fn) {
-    this._parseFunctions[key] = fn
+    this._parsers[key] = fn
     return this
   }
 }
