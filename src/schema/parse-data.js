@@ -17,7 +17,7 @@ function parseArray(ajv, data, schema, functions) {
   return data
 }
 
-function parsePatternProperties(ajv, data, patternProperties = {}, functions) {
+function parsePatternProperties(ajv, data, patternProperties, functions) {
   const objectKeys = Object.keys(data)
   for (const schemaKey of Object.keys(patternProperties)) {
     const regexp = new RegExp(schemaKey)
@@ -38,7 +38,7 @@ function parsePatternProperties(ajv, data, patternProperties = {}, functions) {
   return data
 }
 
-function parseProperties(ajv, data, properties = {}, functions) {
+function parseProperties(ajv, data, properties, functions) {
   for (const key of Object.keys(properties)) {
     const value = data[key]
     if (value !== undefined) {

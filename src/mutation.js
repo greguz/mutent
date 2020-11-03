@@ -78,7 +78,6 @@ export function createMutation(settings = {}) {
     },
     methods: {
       render: renderMethod
-    },
-    constants: {}
+    }
   })
 }

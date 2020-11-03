@@ -12,7 +12,5 @@
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "rules": {
-    "default-param-last": 0
-  }
+  "rules": {}
 }

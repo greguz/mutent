@@ -18,11 +18,7 @@ import { createStatus, readStatus, shouldCommit } from './status'
 import { mutateStatus } from './tree'
 import { isNil, isNull, isUndefined, unlazy } from './utils'
 
-async function unwrapState(
-  { schema, settings, toStatus, tree },
-  data,
-  options
-) {
+async function handleData({ schema, settings, toStatus, tree }, data, options) {
   if (isNull(data)) {
     return data
   }
@@ -82,15 +78,33 @@ async function unwrapState(
 }
 
 async function unwrapMethod(state, options = {}) {
-  return state.toPromise(data => unwrapState(state, data, options), options)
+  const { input, toPromise } = state
+  return toPromise(
+    unlazy(input, options),
+    data => handleData(state, data, options),
+    options
+  )
 }
 
 function streamMethod(state, options = {}) {
-  return state.toStream(data => unwrapState(state, data, options), options)
+  const { input, toStream } = state
+  return toStream(
+    unlazy(input, options),
+    data => handleData(state, data, options),
+    options
+  )
 }
 
-function createInstance(toStatus, toPromise, toStream, settings = {}, schema) {
+function createInstance(
+  input,
+  toStatus,
+  toPromise,
+  toStream,
+  schema,
+  settings = {}
+) {
   const state = {
+    input,
     schema,
     settings,
     toPromise,
@@ -116,47 +130,43 @@ function createInstance(toStatus, toPromise, toStream, settings = {}, schema) {
       render: renderMethod,
       unwrap: unwrapMethod,
       stream: streamMethod
-    },
-    constants: {}
+    }
   })
 }
 
 export function createEntity(one, settings, schema) {
   return createInstance(
+    one,
     createStatus,
-    (mutate, options) => unwrapOne(unlazy(one, options), mutate),
-    (mutate, options) => streamOne(unlazy(one, options), mutate),
-    settings,
-    schema
+    unwrapOne,
+    streamOne,
+    schema,
+    settings
   )
 }
 
 export function readEntity(one, settings, schema) {
-  return createInstance(
-    readStatus,
-    (mutate, options) => unwrapOne(unlazy(one, options), mutate),
-    (mutate, options) => streamOne(unlazy(one, options), mutate),
-    settings,
-    schema
-  )
+  return createInstance(one, readStatus, unwrapOne, streamOne, schema, settings)
 }
 
 export function createEntities(many, settings, schema) {
   return createInstance(
+    many,
     createStatus,
-    (mutate, options) => unwrapMany(unlazy(many, options), mutate),
-    (mutate, options) => streamMany(unlazy(many, options), mutate, options),
-    settings,
-    schema
+    unwrapMany,
+    streamMany,
+    schema,
+    settings
   )
 }
 
 export function readEntities(many, settings, schema) {
   return createInstance(
+    many,
     readStatus,
-    (mutate, options) => unwrapMany(unlazy(many, options), mutate),
-    (mutate, options) => streamMany(unlazy(many, options), mutate, options),
-    settings,
-    schema
+    unwrapMany,
+    streamMany,
+    schema,
+    settings
   )
 }
