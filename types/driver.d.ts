@@ -1,4 +1,6 @@
 /// <reference types="node" />
+import stream from 'stream'
+
 import { Result } from './utils'
 
 export declare type Value<T> = Promise<T> | T
