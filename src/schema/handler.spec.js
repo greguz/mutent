@@ -1,11 +1,13 @@
 import test from 'ava'
 
-import { SchemaHandler } from './handler'
+import { createEngine } from './engine'
 
-test('SchemaHandler:defineConstructor', t => {
+test('engine:defineConstructor', t => {
   class Teapot {}
 
-  const schema = new SchemaHandler({
+  const engine = createEngine().defineConstructor('Teapot', Teapot)
+
+  const schema = engine.compile({
     type: 'object',
     properties: {
       a: {
@@ -19,8 +21,7 @@ test('SchemaHandler:defineConstructor', t => {
     }
   })
 
-  schema.defineConstructor('Teapot', Teapot)
-
+  schema.compute({})
   schema.compute({
     a: new Date(),
     b: new Teapot()
@@ -28,10 +29,17 @@ test('SchemaHandler:defineConstructor', t => {
   t.throws(() => schema.compute({ a: 'nope' }), {
     code: 'EMUT_INVALID_DATA'
   })
+  t.throws(() => schema.compute({ b: 'nope' }), {
+    code: 'EMUT_INVALID_DATA'
+  })
 })
 
-test('SchemaHandler:defineParser', t => {
-  const schema = new SchemaHandler({
+test('engine:defineParser', t => {
+  const engine = createEngine().defineParser('round', value =>
+    Math.round(value)
+  )
+
+  const schema = engine.compile({
     type: 'object',
     properties: {
       value: {
@@ -40,8 +48,6 @@ test('SchemaHandler:defineParser', t => {
       }
     }
   })
-
-  schema.defineParser('round', value => Math.round(value))
 
   t.deepEqual(schema.compute({ value: 42.4 }), { value: 42 })
   t.deepEqual(schema.compute({ value: 41.5 }), { value: 42 })
