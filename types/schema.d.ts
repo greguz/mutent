@@ -1,16 +1,3 @@
-export declare type ParseFunction = (value: any, ...args: any[]) => any
-export declare type ParseString = string
-export declare type ParseArray = [string, ...any[]]
-export interface ParseObject {
-  [key: string]: any[]
-}
-
-export declare type Parse =
-  | ParseFunction
-  | ParseString
-  | ParseArray
-  | ParseObject
-
 /**
  * Primitive type
  * @see https://tools.ietf.org/html/draft-handrews-json-schema-validation-01#section-6.1.1
@@ -168,5 +155,5 @@ export interface JSONSchema7 {
   /**
    * @custom
    */
-  parse?: Parse
+  parse?: string | any[] | object
 }
