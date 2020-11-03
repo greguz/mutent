@@ -240,14 +240,14 @@ test('classy entity', async t => {
   t.throws(entity.unwrap)
 })
 
-test('entity autoCommit override', async t => {
+test('entity manualCommit override', async t => {
   t.plan(1)
-  function entity(autoCommit) {
+  function entity(manualCommit) {
     return createEntity(
       { id: 0 },
       {
-        autoCommit,
-        safe: false,
+        manualCommit,
+        unsafe: true,
         driver: {
           create() {
             t.pass()
@@ -262,18 +262,18 @@ test('entity autoCommit override', async t => {
       }
     )
   }
-  await entity(true).unwrap({ autoCommit: false })
-  await entity(false).unwrap({ autoCommit: true })
+  await entity(true).unwrap({ manualCommit: false })
+  await entity(false).unwrap({ manualCommit: true })
 })
 
-test('entity safe override', async t => {
+test('entity unsafe override', async t => {
   t.plan(1)
-  function entity(safe) {
+  function entity(unsafe) {
     return createEntity(
       { id: 0 },
       {
-        autoCommit: false,
-        safe,
+        manualCommit: true,
+        unsafe,
         driver: {
           create() {
             t.pass()
@@ -288,8 +288,8 @@ test('entity safe override', async t => {
       }
     )
   }
-  await entity(true).unwrap({ safe: false })
-  await t.throwsAsync(entity(false).unwrap({ safe: true }), {
+  await entity(false).unwrap({ unsafe: true })
+  await t.throwsAsync(entity(true).unwrap({ unsafe: false }), {
     code: 'EMUT_UNSAFE'
   })
 })
@@ -297,63 +297,79 @@ test('entity safe override', async t => {
 test('safe create', async t => {
   t.plan(4)
 
-  const writer = {
+  const driver = {
     create() {
       t.pass()
+    },
+    update() {
+      t.fail()
+    },
+    delete() {
+      t.fail()
     }
   }
 
-  function entity(autoCommit, safe) {
-    return createEntity({ id: 0 }, { autoCommit, driver: writer, safe })
+  function entity(manualCommit, unsafe) {
+    return createEntity({ id: 0 }, { driver, manualCommit, unsafe })
   }
 
   await entity().unwrap()
-  await entity(true, true).unwrap()
-  await entity(true, false).unwrap()
-  await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
+  await t.throwsAsync(entity(true, false).unwrap())
+  await entity(false, true).unwrap()
+  await entity(true, true).unwrap()
 })
 
 test('safe update', async t => {
   t.plan(4)
 
-  const writer = {
+  const driver = {
+    create() {
+      t.fail()
+    },
     update() {
       t.pass()
+    },
+    delete() {
+      t.fail()
     }
   }
 
-  function entity(autoCommit, safe) {
-    return readEntity({ id: 0 }, { autoCommit, driver: writer, safe }).update(
-      next
-    )
+  function entity(manualCommit, unsafe) {
+    return readEntity({ id: 0 }, { driver, manualCommit, unsafe }).update(next)
   }
 
   await entity().unwrap()
-  await entity(true, true).unwrap()
-  await entity(true, false).unwrap()
-  await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
+  await t.throwsAsync(entity(true, false).unwrap())
+  await entity(false, true).unwrap()
+  await entity(true, true).unwrap()
 })
 
 test('safe delete', async t => {
   t.plan(4)
 
-  const writer = {
+  const driver = {
+    create() {
+      t.fail()
+    },
+    update() {
+      t.fail()
+    },
     delete() {
       t.pass()
     }
   }
 
-  function entity(autoCommit, safe) {
-    return readEntity({ id: 0 }, { autoCommit, driver: writer, safe }).delete()
+  function entity(manualCommit, unsafe) {
+    return readEntity({ id: 0 }, { driver, manualCommit, unsafe }).delete()
   }
 
   await entity().unwrap()
-  await entity(true, true).unwrap()
-  await entity(true, false).unwrap()
-  await t.throwsAsync(entity(false, true).unwrap())
   await entity(false, false).unwrap()
+  await t.throwsAsync(entity(true, false).unwrap())
+  await entity(false, true).unwrap()
+  await entity(true, true).unwrap()
 })
 
 function bind(t, mode = {}) {

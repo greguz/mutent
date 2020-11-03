@@ -57,19 +57,19 @@ async function unwrapState(
     }
   }
 
-  // Handle autoCommit/safe features
+  // Handle manualCommit/unsafe features
   if (driver && shouldCommit(status)) {
-    const autoCommit = isUndefined(options.autoCommit)
-      ? settings.autoCommit !== false
-      : options.autoCommit !== false
+    const manualCommit = isUndefined(options.manualCommit)
+      ? settings.manualCommit === true
+      : options.manualCommit === true
 
-    const safe = isUndefined(options.safe)
-      ? settings.safe !== false
-      : options.safe !== false
+    const unsafe = isUndefined(options.unsafe)
+      ? settings.unsafe === true
+      : options.unsafe === true
 
-    if (autoCommit) {
+    if (!manualCommit) {
       status = await writeStatus(status, driver, options)
-    } else if (safe) {
+    } else if (!unsafe) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         source: status.source,
         target: status.target,
