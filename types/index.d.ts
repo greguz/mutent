@@ -1,7 +1,6 @@
 /// <reference types="ajv" />
 /// <reference types="node" />
 import Ajv from 'ajv'
-import stream from 'stream'
 
 import { Driver } from './driver'
 import { Mutation, MutationSettings } from './mutation'
@@ -32,12 +31,12 @@ export interface Constructors {
 
 export interface Entity<T, O> extends Mutation<T> {
   unwrap(options?: Options<O>): Promise<T>
-  stream(options?: Options<O>): stream.Readable
+  iterate(options?: Options<O>): AsyncIterable<T>
 }
 
 export interface Entities<T, O> extends Mutation<T> {
   unwrap(options?: Options<O>): Promise<T[]>
-  stream(options?: Options<O>): stream.Readable
+  iterate(options?: Options<O>): AsyncIterable<T>
 }
 
 export interface StoreSettings<T, Q, O>

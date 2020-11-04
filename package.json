@@ -29,7 +29,6 @@
     "@types/node": ">=10.0.0",
     "ajv": "^6.12.5",
     "fluente": "^3.0.0",
-    "fluido": "^1.0.2",
     "herry": "^1.0.0"
   },
   "devDependencies": {
@@ -41,6 +40,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "esm": "^3.2.25",
+    "fluido": "^1.0.2",
     "nyc": "^15.1.0",
     "prettier": "^2.1.2",
     "rimraf": "^3.0.2",

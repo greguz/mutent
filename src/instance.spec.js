@@ -23,7 +23,7 @@ test('createEntity#unwrap', async t => {
 
 test('createEntity#stream', async t => {
   const out = await subscribe(
-    createEntity({ id: 0, value: 'STREAM' }).stream(),
+    Readable.from(createEntity({ id: 0, value: 'STREAM' }).iterate()),
     collect()
   )
   t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
@@ -36,7 +36,7 @@ test('readEntity#unwrap', async t => {
 
 test('readEntity#stream', async t => {
   const out = await subscribe(
-    readEntity({ id: 0, value: 'STREAM' }).stream(),
+    Readable.from(readEntity({ id: 0, value: 'STREAM' }).iterate()),
     collect()
   )
   t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
@@ -49,7 +49,7 @@ test('createEntities#unwrap', async t => {
 
 test('createEntities#stream', async t => {
   const out = await subscribe(
-    createEntities([{ id: 0, value: 'STREAM' }]).stream(),
+    Readable.from(createEntities([{ id: 0, value: 'STREAM' }]).iterate()),
     collect()
   )
   t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
@@ -62,7 +62,7 @@ test('readEntities#unwrap', async t => {
 
 test('readEntities#stream', async t => {
   const out = await subscribe(
-    readEntities([{ id: 0, value: 'STREAM' }]).stream(),
+    Readable.from(readEntities([{ id: 0, value: 'STREAM' }]).iterate()),
     collect()
   )
   t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
@@ -470,9 +470,11 @@ test('stream many', async t => {
   await new Promise((resolve, reject) => {
     let index = 0
     pipeline(
-      createEntities(getItems(), bind(t, { create: true }))
-        .commit()
-        .stream({ db: 'test' }),
+      Readable.from(
+        createEntities(getItems(), bind(t, { create: true }))
+          .commit()
+          .iterate({ db: 'test' })
+      ),
       new Writable({
         objectMode: true,
         write(data, encoding, callback) {
@@ -503,7 +505,7 @@ test('stream-error', async t => {
   await t.throwsAsync(async () => {
     await new Promise((resolve, reject) => {
       pipeline(
-        createEntities(getErroredStream(new Error())).stream(),
+        Readable.from(createEntities(getErroredStream(new Error())).iterate()),
         new Writable({
           objectMode: true,
           write(chunk, encoding, callback) {

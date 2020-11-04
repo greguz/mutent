@@ -1,71 +1,60 @@
-import {
-  Readable,
-  Transform,
-  Writable,
-  isReadable,
-  pipeline,
-  readify
-} from 'fluido'
+import Herry from 'herry'
 
 import { isNull } from './utils'
 
-export async function unwrapOne(value, mutate) {
-  return mutate(await value)
+export async function unwrapOne(input, mutate) {
+  return mutate(await input)
 }
 
-export function streamOne(one, mutate) {
-  return new Readable({
-    objectMode: true,
-    async asyncRead() {
-      const data = await unwrapOne(one, mutate)
-      if (!isNull(data)) {
-        this.push(data)
+export function iterateOne(input, mutate) {
+  return {
+    [Symbol.asyncIterator]: async function* () {
+      const value = await unwrapOne(input, mutate)
+      if (!isNull(value)) {
+        yield value
       }
-      this.push(null)
     }
-  })
+  }
 }
 
-function toStream(values) {
-  return isReadable(values) ? values : Readable.from(values)
+function createIterator(value) {
+  if (!isNull(value) && typeof value[Symbol.asyncIterator] === 'function') {
+    return value[Symbol.asyncIterator]()
+  } else if (!isNull(value) && typeof value[Symbol.iterator] === 'function') {
+    return value[Symbol.iterator]()
+  } else {
+    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', { value })
+  }
 }
 
-export function unwrapMany(values, mutate) {
-  return new Promise((resolve, reject) => {
-    const results = []
-    pipeline(
-      toStream(values),
-      new Writable({
-        objectMode: true,
-        async write(chunk) {
-          results.push(await mutate(chunk))
-        }
-      }),
-      err => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(results)
+export async function unwrapMany(input, mutate) {
+  const iterator = createIterator(input)
+  const results = []
+  let active = true
+  while (active) {
+    const { done, value } = await iterator.next()
+    if (done) {
+      active = false
+    } else {
+      results.push(await mutate(value))
+    }
+  }
+  return results
+}
+
+export function iterateMany(input, mutate) {
+  return {
+    [Symbol.asyncIterator]() {
+      return {
+        iterator: createIterator(input),
+        async next() {
+          const { done, value } = await this.iterator.next()
+          return {
+            done,
+            value: done ? undefined : await mutate(value)
+          }
         }
       }
-    )
-  })
-}
-
-export function streamMany(values, mutate, options = {}) {
-  return readify(
-    {
-      highWaterMark: options.highWaterMark,
-      objectMode: true
-    },
-    toStream(values),
-    new Transform({
-      concurrency: options.concurrency,
-      highWaterMark: options.highWaterMark,
-      objectMode: true,
-      async transform(chunk) {
-        this.push(await mutate(chunk))
-      }
-    })
-  )
+    }
+  }
 }

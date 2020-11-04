@@ -9,11 +9,10 @@ import {
   deleteMethod,
   ifMethod,
   mutateMethod,
-  renderMethod,
   unlessMethod,
   updateMethod
 } from './mutation'
-import { streamMany, streamOne, unwrapMany, unwrapOne } from './producers'
+import { iterateMany, iterateOne, unwrapMany, unwrapOne } from './producers'
 import { createStatus, readStatus, shouldCommit } from './status'
 import { mutateStatus } from './tree'
 import { coalesce, isNil, isNull, unlazy } from './utils'
@@ -79,19 +78,15 @@ async function unwrapStatus(status, { schema, settings, tree }, options) {
 
 async function unwrapMethod(state, options = {}) {
   const { input, toPromise, toStatus } = state
-  return toPromise(
-    unlazy(input, options),
-    data => unwrapStatus(toStatus(data), state, options),
-    options
+  return toPromise(unlazy(input, options), data =>
+    unwrapStatus(toStatus(data), state, options)
   )
 }
 
-function streamMethod(state, options = {}) {
-  const { input, toStatus, toStream } = state
-  return toStream(
-    unlazy(input, options),
-    data => unwrapStatus(toStatus(data), state, options),
-    options
+function iterateMethod(state, options = {}) {
+  const { input, toIterable, toStatus } = state
+  return toIterable(unlazy(input, options), data =>
+    unwrapStatus(toStatus(data), state, options)
   )
 }
 
@@ -99,7 +94,7 @@ function createInstance(
   input,
   toStatus,
   toPromise,
-  toStream,
+  toIterable,
   schema,
   settings = {}
 ) {
@@ -107,9 +102,9 @@ function createInstance(
     input,
     schema,
     settings,
+    toIterable,
     toPromise,
     toStatus,
-    toStream,
     tree: []
   }
 
@@ -127,9 +122,8 @@ function createInstance(
       mutate: mutateMethod
     },
     methods: {
-      render: renderMethod,
       unwrap: unwrapMethod,
-      stream: streamMethod
+      iterate: iterateMethod
     }
   })
 }
@@ -139,14 +133,21 @@ export function createEntity(one, settings, schema) {
     one,
     createStatus,
     unwrapOne,
-    streamOne,
+    iterateOne,
     schema,
     settings
   )
 }
 
 export function readEntity(one, settings, schema) {
-  return createInstance(one, readStatus, unwrapOne, streamOne, schema, settings)
+  return createInstance(
+    one,
+    readStatus,
+    unwrapOne,
+    iterateOne,
+    schema,
+    settings
+  )
 }
 
 export function createEntities(many, settings, schema) {
@@ -154,7 +155,7 @@ export function createEntities(many, settings, schema) {
     many,
     createStatus,
     unwrapMany,
-    streamMany,
+    iterateMany,
     schema,
     settings
   )
@@ -165,7 +166,7 @@ export function readEntities(many, settings, schema) {
     many,
     readStatus,
     unwrapMany,
-    streamMany,
+    iterateMany,
     schema,
     settings
   )

@@ -1,11 +1,8 @@
-/// <reference types="node" />
-import stream from 'stream'
-
 import { Result } from './utils'
 
-export declare type Value<T> = Promise<T> | T
+export declare type Value<T> = T | Promise<T>
 
-export declare type Values<T> = Iterable<T> | AsyncIterable<T> | stream.Readable
+export declare type Values<T> = Iterable<T> | AsyncIterable<T>
 
 export interface Reader<T, Q, O> {
   find?(
