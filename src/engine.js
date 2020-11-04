@@ -12,6 +12,17 @@ function defaultAjv() {
   })
 }
 
+function setAjvKeyword(ajv, keyword, definition) {
+  if (ajv.getKeyword(keyword)) {
+    throw new Herry(
+      'EMUT_RESERVED_KEYWORD',
+      'This custom keyword definition is reserved',
+      { ajv, keyword }
+    )
+  }
+  ajv.addKeyword(keyword, definition)
+}
+
 const hasOwnProperty = Object.prototype.hasOwnProperty
 
 class Schema {
@@ -62,7 +73,7 @@ class Engine {
 
     this._ajv = ajv || defaultAjv()
 
-    this._ajv.addKeyword('instanceof', {
+    setAjvKeyword(this._ajv, 'instanceof', {
       errors: false,
       metaSchema: {
         type: 'string'
@@ -74,7 +85,7 @@ class Engine {
       }
     })
 
-    this._ajv.addKeyword('parse', {
+    setAjvKeyword(this._ajv, 'parse', {
       errors: false,
       metaSchema: {
         type: ['array', 'string', 'object'],
