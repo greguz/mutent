@@ -16,16 +16,15 @@ import {
 import { streamMany, streamOne, unwrapMany, unwrapOne } from './producers'
 import { createStatus, readStatus, shouldCommit } from './status'
 import { mutateStatus } from './tree'
-import { isNil, isNull, isUndefined, unlazy } from './utils'
+import { coalesce, isNil, isNull, unlazy } from './utils'
 
-async function handleData({ schema, settings, toStatus, tree }, data, options) {
-  if (isNull(data)) {
-    return data
+async function handleData(status, { schema, settings, tree }, options) {
+  if (isNull(status.target)) {
+    return null
   }
   const { driver, migrationStrategies, prepare, versionKey } = settings
 
   // Initialize status
-  let status = toStatus(data)
   if (status.created && prepare) {
     const out = prepare(status.target, options)
     if (!isNil(out)) {
@@ -55,13 +54,8 @@ async function handleData({ schema, settings, toStatus, tree }, data, options) {
 
   // Handle manualCommit/unsafe features
   if (driver && shouldCommit(status)) {
-    const manualCommit = isUndefined(options.manualCommit)
-      ? settings.manualCommit === true
-      : options.manualCommit === true
-
-    const unsafe = isUndefined(options.unsafe)
-      ? settings.unsafe === true
-      : options.unsafe === true
+    const manualCommit = coalesce(options.manualCommit, settings.manualCommit)
+    const unsafe = coalesce(options.unsafe, settings.unsafe)
 
     if (!manualCommit) {
       status = await writeStatus(status, driver, options)
@@ -78,19 +72,19 @@ async function handleData({ schema, settings, toStatus, tree }, data, options) {
 }
 
 async function unwrapMethod(state, options = {}) {
-  const { input, toPromise } = state
+  const { input, toPromise, toStatus } = state
   return toPromise(
     unlazy(input, options),
-    data => handleData(state, data, options),
+    data => handleData(toStatus(data), state, options),
     options
   )
 }
 
 function streamMethod(state, options = {}) {
-  const { input, toStream } = state
+  const { input, toStatus, toStream } = state
   return toStream(
     unlazy(input, options),
-    data => handleData(state, data, options),
+    data => handleData(toStatus(data), state, options),
     options
   )
 }
