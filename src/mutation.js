@@ -30,9 +30,9 @@ export function commitMethod(state) {
   return pushNode(state, { type: 'COMMIT' })
 }
 
-function renderIntent(intent) {
+function renderIntent(intent, settings) {
   const mutation =
-    typeof intent === 'function' ? intent(createMutation()) : intent
+    typeof intent === 'function' ? intent(createMutation(settings)) : intent
   return mutation.render()
 }
 
@@ -40,7 +40,7 @@ export function ifMethod(state, condition, intent) {
   return pushNode(state, {
     type: 'CONDITION',
     condition,
-    mutation: renderIntent(intent)
+    mutation: renderIntent(intent, state.settings)
   })
 }
 
@@ -48,9 +48,9 @@ export function unlessMethod(state, condition, intent) {
   return ifMethod(state, data => !unlazy(condition, data), intent)
 }
 
-export function mutateMethod({ tree }, intent) {
+export function mutateMethod({ settings, tree }, intent) {
   return {
-    tree: tree.concat(renderIntent(intent))
+    tree: tree.concat(renderIntent(intent, settings))
   }
 }
 
@@ -60,6 +60,7 @@ export function renderMethod({ tree }) {
 
 export function createMutation(settings = {}) {
   const state = {
+    settings,
     tree: []
   }
 
