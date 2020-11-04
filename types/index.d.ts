@@ -42,7 +42,7 @@ export interface Entities<T, O> extends Mutation<T> {
 export interface StoreSettings<T, Q, O>
   extends EngineSettings,
     MutationSettings {
-  driver?: Driver<T, Q, O>
+  driver: Driver<T, Q, O>
   engine?: Engine
   manualCommit?: boolean
   migrationStrategies?: Strategies
@@ -60,6 +60,8 @@ export interface Store<T, Q, O> {
   filter(query: Q): Entities<T, O>
   from(data: T): Entity<T, O>
   from(data: T[]): Entities<T, O>
+  count(query: Q, options?: Options<O>): Promise<number>
+  exists(query: Q, options?: Options<O>): Promise<boolean>
 }
 
 export interface EngineSettings {
@@ -76,5 +78,5 @@ export interface Engine {
 export declare function createEngine(settings?: EngineSettings): Engine
 
 export declare function createStore<T, Q, O>(
-  settings?: StoreSettings<T, Q, O>
+  settings: StoreSettings<T, Q, O>
 ): Store<T, Q, O>

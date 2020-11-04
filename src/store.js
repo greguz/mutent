@@ -1,4 +1,10 @@
-import { filterData, findData, readData } from './driver/reader'
+import {
+  countData,
+  existsData,
+  filterData,
+  findData,
+  readData
+} from './driver/reader'
 import {
   createEntities,
   createEntity,
@@ -16,32 +22,42 @@ function compileSchema(settings) {
 }
 
 export function createStore(settings) {
-  const reader = settings.driver || {}
+  const { driver } = settings
+  if (!driver) {
+    throw new Error('Expected driver')
+  }
+
   const schema = compileSchema(settings)
 
   return {
+    count(query, options = {}) {
+      return countData(driver, query, options)
+    },
     create(data) {
       return Array.isArray(data)
         ? createEntities(data, settings, schema)
         : createEntity(data, settings, schema)
     },
+    exists(query, options = {}) {
+      return existsData(driver, query, options)
+    },
     find(query) {
       return readEntity(
-        options => findData(reader, query, options),
+        options => findData(driver, query, options),
         settings,
         schema
       )
     },
     read(query) {
       return readEntity(
-        options => readData(reader, query, options),
+        options => readData(driver, query, options),
         settings,
         schema
       )
     },
     filter(query) {
       return readEntities(
-        options => filterData(reader, query, options),
+        options => filterData(driver, query, options),
         settings,
         schema
       )

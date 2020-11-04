@@ -28,3 +28,15 @@ export async function readData(reader, query, options) {
 export function filterData(reader, query, options) {
   return reader.filter ? reader.filter(query, options) : []
 }
+
+export async function countData(reader, query, options) {
+  return reader.count ? reader.count(query, options) : 0
+}
+
+export async function existsData(reader, query, options) {
+  if (reader.exists) {
+    return reader.exists(query, options)
+  }
+  const data = await findData(reader, query, options)
+  return !isNull(data)
+}
