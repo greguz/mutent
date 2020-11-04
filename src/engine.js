@@ -23,7 +23,9 @@ function setAjvKeyword(ajv, keyword, definition) {
   ajv.addKeyword(keyword, definition)
 }
 
-const hasOwnProperty = Object.prototype.hasOwnProperty
+function hasOwnProperty(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key)
+}
 
 class Schema {
   constructor(ajv, parsers, schema) {
@@ -69,7 +71,7 @@ class Engine {
       ...constructors
     }
 
-    this._parsers = parsers || {}
+    this._parsers = { ...parsers }
 
     this._ajv = ajv || defaultAjv()
 
@@ -79,7 +81,7 @@ class Engine {
         type: 'string'
       },
       validate: (schema, data) => {
-        return hasOwnProperty.call(this._constructors, schema)
+        return hasOwnProperty(this._constructors, schema)
           ? data instanceof this._constructors[schema]
           : false
       }
