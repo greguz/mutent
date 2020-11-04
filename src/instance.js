@@ -14,7 +14,7 @@ import {
 } from './mutation'
 import { iterateMany, iterateOne, unwrapMany, unwrapOne } from './producers'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { mutateStatus } from './tree'
+import { mutateStatus } from './ast/tree'
 import { coalesce, isNil, isNull, unlazy } from './utils'
 
 async function unwrapStatus(status, { schema, settings, tree }, options) {

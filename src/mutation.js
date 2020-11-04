@@ -1,5 +1,6 @@
 import fluente from 'fluente'
 
+import { nodeCommit, nodeCondition, nodeDelete, nodeUpdate } from './ast/nodes'
 import { unlazy } from './utils'
 
 function pushNode({ tree }, node) {
@@ -9,25 +10,25 @@ function pushNode({ tree }, node) {
 }
 
 export function updateMethod(state, mutator, ...args) {
-  return pushNode(state, {
-    type: 'UPDATE',
-    mutate: data => mutator(data, ...args)
-  })
+  return pushNode(
+    state,
+    nodeUpdate(data => mutator(data, ...args))
+  )
 }
 
 export function assignMethod(state, object) {
-  return pushNode(state, {
-    type: 'UPDATE',
-    mutate: data => Object.assign({}, data, object)
-  })
+  return pushNode(
+    state,
+    nodeUpdate(data => Object.assign({}, data, object))
+  )
 }
 
 export function deleteMethod(state) {
-  return pushNode(state, { type: 'DELETE' })
+  return pushNode(state, nodeDelete())
 }
 
 export function commitMethod(state) {
-  return pushNode(state, { type: 'COMMIT' })
+  return pushNode(state, nodeCommit())
 }
 
 function renderIntent(intent, settings) {
@@ -37,11 +38,10 @@ function renderIntent(intent, settings) {
 }
 
 export function ifMethod(state, condition, intent) {
-  return pushNode(state, {
-    type: 'CONDITION',
-    condition,
-    mutation: renderIntent(intent, state.settings)
-  })
+  return pushNode(
+    state,
+    nodeCondition(condition, renderIntent(intent, state.settings))
+  )
 }
 
 export function unlessMethod(state, condition, intent) {
