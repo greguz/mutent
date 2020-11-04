@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { createEngine } from './schema/engine'
+import { createEngine } from './engine'
 import { createStore } from './store'
 
 function match(item, value) {

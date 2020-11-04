@@ -5,7 +5,7 @@ import {
   readEntities,
   readEntity
 } from './instance'
-import { createEngine } from './schema/engine'
+import { createEngine } from './engine'
 
 function compileSchema(settings) {
   let { engine, schema } = settings
