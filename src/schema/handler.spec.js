@@ -21,15 +21,15 @@ test('engine:defineConstructor', t => {
     }
   })
 
-  schema.compute({})
-  schema.compute({
+  schema.validate({})
+  schema.validate({
     a: new Date(),
     b: new Teapot()
   })
-  t.throws(() => schema.compute({ a: 'nope' }), {
+  t.throws(() => schema.validate({ a: 'nope' }), {
     code: 'EMUT_INVALID_DATA'
   })
-  t.throws(() => schema.compute({ b: 'nope' }), {
+  t.throws(() => schema.validate({ b: 'nope' }), {
     code: 'EMUT_INVALID_DATA'
   })
 })
@@ -49,9 +49,9 @@ test('engine:defineParser', t => {
     }
   })
 
-  t.deepEqual(schema.compute({ value: 42.4 }), { value: 42 })
-  t.deepEqual(schema.compute({ value: 41.5 }), { value: 42 })
-  t.throws(() => schema.compute({ value: 'nope' }), {
+  t.deepEqual(schema.parse({ value: 42.4 }), { value: 42 })
+  t.deepEqual(schema.parse({ value: 41.5 }), { value: 42 })
+  t.throws(() => schema.parse({ value: 'nope' }), {
     code: 'EMUT_INVALID_DATA'
   })
 })

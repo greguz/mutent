@@ -18,7 +18,7 @@ import { createStatus, readStatus, shouldCommit } from './status'
 import { mutateStatus } from './tree'
 import { coalesce, isNil, isNull, unlazy } from './utils'
 
-async function handleData(status, { schema, settings, tree }, options) {
+async function unwrapStatus(status, { schema, settings, tree }, options) {
   if (isNull(status.target)) {
     return null
   }
@@ -37,18 +37,24 @@ async function handleData(status, { schema, settings, tree }, options) {
     status = await migrateStatus(status, migrationStrategies, versionKey)
   }
 
-  // Apply JSON schema validation/parsing (before any mutation)
+  // First validation and parsing
   if (schema) {
-    status.target = schema.compute(status.target)
+    status.target = schema.parse(
+      status.target,
+      'EMUT_INVALID_DATA',
+      'Unusable data found'
+    )
   }
 
-  // Apply mutations
+  // Apply mutations and validate
   if (tree.length > 0) {
     status = await mutateStatus(status, tree, driver, options)
-
-    // Apply JSON schema validation/parsing (post mutations)
     if (schema) {
-      status.target = schema.compute(status.target)
+      schema.validate(
+        status.target,
+        'EMUT_INVALID_MUTATION',
+        'A mutation has generated an invalid output'
+      )
     }
   }
 
@@ -75,7 +81,7 @@ async function unwrapMethod(state, options = {}) {
   const { input, toPromise, toStatus } = state
   return toPromise(
     unlazy(input, options),
-    data => handleData(toStatus(data), state, options),
+    data => unwrapStatus(toStatus(data), state, options),
     options
   )
 }
@@ -84,7 +90,7 @@ function streamMethod(state, options = {}) {
   const { input, toStatus, toStream } = state
   return toStream(
     unlazy(input, options),
-    data => handleData(toStatus(data), state, options),
+    data => unwrapStatus(toStatus(data), state, options),
     options
   )
 }
