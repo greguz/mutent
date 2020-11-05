@@ -17,8 +17,8 @@ export interface Mutation<T> {
   assign(object: Partial<T>): this
   delete(): this
   commit(): this
-  if(condition: Condition<T>, intent: Intent<T>): this
-  unless(condition: Condition<T>, intent: Intent<T>): this
+  if(condition: Condition<T>, alteration: Alteration<T>): this
+  unless(condition: Condition<T>, alteration: Alteration<T>): this
   mutate(mutation: Mutation<T>): this
   undo(steps?: number): this
   redo(steps?: number): this
@@ -26,7 +26,7 @@ export interface Mutation<T> {
 
 export type MutationMapper<T> = (mutation: Mutation<T>) => Mutation<T>
 
-export type Intent<T> = Mutation<T> | MutationMapper<T>
+export type Alteration<T> = Mutation<T> | MutationMapper<T>
 
 export declare function createMutation<T>(
   settings?: MutationSettings

@@ -31,27 +31,28 @@ export function commitMethod(state) {
   return pushNode(state, nodeCommit())
 }
 
-function renderIntent(intent, settings) {
-  const mutation = isFunction(intent)
-    ? intent(createMutation(settings))
-    : intent
+function renderAlteration(alteration, settings) {
+  const mutation = isFunction(alteration)
+    ? alteration(createMutation(settings))
+    : alteration
+
   return mutation.render()
 }
 
-export function ifMethod(state, condition, intent) {
+export function ifMethod(state, condition, alteration) {
   return pushNode(
     state,
-    nodeCondition(condition, renderIntent(intent, state.settings))
+    nodeCondition(condition, renderAlteration(alteration, state.settings))
   )
 }
 
-export function unlessMethod(state, condition, intent) {
-  return ifMethod(state, data => !unlazy(condition, data), intent)
+export function unlessMethod(state, condition, alteration) {
+  return ifMethod(state, data => !unlazy(condition, data), alteration)
 }
 
-export function mutateMethod({ settings, tree }, intent) {
+export function mutateMethod({ settings, tree }, alteration) {
   return {
-    tree: tree.concat(renderIntent(intent, settings))
+    tree: tree.concat(renderAlteration(alteration, settings))
   }
 }
 
