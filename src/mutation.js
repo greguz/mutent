@@ -1,6 +1,6 @@
 import fluente from 'fluente'
 
-import { nodeCommit, nodeCondition, nodeDelete, nodeUpdate } from './ast/nodes'
+import { nodeCommit, nodeCondition, nodeDelete, nodeUpdate } from './ast'
 import { unlazy } from './utils'
 
 function pushNode({ tree }, node) {
