@@ -1,12 +1,9 @@
 import Herry from 'herry'
 
-import { isUndefined } from './utils'
+import { isNil } from './utils'
 
-function noUndef(value) {
-  if (isUndefined(value)) {
-    throw new Herry('EMUT_UNDEFINED', 'Undefined values are not valid')
-  }
-  return value
+function noUndef(data) {
+  return isNil(data) ? null : data
 }
 
 export function commitStatus({ deleted, target }) {
@@ -30,16 +27,22 @@ export function createStatus(data) {
 }
 
 export function readStatus(data) {
-  return commitStatus(createStatus(data))
+  return commitStatus(createStatus(noUndef(data)))
 }
 
-export function updateStatus({ created, deleted, source }, data) {
+export function updateStatus({ created, deleted, source }, target) {
+  if (isNil(target)) {
+    throw new Herry('EMUT_NIL_UPDATE', 'Cannot accept a nil value as entity', {
+      source,
+      target
+    })
+  }
   return {
     created,
     updated: true,
     deleted,
     source,
-    target: noUndef(data)
+    target
   }
 }
 

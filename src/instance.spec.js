@@ -1,13 +1,25 @@
 import test from 'ava'
 import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
-import {
-  createEntities,
-  createEntity,
-  readEntities,
-  readEntity
-} from './instance'
+import { intentCreate, intentFrom } from './driver/reader'
+import { createInstance } from './instance'
 import { createMutation } from './mutation'
+
+function createEntities(data, settings) {
+  return createInstance(intentCreate(data), settings)
+}
+
+function createEntity(data, settings) {
+  return createInstance(intentCreate(data), settings)
+}
+
+function readEntities(data, settings) {
+  return createInstance(intentFrom(data), settings)
+}
+
+function readEntity(data, settings) {
+  return createInstance(intentFrom(data), settings)
+}
 
 function next(item) {
   return {

@@ -1,6 +1,6 @@
 import Herry from 'herry'
 
-import { isNull } from './utils'
+import { isAsyncIterable, isIterable, isNull } from './utils'
 
 export async function unwrapOne(input, mutate) {
   return mutate(await input)
@@ -18,9 +18,9 @@ export function iterateOne(input, mutate) {
 }
 
 function createIterator(value) {
-  if (!isNull(value) && typeof value[Symbol.asyncIterator] === 'function') {
+  if (isAsyncIterable(value)) {
     return value[Symbol.asyncIterator]()
-  } else if (!isNull(value) && typeof value[Symbol.iterator] === 'function') {
+  } else if (isIterable(value)) {
     return value[Symbol.iterator]()
   } else {
     throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', { value })

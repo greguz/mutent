@@ -1,26 +1,38 @@
 import { commitStatus, updateStatus } from '../status'
-import { isNil, isNull } from '../utils'
+import { isFunction, isNil, isNull } from '../utils'
 
-function close(status, data) {
-  return commitStatus(isNil(data) ? status : updateStatus(status, data))
-}
+import { DriverError } from './error'
 
-export async function writeStatus(status, writer, options = {}) {
+export async function writeStatus(status, driver, options = {}) {
+  let data
   if (isNull(status.source) && status.created && !status.deleted) {
-    if (writer.create) {
-      return close(status, await writer.create(status.target, options))
+    if (!isFunction(driver.create)) {
+      throw DriverError('create', {
+        op: 'CREATE',
+        data: status.target,
+        options
+      })
     }
+    data = await driver.create(status.target, options)
   } else if (!isNull(status.source) && status.updated && !status.deleted) {
-    if (writer.update) {
-      return close(
-        status,
-        await writer.update(status.source, status.target, options)
-      )
+    if (!isFunction(driver.update)) {
+      throw DriverError('update', {
+        op: 'UPDATE',
+        oldData: status.source,
+        newDate: status.target,
+        options
+      })
     }
+    data = await driver.update(status.source, status.target, options)
   } else if (!isNull(status.source) && status.deleted) {
-    if (writer.delete) {
-      return close(status, await writer.delete(status.source, options))
+    if (!isFunction(driver.delete)) {
+      throw DriverError('delete', {
+        op: 'DELETE',
+        data: status.source,
+        options
+      })
     }
+    data = await driver.delete(status.source, options)
   }
-  return close(status)
+  return commitStatus(isNil(data) ? status : updateStatus(status, data))
 }

@@ -192,7 +192,7 @@ test('sDelete', async t => {
 })
 
 test('sCreateUpdate', async t => {
-  t.plan(4)
+  t.plan(3)
 
   const writer = {
     create(data, options) {
@@ -216,8 +216,6 @@ test('sCreateUpdate', async t => {
     hello: 'world'
   })
 
-  t.deepEqual(status, await writeStatus(sCreateUpdate(0, 'UPDATE'), {}))
-
   t.deepEqual(status, {
     created: false,
     updated: false,
@@ -234,7 +232,7 @@ test('sCreateUpdate', async t => {
 })
 
 test('sCreateDelete', async t => {
-  t.plan(2)
+  t.plan(1)
 
   const writer = {
     create() {
@@ -250,8 +248,6 @@ test('sCreateDelete', async t => {
 
   const status = await writeStatus(sCreateDelete(0), writer, { hello: 'world' })
 
-  t.deepEqual(status, await writeStatus(sCreateDelete(0), {}))
-
   t.deepEqual(status, {
     created: false,
     updated: false,
@@ -264,7 +260,7 @@ test('sCreateDelete', async t => {
 })
 
 test('sUpdateDelete', async t => {
-  t.plan(4)
+  t.plan(3)
 
   const writer = {
     create() {
@@ -287,8 +283,6 @@ test('sUpdateDelete', async t => {
     hello: 'world'
   })
 
-  t.deepEqual(status, await writeStatus(sUpdateDelete(0, 'UPDATE'), {}))
-
   t.deepEqual(status, {
     created: false,
     updated: false,
@@ -302,7 +296,7 @@ test('sUpdateDelete', async t => {
 })
 
 test('sCreateUpdateDelete', async t => {
-  t.plan(2)
+  t.plan(1)
 
   const writer = {
     create() {
@@ -320,8 +314,6 @@ test('sCreateUpdateDelete', async t => {
     hello: 'world'
   })
 
-  t.deepEqual(status, await writeStatus(sCreateUpdateDelete(0, 'UPDATE'), {}))
-
   t.deepEqual(status, {
     created: false,
     updated: false,
@@ -335,14 +327,14 @@ test('sCreateUpdateDelete', async t => {
 })
 
 test('writer defaults', async t => {
-  const writer = {}
-
-  const a = await writeStatus(sCreate(0), writer)
-  t.deepEqual(a.target, { id: 0 })
-
-  const b = await writeStatus(sUpdate(0, 'UPDATE'), writer)
-  t.deepEqual(b.target, { id: 0, value: 'UPDATE' })
-
-  const c = await writeStatus(sDelete(0), writer)
-  t.deepEqual(c.target, { id: 0 })
+  const driver = {}
+  await t.throwsAsync(writeStatus(sCreate(0), driver), {
+    code: 'EMUT_EXPECTED_DRIVER_METHOD'
+  })
+  await t.throwsAsync(writeStatus(sUpdate(0, 'UPDATE'), driver), {
+    code: 'EMUT_EXPECTED_DRIVER_METHOD'
+  })
+  await t.throwsAsync(writeStatus(sDelete(0), driver), {
+    code: 'EMUT_EXPECTED_DRIVER_METHOD'
+  })
 })

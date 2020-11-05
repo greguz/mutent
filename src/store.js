@@ -1,16 +1,13 @@
 import {
-  countData,
-  existsData,
-  filterData,
-  findData,
-  readData
+  driverCount,
+  driverExists,
+  intentCreate,
+  intentFilter,
+  intentFind,
+  intentFrom,
+  intentRead
 } from './driver/reader'
-import {
-  createEntities,
-  createEntity,
-  readEntities,
-  readEntity
-} from './instance'
+import { createInstance } from './instance'
 import { createEngine } from './engine'
 
 function compileSchema(settings) {
@@ -31,41 +28,25 @@ export function createStore(settings) {
 
   return {
     count(query, options = {}) {
-      return countData(driver, query, options)
+      return driverCount(driver, query, options)
     },
     create(data) {
-      return Array.isArray(data)
-        ? createEntities(data, settings, schema)
-        : createEntity(data, settings, schema)
+      return createInstance(intentCreate(data), settings, schema)
     },
     exists(query, options = {}) {
-      return existsData(driver, query, options)
+      return driverExists(driver, query, options)
     },
     find(query) {
-      return readEntity(
-        options => findData(driver, query, options),
-        settings,
-        schema
-      )
+      return createInstance(intentFind(query), settings, schema)
     },
     read(query) {
-      return readEntity(
-        options => readData(driver, query, options),
-        settings,
-        schema
-      )
+      return createInstance(intentRead(query), settings, schema)
     },
     filter(query) {
-      return readEntities(
-        options => filterData(driver, query, options),
-        settings,
-        schema
-      )
+      return createInstance(intentFilter(query), settings, schema)
     },
     from(data) {
-      return Array.isArray(data)
-        ? readEntities(data, settings, schema)
-        : readEntity(data, settings, schema)
+      return createInstance(intentFrom(data), settings, schema)
     }
   }
 }

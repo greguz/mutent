@@ -1,5 +1,9 @@
+export function isFunction(value) {
+  return typeof value === 'function'
+}
+
 export function unlazy(lazy, arg) {
-  return typeof lazy === 'function' ? lazy(arg) : lazy
+  return isFunction(lazy) ? lazy(arg) : lazy
 }
 
 export function isUndefined(value) {
@@ -20,4 +24,12 @@ export function objectify(value) {
 
 export function coalesce(a, b) {
   return !isNil(a) ? a : b
+}
+
+export function isIterable(value) {
+  return !isNull(value) && isFunction(value[Symbol.iterator])
+}
+
+export function isAsyncIterable(value) {
+  return !isNull(value) && isFunction(value[Symbol.asyncIterator])
 }

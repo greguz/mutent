@@ -2,6 +2,11 @@ import fluente from 'fluente'
 import Herry from 'herry'
 
 import { mutateStatus } from './ast'
+import {
+  isCreationIntent,
+  isIntentIterable,
+  unwrapIntent
+} from './driver/reader'
 import { writeStatus } from './driver/writer'
 import { migrateStatus } from './migration'
 import {
@@ -15,7 +20,7 @@ import {
 } from './mutation'
 import { iterateMany, iterateOne, unwrapMany, unwrapOne } from './producers'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { coalesce, isNil, isNull, unlazy } from './utils'
+import { coalesce, isNil, isNull } from './utils'
 
 async function unwrapStatus(status, { schema, settings, tree }, options) {
   if (isNull(status.target)) {
@@ -77,34 +82,27 @@ async function unwrapStatus(status, { schema, settings, tree }, options) {
 }
 
 async function unwrapMethod(state, options = {}) {
-  const { input, toPromise, toStatus } = state
-  return toPromise(unlazy(input, options), data =>
+  const { intent, settings, toPromise, toStatus } = state
+  return toPromise(unwrapIntent(intent, settings.driver, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
 
 function iterateMethod(state, options = {}) {
-  const { input, toIterable, toStatus } = state
-  return toIterable(unlazy(input, options), data =>
+  const { intent, settings, toIterable, toStatus } = state
+  return toIterable(unwrapIntent(intent, settings.driver, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
 
-function createInstance(
-  input,
-  toStatus,
-  toPromise,
-  toIterable,
-  schema,
-  settings = {}
-) {
+function buildInstance(intent, toPromise, toIterable, schema, settings = {}) {
   const state = {
-    input,
+    intent,
     schema,
     settings,
     toIterable,
     toPromise,
-    toStatus,
+    toStatus: isCreationIntent(intent) ? createStatus : readStatus,
     tree: []
   }
 
@@ -128,45 +126,12 @@ function createInstance(
   })
 }
 
-export function createEntity(one, settings, schema) {
-  return createInstance(
-    one,
-    createStatus,
-    unwrapOne,
-    iterateOne,
-    schema,
-    settings
-  )
-}
-
-export function readEntity(one, settings, schema) {
-  return createInstance(
-    one,
-    readStatus,
-    unwrapOne,
-    iterateOne,
-    schema,
-    settings
-  )
-}
-
-export function createEntities(many, settings, schema) {
-  return createInstance(
-    many,
-    createStatus,
-    unwrapMany,
-    iterateMany,
-    schema,
-    settings
-  )
-}
-
-export function readEntities(many, settings, schema) {
-  return createInstance(
-    many,
-    readStatus,
-    unwrapMany,
-    iterateMany,
+export function createInstance(intent, settings, schema) {
+  const isIterable = isIntentIterable(intent)
+  return buildInstance(
+    intent,
+    isIterable ? unwrapMany : unwrapOne,
+    isIterable ? iterateMany : iterateOne,
     schema,
     settings
   )
