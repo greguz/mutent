@@ -1,6 +1,6 @@
 import Herry from 'herry'
 
-import { isAsyncIterable, isFunction, isIterable, isNil } from '../utils'
+import { isFunction, isNil } from '../utils'
 
 import { DriverError } from './error'
 
@@ -89,7 +89,7 @@ export function isIntentIterable({ data, type }) {
   switch (type) {
     case INTENT_TYPE.CREATE:
     case INTENT_TYPE.FROM:
-      return isIterable(data) || isAsyncIterable(data)
+      return Array.isArray(data)
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
       return false

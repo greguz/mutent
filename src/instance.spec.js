@@ -1,7 +1,7 @@
 import test from 'ava'
 import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
-import { intentCreate, intentFrom } from './driver/reader'
+import { intentCreate, intentFilter, intentFrom } from './driver/reader'
 import { createInstance } from './instance'
 import { createMutation } from './mutation'
 
@@ -517,7 +517,15 @@ test('stream-error', async t => {
   await t.throwsAsync(async () => {
     await new Promise((resolve, reject) => {
       pipeline(
-        Readable.from(createEntities(getErroredStream(new Error())).iterate()),
+        Readable.from(
+          createEntities(intentFilter(), {
+            driver: {
+              filter() {
+                return getErroredStream(new Error())
+              }
+            }
+          }).iterate()
+        ),
         new Writable({
           objectMode: true,
           write(chunk, encoding, callback) {
@@ -618,4 +626,14 @@ test('prepare', async t => {
     }
   ).unwrap({ option: true })
   t.deepEqual(a, { value: 1 })
+})
+
+test('alteration', async t => {
+  const data = await createInstance(intentCreate({ a: 'test' }))
+    .if(true, mutation => mutation.assign({ b: 'free' }))
+    .unwrap()
+  t.deepEqual(data, {
+    a: 'test',
+    b: 'free'
+  })
 })

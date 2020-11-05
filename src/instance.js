@@ -95,13 +95,15 @@ function iterateMethod(state, options = {}) {
   )
 }
 
-function buildInstance(intent, toPromise, toIterable, schema, settings = {}) {
+export function createInstance(intent, settings = {}, schema = undefined) {
+  const isIterable = isIntentIterable(intent)
+
   const state = {
     intent,
     schema,
     settings,
-    toIterable,
-    toPromise,
+    toIterable: isIterable ? iterateMany : iterateOne,
+    toPromise: isIterable ? unwrapMany : unwrapOne,
     toStatus: isCreationIntent(intent) ? createStatus : readStatus,
     tree: []
   }
@@ -124,15 +126,4 @@ function buildInstance(intent, toPromise, toIterable, schema, settings = {}) {
       iterate: iterateMethod
     }
   })
-}
-
-export function createInstance(intent, settings, schema) {
-  const isIterable = isIntentIterable(intent)
-  return buildInstance(
-    intent,
-    isIterable ? unwrapMany : unwrapOne,
-    isIterable ? iterateMany : iterateOne,
-    schema,
-    settings
-  )
 }
