@@ -7,22 +7,12 @@ import {
   nodeDelete,
   nodeUpdate
 } from './ast'
+import { Driver } from './driver'
 import { createStatus, readStatus } from './status'
 
-test('ast:commitNoDriver', async t => {
-  const status = await mutateStatus(createStatus(42), [nodeCommit()])
-  t.deepEqual(status, {
-    created: false,
-    updated: false,
-    deleted: false,
-    source: 42,
-    target: 42
-  })
-})
-
-test('ast:commitWithDriver', async t => {
+test('ast:commit', async t => {
   t.plan(3)
-  const driver = {
+  const driver = new Driver({
     create(data, options) {
       t.is(data, 42)
       t.deepEqual(options, { it: 'works' })
@@ -33,7 +23,7 @@ test('ast:commitWithDriver', async t => {
     delete() {
       t.fail()
     }
-  }
+  })
   const status = await mutateStatus(createStatus(42), [nodeCommit()], driver, {
     it: 'works'
   })
@@ -47,7 +37,7 @@ test('ast:commitWithDriver', async t => {
 })
 
 test('ast:condition', async t => {
-  const driver = {
+  const driver = new Driver({
     create() {
       t.fail()
     },
@@ -57,7 +47,7 @@ test('ast:condition', async t => {
     delete() {
       t.fail()
     }
-  }
+  })
   const condition = nodeCondition(value => value !== 42, [nodeDelete()])
   const a = await mutateStatus(createStatus('UGLY'), [condition], driver)
   t.deepEqual(a, {
@@ -78,7 +68,7 @@ test('ast:condition', async t => {
 })
 
 test('ast:delete', async t => {
-  const driver = {
+  const driver = new Driver({
     create() {
       t.fail()
     },
@@ -88,7 +78,7 @@ test('ast:delete', async t => {
     delete() {
       t.fail()
     }
-  }
+  })
   const value = 'DELETEME.md'
   const status = await mutateStatus(readStatus(value), [nodeDelete()], driver)
   t.deepEqual(status, {
@@ -101,7 +91,7 @@ test('ast:delete', async t => {
 })
 
 test('ast:update', async t => {
-  const driver = {
+  const driver = new Driver({
     create() {
       t.fail()
     },
@@ -111,7 +101,7 @@ test('ast:update', async t => {
     delete() {
       t.fail()
     }
-  }
+  })
   const status = await mutateStatus(
     createStatus(41.8),
     [nodeUpdate(Math.round)],

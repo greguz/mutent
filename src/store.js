@@ -1,12 +1,11 @@
 import {
-  driverCount,
-  driverExists,
+  Driver,
   intentCreate,
   intentFilter,
   intentFind,
   intentFrom,
   intentRead
-} from './driver/reader'
+} from './driver'
 import { createEngine } from './engine'
 import { createInstance } from './instance'
 import { Migration } from './migration'
@@ -26,31 +25,37 @@ function createMigration({ migrationStrategies, versionKey }) {
 }
 
 export function createStore(settings) {
-  const { driver } = settings
-  if (!driver) {
-    throw new Error('Expected driver')
-  }
+  const {
+    adapter,
+    classy,
+    historySize,
+    manualCommit,
+    prepare,
+    unsafe
+  } = settings
+
+  const driver = new Driver(adapter)
 
   const instanceSettings = {
-    classy: settings.classy,
+    classy,
     driver,
-    historySize: settings.historySize,
-    manualCommit: settings.manualCommit,
+    historySize,
+    manualCommit,
     migration: createMigration(settings),
-    prepare: settings.prepare,
+    prepare,
     schema: compileSchema(settings),
-    unsafe: settings.unsafe
+    unsafe
   }
 
   return {
     count(query, options = {}) {
-      return driverCount(driver, query, options)
+      return driver.count(query, options)
     },
     create(data) {
       return createInstance(intentCreate(data), instanceSettings)
     },
     exists(query, options = {}) {
-      return driverExists(driver, query, options)
+      return driver.exists(query, options)
     },
     find(query) {
       return createInstance(intentFind(query), instanceSettings)

@@ -2,12 +2,7 @@ import fluente from 'fluente'
 import Herry from 'herry'
 
 import { mutateStatus } from './ast'
-import {
-  isCreationIntent,
-  isIntentIterable,
-  unwrapIntent
-} from './driver/reader'
-import { writeStatus } from './driver/writer'
+import { isCreationIntent, isIntentIterable } from './driver'
 import {
   assignMethod,
   commitMethod,
@@ -121,9 +116,9 @@ async function unwrapStatus(
   }
 
   // Handle manualCommit/unsafe features
-  if (driver && shouldCommit(status)) {
+  if (shouldCommit(status)) {
     if (!coalesce(options.manualCommit, manualCommit)) {
-      status = await writeStatus(status, driver, options)
+      status = await driver.writeStatus(status, options)
     } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         source: status.source,
@@ -138,14 +133,14 @@ async function unwrapStatus(
 
 async function unwrapMethod(state, options = {}) {
   const { driver, intent, toPromise, toStatus } = state
-  return toPromise(unwrapIntent(intent, driver, options), data =>
+  return toPromise(driver.unwrapIntent(intent, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
 
 function iterateMethod(state, options = {}) {
   const { driver, intent, toIterable, toStatus } = state
-  return toIterable(unwrapIntent(intent, driver, options), data =>
+  return toIterable(driver.unwrapIntent(intent, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }

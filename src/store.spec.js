@@ -2,7 +2,7 @@ import test from 'ava'
 
 import { createStore } from './store'
 
-function createDriver(items = []) {
+function createAdapter(items = []) {
   return {
     find(predicate) {
       return items.find(predicate)
@@ -42,7 +42,7 @@ test('store:settings', t => {
 
 test('store:create', async t => {
   const items = []
-  const store = createStore({ driver: createDriver(items) })
+  const store = createStore({ adapter: createAdapter(items) })
 
   const a = { id: 0, name: 'Huey' }
   const b = { id: 1, name: 'Dewey' }
@@ -65,7 +65,7 @@ test('store:find', async t => {
     { id: 1, name: 'March Hare' },
     { id: 2, name: 'Dormouse' }
   ]
-  const store = createStore({ driver: createDriver(items) })
+  const store = createStore({ adapter: createAdapter(items) })
 
   t.is(await store.find(item => item.id === 0).unwrap(), items[0])
   t.is(await store.find(item => item.name === 'March Hare').unwrap(), items[1])
@@ -75,7 +75,7 @@ test('store:find', async t => {
 
 test('store:read', async t => {
   const items = [{ id: 0, name: 'Tom Orvoloson Riddle', nose: false }]
-  const store = createStore({ driver: createDriver(items) })
+  const store = createStore({ adapter: createAdapter(items) })
 
   t.is(await store.read(item => item.nose !== true).unwrap(), items[0])
   await t.throwsAsync(store.read(item => item.nose === true).unwrap(), {
@@ -93,7 +93,7 @@ test('store:filter', async t => {
     { id: 5, name: 'Ralph T. Guard', gender: 'male', human: true },
     { id: 6, name: 'Thaddeus Plotz ', gender: 'male', human: true }
   ]
-  const store = createStore({ driver: createDriver(items) })
+  const store = createStore({ adapter: createAdapter(items) })
 
   const a = await store.filter(item => item.protagonist === true).unwrap()
   t.is(a.length, 3)
@@ -113,7 +113,7 @@ test('store:count', async t => {
     { id: 3, name: 'Professor Utonium', human: true },
     { id: 4, name: 'Mojo Jojo' }
   ]
-  const store = createStore({ driver: createDriver(items) })
+  const store = createStore({ adapter: createAdapter(items) })
 
   t.is(await store.count(item => item.human === true), 4)
   t.is(await store.count(item => item.super === true), 3)
@@ -122,7 +122,7 @@ test('store:count', async t => {
 
 test('store:exists', async t => {
   const items = [{ id: 0, name: 'The Narrator' }]
-  const store = createStore({ driver: createDriver(items) })
+  const store = createStore({ adapter: createAdapter(items) })
 
   t.true(await store.exists(item => item.name === 'The Narrator'))
   t.false(await store.exists(item => item.name === 'Tyler Durden'))
@@ -160,7 +160,7 @@ test('store:schema', async t => {
     constructors: {
       Teapot
     },
-    driver: createDriver(),
+    adapter: createAdapter(),
     parsers: {
       toDate: value => new Date(value)
     },

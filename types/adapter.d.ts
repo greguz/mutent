@@ -4,16 +4,16 @@ export declare type Value<T> = T | Promise<T>
 
 export declare type Values<T> = Iterable<T> | AsyncIterable<T>
 
-export declare type DriverResult<T> = Result<T | null | undefined | void>
+export declare type AdapterResult<T> = Result<T | null | undefined | void>
 
-export interface Driver<T, Q, O> {
+export interface Adapter<T, Q, O> {
   /**
    * Fetch one entity
    */
   find?(
     query: Q,
     options: Partial<O>,
-    isRequired: boolean
+    required: boolean
   ): Value<T | null | undefined>
   /**
    * Fetch multiple entities
@@ -22,21 +22,21 @@ export interface Driver<T, Q, O> {
   /**
    * Create a new entity
    */
-  create?(data: T, options: Partial<O>): DriverResult<T>
+  create?(data: T, options: Partial<O>): AdapterResult<T>
   /**
    * Update an entity
    */
-  update?(oldData: T, newData: T, options: Partial<O>): DriverResult<T>
+  update?(oldData: T, newData: T, options: Partial<O>): AdapterResult<T>
   /**
    * Delete an entity
    */
-  delete?(data: T, options: Partial<O>): DriverResult<T>
+  delete?(data: T, options: Partial<O>): AdapterResult<T>
   /**
    * Count requested entities
    */
-  count?(query: Q, options: Partial<O>): Promise<number>
+  count?(query: Q, options: Partial<O>): Result<number>
   /**
    * Check entity existence
    */
-  exists?(query: Q, options: Partial<O>): Promise<boolean>
+  exists?(query: Q, options: Partial<O>): Result<boolean>
 }

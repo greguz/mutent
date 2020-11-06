@@ -2,12 +2,12 @@
 /// <reference types="node" />
 import Ajv from 'ajv'
 
-import { Driver } from './driver'
+import { Adapter } from './adapter'
 import { Mutation, MutationSettings } from './mutation'
 import { Options } from './options'
 import { JSONSchema7Definition } from './schema'
 
-export * from './driver'
+export * from './adapter'
 export * from './mutation'
 export * from './options'
 export * from './schema'
@@ -42,7 +42,7 @@ export interface Entities<T, O> extends Mutation<T> {
 export interface StoreSettings<T, Q, O>
   extends EngineSettings,
     MutationSettings {
-  driver: Driver<T, Q, O>
+  adapter: Adapter<T, Q, O>
   engine?: Engine
   manualCommit?: boolean
   migrationStrategies?: Strategies

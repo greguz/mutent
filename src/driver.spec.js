@@ -1,12 +1,59 @@
 import test from 'ava'
 
-import { writeStatus } from './writer'
+import { Driver } from './driver'
 import {
   commitStatus,
   createStatus,
   deleteStatus,
   updateStatus
-} from '../status'
+} from './status'
+
+function createDriver(definition = {}) {
+  return new Driver(definition)
+}
+
+function writeStatus(status, definition = {}, options = {}) {
+  const driver = new Driver(definition)
+  return driver.writeStatus(status, options)
+}
+
+test('reader:count', async t => {
+  const driver = createDriver({
+    count(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return 42
+    }
+  })
+  t.is(await driver.count({ imma: 'query' }, { imma: 'options' }), 42)
+  await t.throwsAsync(createDriver().count(), {
+    code: 'EMUT_EXPECTED_DRIVER_METHOD'
+  })
+})
+
+test('reader:exists', async t => {
+  const a = createDriver({
+    exists(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return true
+    }
+  })
+  t.true(await a.exists({ imma: 'query' }, { imma: 'options' }))
+
+  const b = createDriver({
+    find(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return { a: 'document' }
+    }
+  })
+  t.true(await b.exists({ imma: 'query' }, { imma: 'options' }))
+
+  await t.throwsAsync(createDriver().exists(), {
+    code: 'EMUT_EXPECTED_DRIVER_METHOD'
+  })
+})
 
 function sCreate(id) {
   return createStatus({ id })

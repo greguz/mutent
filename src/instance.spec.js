@@ -1,24 +1,42 @@
 import test from 'ava'
 import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
-import { intentCreate, intentFilter, intentFrom } from './driver/reader'
+import { Driver, intentCreate, intentFilter, intentFrom } from './driver'
 import { createInstance } from './instance'
 import { Migration } from './migration'
 import { createMutation } from './mutation'
 
-function createEntities(data, settings) {
+const defaultDriver = {
+  create() {},
+  update() {},
+  delete() {}
+}
+
+function createEntities(data, settings = {}) {
+  settings.driver = new Driver(
+    settings.adapter || settings.driver || defaultDriver
+  )
   return createInstance(intentCreate(data), settings)
 }
 
-function createEntity(data, settings) {
+function createEntity(data, settings = {}) {
+  settings.driver = new Driver(
+    settings.adapter || settings.driver || defaultDriver
+  )
   return createInstance(intentCreate(data), settings)
 }
 
-function readEntities(data, settings) {
+function readEntities(data, settings = {}) {
+  settings.driver = new Driver(
+    settings.adapter || settings.driver || defaultDriver
+  )
   return createInstance(intentFrom(data), settings)
 }
 
-function readEntity(data, settings) {
+function readEntity(data, settings = {}) {
+  settings.driver = new Driver(
+    settings.adapter || settings.driver || defaultDriver
+  )
   return createInstance(intentFrom(data), settings)
 }
 
@@ -630,7 +648,7 @@ test('prepare', async t => {
 })
 
 test('alteration', async t => {
-  const data = await createInstance(intentCreate({ a: 'test' }))
+  const data = await createEntity({ a: 'test' })
     .if(true, mutation => mutation.assign({ b: 'free' }))
     .unwrap()
   t.deepEqual(data, {
