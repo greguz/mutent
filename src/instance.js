@@ -18,9 +18,65 @@ import {
   unlessMethod,
   updateMethod
 } from './mutation'
-import { iterateMany, iterateOne, unwrapMany, unwrapOne } from './producers'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { coalesce, isNil, isNull } from './utils'
+import { coalesce, isFunction, isNil, isNull } from './utils'
+
+async function unwrapOne(input, mutate) {
+  return mutate(await input)
+}
+
+function iterateOne(input, mutate) {
+  return {
+    [Symbol.asyncIterator]: async function* () {
+      const value = await unwrapOne(input, mutate)
+      if (!isNull(value)) {
+        yield value
+      }
+    }
+  }
+}
+
+function createIterator(value) {
+  if (!isNull(value) && isFunction(value[Symbol.asyncIterator])) {
+    return value[Symbol.asyncIterator]()
+  } else if (!isNull(value) && isFunction(value[Symbol.iterator])) {
+    return value[Symbol.iterator]()
+  } else {
+    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', { value })
+  }
+}
+
+async function unwrapMany(input, mutate) {
+  const iterator = createIterator(input)
+  const results = []
+  let active = true
+  while (active) {
+    const { done, value } = await iterator.next()
+    if (done) {
+      active = false
+    } else {
+      results.push(await mutate(value))
+    }
+  }
+  return results
+}
+
+function iterateMany(input, mutate) {
+  return {
+    [Symbol.asyncIterator]() {
+      return {
+        iterator: createIterator(input),
+        async next() {
+          const { done, value } = await this.iterator.next()
+          return {
+            done,
+            value: done ? undefined : await mutate(value)
+          }
+        }
+      }
+    }
+  }
+}
 
 async function unwrapStatus(status, { schema, settings, tree }, options) {
   if (isNull(status.target)) {

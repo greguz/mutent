@@ -25,11 +25,3 @@ export function objectify(value) {
 export function coalesce(a, b) {
   return !isNil(a) ? a : b
 }
-
-export function isIterable(value) {
-  return !isNull(value) && isFunction(value[Symbol.iterator])
-}
-
-export function isAsyncIterable(value) {
-  return !isNull(value) && isFunction(value[Symbol.asyncIterator])
-}
