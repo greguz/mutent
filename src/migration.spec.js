@@ -3,25 +3,25 @@ import test from 'ava'
 import { Migration } from './migration'
 import { readStatus } from './status'
 
-test('migration: default', async t => {
+test('migration:smoke', async t => {
   const migration = new Migration({
-    1: data => {
-      return {
-        version: 1,
-        value: parseInt(data.value, 10)
-      }
-    },
-    2: data => {
-      return {
-        version: 2,
-        number: data.value
-      }
-    }
+    1: data => ({
+      version: 1,
+      value: parseFloat(data.value)
+    }),
+    2: data => ({
+      version: 2,
+      number: data.value
+    }),
+    3: data => ({
+      version: 3,
+      number: Math.round(data.number)
+    })
   })
 
   const out = await migration.migrateStatus(
     readStatus({
-      value: '42'
+      value: '41.7'
     })
   )
   t.deepEqual(out, {
@@ -29,31 +29,51 @@ test('migration: default', async t => {
     updated: true,
     deleted: false,
     source: {
-      value: '42'
+      value: '41.7'
     },
     target: {
-      version: 2,
+      version: 3,
       number: 42
     }
   })
 })
 
-test('migration: missing stratery', async t => {
+test('migration:missingStrategy', async t => {
   const migration = new Migration({
     2: data => data
   })
-
   await t.throwsAsync(migration.migrateStatus(readStatus({})), {
     code: 'EMUT_MISSING_STRATEGY'
   })
 })
 
-test('migration: no upgrade', async t => {
+test('migration:expectedUpgrade', async t => {
   const migration = new Migration({
     1: data => data
   })
-
   await t.throwsAsync(migration.migrateStatus(readStatus({})), {
     code: 'EMUT_EXPECTED_UPGRADE'
+  })
+})
+
+test('migration:futureVersion', async t => {
+  const migration = new Migration({
+    1: data => ({ ...data, version: 1 })
+  })
+  const out = await migration.migrateStatus(
+    readStatus({ version: 2, value: 'TEST' })
+  )
+  t.deepEqual(out, {
+    created: false,
+    updated: false,
+    deleted: false,
+    source: {
+      version: 2,
+      value: 'TEST'
+    },
+    target: {
+      version: 2,
+      value: 'TEST'
+    }
   })
 })

@@ -181,3 +181,53 @@ test('store:schema', async t => {
     code: 'EMUT_INVALID_DATA'
   })
 })
+
+test('store:migration', async t => {
+  const items = [{ id: 0, name: 'Gandalf' }]
+
+  const store = createStore({
+    adapter: createAdapter(items),
+    migrationStrategies: {
+      1: data => ({ ...data, v: 1, migrated: true })
+    },
+    versionKey: 'v'
+  })
+
+  const a = await store
+    .create({
+      id: 1,
+      name: 'Bilbo'
+    })
+    .unwrap()
+  t.deepEqual(a, {
+    id: 1,
+    v: 1,
+    migrated: true,
+    name: 'Bilbo'
+  })
+
+  const b = await store
+    .read(item => item.name === 'Gandalf')
+    .update(data => ({ ...data, white: true }))
+    .unwrap()
+  t.deepEqual(b, {
+    id: 0,
+    v: 1,
+    migrated: true,
+    name: 'Gandalf',
+    white: true
+  })
+
+  const c = await store
+    .create({
+      id: 2,
+      v: 1,
+      name: 'Sam'
+    })
+    .unwrap()
+  t.deepEqual(c, {
+    id: 2,
+    v: 1,
+    name: 'Sam'
+  })
+})

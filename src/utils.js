@@ -18,10 +18,6 @@ export function isNil(value) {
   return isNull(value) || isUndefined(value)
 }
 
-export function objectify(value) {
-  return typeof value === 'object' && !isNull(value) ? value : {}
-}
-
 export function coalesce(a, b) {
   return !isNil(a) ? a : b
 }

@@ -156,7 +156,7 @@ export function createInstance(
     prepare,
     schema,
     unsafe
-  } = {}
+  }
 ) {
   const isIterable = isIntentIterable(intent)
 

@@ -6,38 +6,33 @@ import { createInstance } from './instance'
 import { Migration } from './migration'
 import { createMutation } from './mutation'
 
-const defaultDriver = {
+const defaultAdapter = {
   create() {},
   update() {},
   delete() {}
 }
 
-function createEntities(data, settings = {}) {
-  settings.driver = new Driver(
-    settings.adapter || settings.driver || defaultDriver
-  )
-  return createInstance(intentCreate(data), settings)
+function prepareSettings(settings = {}) {
+  return {
+    ...settings,
+    driver: new Driver(settings.adapter || defaultAdapter)
+  }
 }
 
-function createEntity(data, settings = {}) {
-  settings.driver = new Driver(
-    settings.adapter || settings.driver || defaultDriver
-  )
-  return createInstance(intentCreate(data), settings)
+function createEntities(data, settings) {
+  return createInstance(intentCreate(data), prepareSettings(settings))
 }
 
-function readEntities(data, settings = {}) {
-  settings.driver = new Driver(
-    settings.adapter || settings.driver || defaultDriver
-  )
-  return createInstance(intentFrom(data), settings)
+function createEntity(data, settings) {
+  return createInstance(intentCreate(data), prepareSettings(settings))
 }
 
-function readEntity(data, settings = {}) {
-  settings.driver = new Driver(
-    settings.adapter || settings.driver || defaultDriver
-  )
-  return createInstance(intentFrom(data), settings)
+function readEntities(data, settings) {
+  return createInstance(intentFrom(data), prepareSettings(settings))
+}
+
+function readEntity(data, settings) {
+  return createInstance(intentFrom(data), prepareSettings(settings))
 }
 
 function next(item) {
@@ -125,7 +120,7 @@ test('instance#mutate', async t => {
 test('create one', async t => {
   t.plan(3)
 
-  const writer = {
+  const adapter = {
     async create(target, options) {
       t.deepEqual(target, {
         id: 1,
@@ -141,7 +136,7 @@ test('create one', async t => {
     }
   }
 
-  const item = await createEntity({ id: 0 }, { driver: writer })
+  const item = await createEntity({ id: 0 }, { adapter })
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -156,7 +151,7 @@ test('create one', async t => {
 test('update one', async t => {
   t.plan(4)
 
-  const writer = {
+  const adapter = {
     async create() {
       t.fail()
     },
@@ -175,7 +170,7 @@ test('update one', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { driver: writer })
+  const item = await readEntity({ id: 0 }, { adapter })
     .assign({ value: 'UPDATE' })
     .update(next)
     .commit()
@@ -190,7 +185,7 @@ test('update one', async t => {
 test('delete one', async t => {
   t.plan(3)
 
-  const writer = {
+  const adapter = {
     async create() {
       t.fail()
     },
@@ -205,7 +200,7 @@ test('delete one', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { driver: writer })
+  const item = await readEntity({ id: 0 }, { adapter })
     .delete()
     .commit()
     .unwrap({ hello: 'world' })
@@ -279,7 +274,7 @@ test('entity manualCommit override', async t => {
       {
         manualCommit,
         unsafe: true,
-        driver: {
+        adapter: {
           create() {
             t.pass()
           },
@@ -305,7 +300,7 @@ test('entity unsafe override', async t => {
       {
         manualCommit: true,
         unsafe,
-        driver: {
+        adapter: {
           create() {
             t.pass()
           },
@@ -328,7 +323,7 @@ test('entity unsafe override', async t => {
 test('safe create', async t => {
   t.plan(4)
 
-  const driver = {
+  const adapter = {
     create() {
       t.pass()
     },
@@ -341,7 +336,7 @@ test('safe create', async t => {
   }
 
   function entity(manualCommit, unsafe) {
-    return createEntity({ id: 0 }, { driver, manualCommit, unsafe })
+    return createEntity({ id: 0 }, { adapter, manualCommit, unsafe })
   }
 
   await entity().unwrap()
@@ -354,7 +349,7 @@ test('safe create', async t => {
 test('safe update', async t => {
   t.plan(4)
 
-  const driver = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -367,7 +362,7 @@ test('safe update', async t => {
   }
 
   function entity(manualCommit, unsafe) {
-    return readEntity({ id: 0 }, { driver, manualCommit, unsafe }).update(next)
+    return readEntity({ id: 0 }, { adapter, manualCommit, unsafe }).update(next)
   }
 
   await entity().unwrap()
@@ -380,7 +375,7 @@ test('safe update', async t => {
 test('safe delete', async t => {
   t.plan(4)
 
-  const driver = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -393,7 +388,7 @@ test('safe delete', async t => {
   }
 
   function entity(manualCommit, unsafe) {
-    return readEntity({ id: 0 }, { driver, manualCommit, unsafe }).delete()
+    return readEntity({ id: 0 }, { adapter, manualCommit, unsafe }).delete()
   }
 
   await entity().unwrap()
@@ -404,7 +399,7 @@ test('safe delete', async t => {
 })
 
 function bind(t, mode = {}) {
-  const writer = {
+  const adapter = {
     async create(target, options) {
       if (mode.create === true) {
         t.pass()
@@ -430,7 +425,7 @@ function bind(t, mode = {}) {
       t.is(options.db, 'test')
     }
   }
-  return { driver: writer }
+  return { adapter }
 }
 
 function getItems(count = 16) {
@@ -538,7 +533,7 @@ test('stream-error', async t => {
       pipeline(
         Readable.from(
           createEntities(intentFilter(), {
-            driver: {
+            adapter: {
               filter() {
                 return getErroredStream(new Error())
               }
