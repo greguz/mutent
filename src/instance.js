@@ -8,7 +8,6 @@ import {
   unwrapIntent
 } from './driver/reader'
 import { writeStatus } from './driver/writer'
-import { migrateStatus } from './migration'
 import {
   assignMethod,
   commitMethod,
@@ -78,11 +77,14 @@ function iterateMany(input, mutate) {
   }
 }
 
-async function unwrapStatus(status, { schema, settings, tree }, options) {
+async function unwrapStatus(
+  status,
+  { driver, manualCommit, migration, prepare, schema, tree, unsafe },
+  options
+) {
   if (isNull(status.target)) {
     return null
   }
-  const { driver, migrationStrategies, prepare, versionKey } = settings
 
   // Initialize status
   if (status.created && prepare) {
@@ -93,8 +95,8 @@ async function unwrapStatus(status, { schema, settings, tree }, options) {
   }
 
   // Apply migration strategies
-  if (migrationStrategies) {
-    status = await migrateStatus(status, migrationStrategies, versionKey)
+  if (migration) {
+    status = await migration.migrateStatus(status)
   }
 
   // First validation and parsing
@@ -120,12 +122,9 @@ async function unwrapStatus(status, { schema, settings, tree }, options) {
 
   // Handle manualCommit/unsafe features
   if (driver && shouldCommit(status)) {
-    const manualCommit = coalesce(options.manualCommit, settings.manualCommit)
-    const unsafe = coalesce(options.unsafe, settings.unsafe)
-
-    if (!manualCommit) {
+    if (!coalesce(options.manualCommit, manualCommit)) {
       status = await writeStatus(status, driver, options)
-    } else if (!unsafe) {
+    } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         source: status.source,
         target: status.target,
@@ -138,35 +137,51 @@ async function unwrapStatus(status, { schema, settings, tree }, options) {
 }
 
 async function unwrapMethod(state, options = {}) {
-  const { intent, settings, toPromise, toStatus } = state
-  return toPromise(unwrapIntent(intent, settings.driver, options), data =>
+  const { driver, intent, toPromise, toStatus } = state
+  return toPromise(unwrapIntent(intent, driver, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
 
 function iterateMethod(state, options = {}) {
-  const { intent, settings, toIterable, toStatus } = state
-  return toIterable(unwrapIntent(intent, settings.driver, options), data =>
+  const { driver, intent, toIterable, toStatus } = state
+  return toIterable(unwrapIntent(intent, driver, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
 
-export function createInstance(intent, settings = {}, schema = undefined) {
+export function createInstance(
+  intent,
+  {
+    classy,
+    driver,
+    historySize,
+    manualCommit,
+    migration,
+    prepare,
+    schema,
+    unsafe
+  } = {}
+) {
   const isIterable = isIntentIterable(intent)
 
   const state = {
     intent,
+    driver,
+    manualCommit,
+    migration,
+    prepare,
     schema,
-    settings,
     toIterable: isIterable ? iterateMany : iterateOne,
     toPromise: isIterable ? unwrapMany : unwrapOne,
     toStatus: isCreationIntent(intent) ? createStatus : readStatus,
-    tree: []
+    tree: [],
+    unsafe
   }
 
   return fluente({
-    historySize: settings.historySize,
-    isMutable: settings.classy,
+    historySize,
+    isMutable: classy,
     state,
     fluent: {
       update: updateMethod,

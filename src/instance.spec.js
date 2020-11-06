@@ -3,6 +3,7 @@ import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
 import { intentCreate, intentFilter, intentFrom } from './driver/reader'
 import { createInstance } from './instance'
+import { Migration } from './migration'
 import { createMutation } from './mutation'
 
 function createEntities(data, settings) {
@@ -572,29 +573,29 @@ test('redo entitites', async t => {
 })
 
 test('migration', async t => {
+  const migration = new Migration({
+    1: function (data) {
+      return {
+        ...data,
+        version: 1,
+        id: data.id + 1
+      }
+    },
+    2: function (data) {
+      return {
+        ...data,
+        version: 2,
+        value: 'MIGRATED'
+      }
+    }
+  })
+
   const item = {
     version: 0,
     id: 0
   }
 
-  const data = await readEntity(item, {
-    migrationStrategies: {
-      1: function (data) {
-        return {
-          ...data,
-          version: 1,
-          id: data.id + 1
-        }
-      },
-      2: function (data) {
-        return {
-          ...data,
-          version: 2,
-          value: 'MIGRATED'
-        }
-      }
-    }
-  }).unwrap()
+  const data = await readEntity(item, { migration }).unwrap()
 
   t.deepEqual(data, {
     version: 2,
