@@ -7,8 +7,8 @@ function call(adapter, key, a1, a2, a3) {
   const method = adapter[key]
   if (!isFunction(method)) {
     throw new Herry(
-      'EMUT_EXPECTED_DRIVER_METHOD',
-      `Driver ".${key}" method is required for this operation`
+      'EMUT_EXPECTED_ADAPTER_METHOD',
+      `Adapter ".${key}" method is required for this operation`
     )
   }
   return method.call(adapter, a1, a2, a3)

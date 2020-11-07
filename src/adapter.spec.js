@@ -1,55 +1,19 @@
 import test from 'ava'
 
-import { adapterCount, adapterExists, writeStatus } from './adapter'
+import {
+  adapterCount,
+  adapterExists,
+  adapterFilter,
+  adapterFind,
+  adapterRead,
+  writeStatus
+} from './adapter'
 import {
   commitStatus,
   createStatus,
   deleteStatus,
   updateStatus
 } from './status'
-
-function write(status, adapter = {}, options = {}) {
-  return writeStatus(adapter, status, options)
-}
-
-test('reader:count', async t => {
-  const adapter = {
-    count(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return 42
-    }
-  }
-  t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 42)
-
-  await t.throwsAsync(adapterCount({}), {
-    code: 'EMUT_EXPECTED_DRIVER_METHOD'
-  })
-})
-
-test('reader:exists', async t => {
-  const a = {
-    exists(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return true
-    }
-  }
-  t.true(await adapterExists(a, { imma: 'query' }, { imma: 'options' }))
-
-  const b = {
-    find(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return { a: 'document' }
-    }
-  }
-  t.true(await adapterExists(b, { imma: 'query' }, { imma: 'options' }))
-
-  await t.throwsAsync(adapterExists({}), {
-    code: 'EMUT_EXPECTED_DRIVER_METHOD'
-  })
-})
 
 function sCreate(id) {
   return createStatus({ id })
@@ -83,10 +47,76 @@ function sCreateUpdateDelete(id, value) {
   return deleteStatus(sCreateUpdate(id, value))
 }
 
+function write(status, adapter = {}, options = {}) {
+  return writeStatus(adapter, status, options)
+}
+
+test('adapter:defaults', async t => {
+  const adapter = {}
+
+  await t.throwsAsync(() => adapterFind(adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+  await t.throwsAsync(() => adapterRead(adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+  t.throws(() => adapterFilter(adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+
+  await t.throwsAsync(() => adapterCount(adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+  await t.throwsAsync(() => adapterExists(adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+
+  await t.throwsAsync(() => write(sCreate(0), adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+  await t.throwsAsync(() => write(sUpdate(0, 'UPDATE'), adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+  await t.throwsAsync(() => write(sDelete(0), adapter), {
+    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+  })
+})
+
+test('adapter:count', async t => {
+  const adapter = {
+    count(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return 42
+    }
+  }
+  t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 42)
+})
+
+test('adapter:exists', async t => {
+  const a = {
+    exists(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return true
+    }
+  }
+  t.true(await adapterExists(a, { imma: 'query' }, { imma: 'options' }))
+
+  const b = {
+    find(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return { a: 'document' }
+    }
+  }
+  t.true(await adapterExists(b, { imma: 'query' }, { imma: 'options' }))
+})
+
 test('sCreate', async t => {
   t.plan(3)
 
-  const writer = {
+  const adapter = {
     create(data, options) {
       t.deepEqual(data, {
         id: 0
@@ -107,7 +137,7 @@ test('sCreate', async t => {
     }
   }
 
-  const status = await write(sCreate(0), writer, { hello: 'world' })
+  const status = await write(sCreate(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -125,7 +155,7 @@ test('sCreate', async t => {
 test('sVoid', async t => {
   t.plan(2)
 
-  const writer = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -137,7 +167,7 @@ test('sVoid', async t => {
     }
   }
 
-  const status = await write(sVoid(0), writer, { hello: 'world' })
+  const status = await write(sVoid(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, await write(sVoid(0), {}))
 
@@ -157,7 +187,7 @@ test('sVoid', async t => {
 test('sUpdate', async t => {
   t.plan(4)
 
-  const writer = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -182,7 +212,7 @@ test('sUpdate', async t => {
     }
   }
 
-  const status = await write(sUpdate(0, 'UPDATE'), writer, {
+  const status = await write(sUpdate(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -204,7 +234,7 @@ test('sUpdate', async t => {
 test('sDelete', async t => {
   t.plan(3)
 
-  const writer = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -221,7 +251,7 @@ test('sDelete', async t => {
     }
   }
 
-  const status = await write(sDelete(0), writer, { hello: 'world' })
+  const status = await write(sDelete(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -237,7 +267,7 @@ test('sDelete', async t => {
 test('sCreateUpdate', async t => {
   t.plan(3)
 
-  const writer = {
+  const adapter = {
     create(data, options) {
       t.deepEqual(data, {
         id: 0,
@@ -255,7 +285,7 @@ test('sCreateUpdate', async t => {
     }
   }
 
-  const status = await write(sCreateUpdate(0, 'UPDATE'), writer, {
+  const status = await write(sCreateUpdate(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -277,7 +307,7 @@ test('sCreateUpdate', async t => {
 test('sCreateDelete', async t => {
   t.plan(1)
 
-  const writer = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -289,7 +319,7 @@ test('sCreateDelete', async t => {
     }
   }
 
-  const status = await write(sCreateDelete(0), writer, {
+  const status = await write(sCreateDelete(0), adapter, {
     hello: 'world'
   })
 
@@ -307,7 +337,7 @@ test('sCreateDelete', async t => {
 test('sUpdateDelete', async t => {
   t.plan(3)
 
-  const writer = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -324,7 +354,7 @@ test('sUpdateDelete', async t => {
     }
   }
 
-  const status = await write(sUpdateDelete(0, 'UPDATE'), writer, {
+  const status = await write(sUpdateDelete(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -343,7 +373,7 @@ test('sUpdateDelete', async t => {
 test('sCreateUpdateDelete', async t => {
   t.plan(1)
 
-  const writer = {
+  const adapter = {
     create() {
       t.fail()
     },
@@ -355,7 +385,7 @@ test('sCreateUpdateDelete', async t => {
     }
   }
 
-  const status = await write(sCreateUpdateDelete(0, 'UPDATE'), writer, {
+  const status = await write(sCreateUpdateDelete(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -368,18 +398,5 @@ test('sCreateUpdateDelete', async t => {
       id: 0,
       value: 'UPDATE'
     }
-  })
-})
-
-test('writer defaults', async t => {
-  const driver = {}
-  await t.throwsAsync(write(sCreate(0), driver), {
-    code: 'EMUT_EXPECTED_DRIVER_METHOD'
-  })
-  await t.throwsAsync(write(sUpdate(0, 'UPDATE'), driver), {
-    code: 'EMUT_EXPECTED_DRIVER_METHOD'
-  })
-  await t.throwsAsync(write(sDelete(0), driver), {
-    code: 'EMUT_EXPECTED_DRIVER_METHOD'
   })
 })

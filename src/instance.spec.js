@@ -1,6 +1,7 @@
 import test from 'ava'
-import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
+import { Readable, Writable, pipeline } from 'fluido'
 
+import { createEngine } from './engine'
 import { createInstance } from './instance'
 import { intentCreate, intentFilter, intentFrom } from './intent'
 import { createMigration } from './migration'
@@ -19,19 +20,11 @@ function prepareSettings(settings = {}) {
   }
 }
 
-function createEntities(data, settings) {
+function create(data, settings) {
   return createInstance(intentCreate(data), prepareSettings(settings))
 }
 
-function createEntity(data, settings) {
-  return createInstance(intentCreate(data), prepareSettings(settings))
-}
-
-function readEntities(data, settings) {
-  return createInstance(intentFrom(data), prepareSettings(settings))
-}
-
-function readEntity(data, settings) {
+function read(data, settings) {
   return createInstance(intentFrom(data), prepareSettings(settings))
 }
 
@@ -42,60 +35,53 @@ function next(item) {
   }
 }
 
-test('createEntity#unwrap', async t => {
-  const out = await createEntity({ id: 0, value: 'UNWRAP' }).unwrap()
+function createIterator(iterable) {
+  return iterable[Symbol.asyncIterator]
+    ? iterable[Symbol.asyncIterator]()
+    : iterable[Symbol.iterator]()
+}
+
+async function consumeIterable(iterable, handler) {
+  const iterator = createIterator(iterable)
+  let active = true
+  const results = []
+  while (active) {
+    const { done, value } = await iterator.next()
+    if (done) {
+      active = false
+    } else if (handler) {
+      results.push(await handler(value))
+    } else {
+      results.push(value)
+    }
+  }
+  return results
+}
+
+test('one:unwrap', async t => {
+  const out = await create({ id: 0, value: 'UNWRAP' }).unwrap()
   t.deepEqual(out, { id: 0, value: 'UNWRAP' })
 })
 
-test('createEntity#stream', async t => {
-  const out = await subscribe(
-    Readable.from(createEntity({ id: 0, value: 'STREAM' }).iterate()),
-    collect()
+test('one:iterate', async t => {
+  const out = await consumeIterable(
+    create({ id: 0, value: 'ITERATE' }).iterate()
   )
-  t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
+  t.deepEqual(out, [{ id: 0, value: 'ITERATE' }])
 })
 
-test('readEntity#unwrap', async t => {
-  const out = await readEntity({ id: 0, value: 'UNWRAP' }).unwrap()
+test('many:unwrap', async t => {
+  const out = await read({ id: 0, value: 'UNWRAP' }).unwrap()
   t.deepEqual(out, { id: 0, value: 'UNWRAP' })
 })
 
-test('readEntity#stream', async t => {
-  const out = await subscribe(
-    Readable.from(readEntity({ id: 0, value: 'STREAM' }).iterate()),
-    collect()
-  )
-  t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
+test('many:iterate', async t => {
+  const out = await consumeIterable(read({ id: 0, value: 'ITERATE' }).iterate())
+  t.deepEqual(out, [{ id: 0, value: 'ITERATE' }])
 })
 
-test('createEntities#unwrap', async t => {
-  const out = await createEntities([{ id: 0, value: 'UNWRAP' }]).unwrap()
-  t.deepEqual(out, [{ id: 0, value: 'UNWRAP' }])
-})
-
-test('createEntities#stream', async t => {
-  const out = await subscribe(
-    Readable.from(createEntities([{ id: 0, value: 'STREAM' }]).iterate()),
-    collect()
-  )
-  t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
-})
-
-test('readEntities#unwrap', async t => {
-  const out = await readEntities([{ id: 0, value: 'UNWRAP' }]).unwrap()
-  t.deepEqual(out, [{ id: 0, value: 'UNWRAP' }])
-})
-
-test('readEntities#stream', async t => {
-  const out = await subscribe(
-    Readable.from(readEntities([{ id: 0, value: 'STREAM' }]).iterate()),
-    collect()
-  )
-  t.deepEqual(out, [{ id: 0, value: 'STREAM' }])
-})
-
-test('instance#conditional-mutation', async t => {
-  const entity = readEntity({ id: 0 })
+test('instance:condition', async t => {
+  const entity = read({ id: 0 })
 
   const mDelete = createMutation().assign({ value: 'DELETE' })
   const mUpdate = createMutation().assign({ value: 'UPDATE' })
@@ -110,14 +96,43 @@ test('instance#conditional-mutation', async t => {
   t.deepEqual(b, { id: 0, value: 'UPDATE' })
 })
 
-test('instance#mutate', async t => {
-  const entity = readEntity({ id: 0 })
+test('instance:alteration', async t => {
+  const data = await create({ a: 'test' })
+    .if(true, mutation => mutation.assign({ b: 'free' }))
+    .unwrap()
+  t.deepEqual(data, {
+    a: 'test',
+    b: 'free'
+  })
+})
+
+test('instance:mutate', async t => {
+  const entity = read({ id: 0 })
   const mutation = createMutation().assign({ value: 'UPDATE' })
   const out = await entity.mutate(mutation).unwrap()
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
 })
 
-test('create one', async t => {
+test('instance:invalid-mutation', async t => {
+  const engine = createEngine()
+
+  const schema = engine.compile({
+    type: 'object',
+    properties: {
+      value: {
+        type: 'number'
+      }
+    },
+    required: ['value']
+  })
+
+  await t.throwsAsync(
+    read({ value: 42 }, { schema }).update(JSON.stringify).unwrap(),
+    { code: 'EMUT_INVALID_MUTATION' }
+  )
+})
+
+test('instance:create-one', async t => {
   t.plan(3)
 
   const adapter = {
@@ -136,7 +151,7 @@ test('create one', async t => {
     }
   }
 
-  const item = await createEntity({ id: 0 }, { adapter })
+  const item = await create({ id: 0 }, { adapter })
     .assign({ value: 'CREATE' })
     .update(next)
     .commit()
@@ -148,7 +163,7 @@ test('create one', async t => {
   })
 })
 
-test('update one', async t => {
+test('instance:update-one', async t => {
   t.plan(4)
 
   const adapter = {
@@ -170,7 +185,7 @@ test('update one', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { adapter })
+  const item = await read({ id: 0 }, { adapter })
     .assign({ value: 'UPDATE' })
     .update(next)
     .commit()
@@ -182,7 +197,7 @@ test('update one', async t => {
   })
 })
 
-test('delete one', async t => {
+test('instance:delete-one', async t => {
   t.plan(3)
 
   const adapter = {
@@ -200,7 +215,7 @@ test('delete one', async t => {
     }
   }
 
-  const item = await readEntity({ id: 0 }, { adapter })
+  const item = await read({ id: 0 }, { adapter })
     .delete()
     .commit()
     .unwrap({ hello: 'world' })
@@ -210,8 +225,8 @@ test('delete one', async t => {
   })
 })
 
-test('undo entity', async t => {
-  const a = await readEntity(2)
+test('instance:undo', async t => {
+  const a = await read(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -219,7 +234,7 @@ test('undo entity', async t => {
     .unwrap()
   t.is(a, -2)
 
-  const b = await readEntity(2)
+  const b = await read(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -227,7 +242,7 @@ test('undo entity', async t => {
     .unwrap()
   t.is(b, 2)
 
-  const c = await readEntity(2)
+  const c = await read(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -236,8 +251,8 @@ test('undo entity', async t => {
   t.is(c, -40)
 })
 
-test('redo entity', async t => {
-  const result = await readEntity(2)
+test('instance:redo', async t => {
+  const result = await read(2)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -247,8 +262,8 @@ test('redo entity', async t => {
   t.is(result, -4)
 })
 
-test('skip nulls', async t => {
-  const result = await readEntity(null)
+test('instance:ignore-null', async t => {
+  const result = await read(null)
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
@@ -256,8 +271,8 @@ test('skip nulls', async t => {
   t.is(result, null)
 })
 
-test('classy entity', async t => {
-  const entity = createEntity({ id: 0 }, { classy: true })
+test('instance:classy', async t => {
+  const entity = create({ id: 0 }, { classy: true })
   entity.update(next)
   entity.update(next)
   entity.update(next)
@@ -266,10 +281,10 @@ test('classy entity', async t => {
   t.throws(entity.unwrap)
 })
 
-test('entity manualCommit override', async t => {
+test('instance:manualCommit-override', async t => {
   t.plan(1)
   function entity(manualCommit) {
-    return createEntity(
+    return create(
       { id: 0 },
       {
         manualCommit,
@@ -292,10 +307,10 @@ test('entity manualCommit override', async t => {
   await entity(false).unwrap({ manualCommit: true })
 })
 
-test('entity unsafe override', async t => {
+test('instance:unsafe-override', async t => {
   t.plan(1)
   function entity(unsafe) {
-    return createEntity(
+    return create(
       { id: 0 },
       {
         manualCommit: true,
@@ -320,7 +335,7 @@ test('entity unsafe override', async t => {
   })
 })
 
-test('safe create', async t => {
+test('instance:safe-create', async t => {
   t.plan(4)
 
   const adapter = {
@@ -336,7 +351,7 @@ test('safe create', async t => {
   }
 
   function entity(manualCommit, unsafe) {
-    return createEntity({ id: 0 }, { adapter, manualCommit, unsafe })
+    return create({ id: 0 }, { adapter, manualCommit, unsafe })
   }
 
   await entity().unwrap()
@@ -346,7 +361,7 @@ test('safe create', async t => {
   await entity(true, true).unwrap()
 })
 
-test('safe update', async t => {
+test('instance:safe-update', async t => {
   t.plan(4)
 
   const adapter = {
@@ -362,7 +377,7 @@ test('safe update', async t => {
   }
 
   function entity(manualCommit, unsafe) {
-    return readEntity({ id: 0 }, { adapter, manualCommit, unsafe }).update(next)
+    return read({ id: 0 }, { adapter, manualCommit, unsafe }).update(next)
   }
 
   await entity().unwrap()
@@ -372,7 +387,7 @@ test('safe update', async t => {
   await entity(true, true).unwrap()
 })
 
-test('safe delete', async t => {
+test('instance:safe-delete', async t => {
   t.plan(4)
 
   const adapter = {
@@ -388,7 +403,7 @@ test('safe delete', async t => {
   }
 
   function entity(manualCommit, unsafe) {
-    return readEntity({ id: 0 }, { adapter, manualCommit, unsafe }).delete()
+    return read({ id: 0 }, { adapter, manualCommit, unsafe }).delete()
   }
 
   await entity().unwrap()
@@ -438,7 +453,7 @@ function getItems(count = 16) {
 
 test('create many', async t => {
   t.plan(35)
-  const results = await createEntities(getItems(), bind(t, { create: true }))
+  const results = await create(getItems(), bind(t, { create: true }))
     .commit()
     .unwrap({ db: 'test' })
   t.is(results.length, 16)
@@ -448,7 +463,7 @@ test('create many', async t => {
 
 test('update many', async t => {
   t.plan(35)
-  const results = await readEntities(getItems(), bind(t, { update: true }))
+  const results = await read(getItems(), bind(t, { update: true }))
     .update(data => ({ id: data.id / 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -459,7 +474,7 @@ test('update many', async t => {
 
 test('assign many', async t => {
   t.plan(37)
-  const results = await readEntities(getItems(), bind(t, { update: true }))
+  const results = await read(getItems(), bind(t, { update: true }))
     .assign({ value: 42 })
     .commit()
     .unwrap({ db: 'test' })
@@ -472,7 +487,7 @@ test('assign many', async t => {
 
 test('delete many', async t => {
   t.plan(35)
-  const results = await readEntities(getItems(), bind(t, { delete: true }))
+  const results = await read(getItems(), bind(t, { delete: true }))
     .delete()
     .commit()
     .unwrap({ db: 'test' })
@@ -483,7 +498,7 @@ test('delete many', async t => {
 
 test('insert-error', async t => {
   await t.throwsAsync(async () => {
-    await createEntities([1])
+    await create([1])
       .update(async () => {
         throw new Error('TEST')
       })
@@ -497,7 +512,7 @@ test('stream many', async t => {
     let index = 0
     pipeline(
       Readable.from(
-        createEntities(getItems(), bind(t, { create: true }))
+        create(getItems(), bind(t, { create: true }))
           .commit()
           .iterate({ db: 'test' })
       ),
@@ -532,7 +547,7 @@ test('stream-error', async t => {
     await new Promise((resolve, reject) => {
       pipeline(
         Readable.from(
-          createEntities(intentFilter(), {
+          createInstance(intentFilter(), {
             adapter: {
               filter() {
                 return getErroredStream(new Error())
@@ -560,7 +575,7 @@ test('stream-error', async t => {
 
 test('undo entitites', async t => {
   t.plan(3)
-  const results = await readEntities(getItems())
+  const results = await read(getItems())
     .update(data => ({ id: data.id * -1 }))
     .update(data => ({ id: data.id * 2 }))
     .delete()
@@ -573,7 +588,7 @@ test('undo entitites', async t => {
 
 test('redo entitites', async t => {
   t.plan(3)
-  const results = await readEntities(getItems())
+  const results = await read(getItems())
     .update(data => ({ id: data.id * -1 }))
     .update(data => ({ id: data.id * 2 }))
     .update(data => ({ id: data.id * 10 }))
@@ -585,7 +600,7 @@ test('redo entitites', async t => {
   t.is(results[15].id, -600)
 })
 
-test('migration', async t => {
+test('instance:migration', async t => {
   const migration = createMigration({
     1: function (data) {
       return {
@@ -608,7 +623,7 @@ test('migration', async t => {
     id: 0
   }
 
-  const data = await readEntity(item, { migration }).unwrap()
+  const data = await read(item, { migration }).unwrap()
 
   t.deepEqual(data, {
     version: 2,
@@ -617,37 +632,59 @@ test('migration', async t => {
   })
 })
 
-test('prepare', async t => {
-  t.plan(3)
+test('instance:prepare', async t => {
+  t.plan(5)
 
-  const b = await readEntity(
+  const a = await read(
     { value: 0 },
     {
       prepare() {
         t.fail()
       }
     }
-  ).unwrap({ option: true })
-  t.deepEqual(b, { value: 0 })
+  ).unwrap()
+  t.deepEqual(a, { value: 0 })
 
-  const a = await createEntity(
+  const b = await create(
     { value: 0 },
     {
       prepare(data, options) {
+        t.deepEqual(options, { a: 'train' })
         data.value++
-        t.is(options.option, true)
       }
     }
-  ).unwrap({ option: true })
-  t.deepEqual(a, { value: 1 })
+  ).unwrap({ a: 'train' })
+  t.deepEqual(b, { value: 1 })
+
+  const c = await create(
+    { value: 0 },
+    {
+      prepare(data, options) {
+        t.deepEqual(options, { a: 'train' })
+        return {
+          ...data,
+          value: data.value + 1
+        }
+      }
+    }
+  ).unwrap({ a: 'train' })
+  t.deepEqual(c, { value: 1 })
 })
 
-test('alteration', async t => {
-  const data = await createEntity({ a: 'test' })
-    .if(true, mutation => mutation.assign({ b: 'free' }))
-    .unwrap()
-  t.deepEqual(data, {
-    a: 'test',
-    b: 'free'
-  })
+test('instance:not-iterable', async t => {
+  const adapter = {
+    filter() {
+      return null
+    }
+  }
+  const iterable = createInstance(intentFilter(), { adapter }).iterate()
+  await t.throwsAsync(
+    consumeIterable(iterable, () => t.fail()),
+    { code: 'EMUT_NOT_ITERABLE' }
+  )
+})
+
+test('instance:null-iterable', async t => {
+  const out = await consumeIterable(read(null).iterate())
+  t.deepEqual(out, [])
 })

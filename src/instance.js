@@ -102,7 +102,7 @@ function iterateOne(state, options) {
   }
 }
 
-function toIterator(value) {
+function createIterator(value) {
   if (!isNull(value) && isFunction(value[Symbol.asyncIterator])) {
     return value[Symbol.asyncIterator]()
   } else if (!isNull(value) && isFunction(value[Symbol.iterator])) {
@@ -113,7 +113,7 @@ function toIterator(value) {
 }
 
 async function unwrapMany(state, options) {
-  const iterator = toIterator(fetch(state, options))
+  const iterator = createIterator(fetch(state, options))
   const results = []
   let active = true
   while (active) {
@@ -130,7 +130,7 @@ async function unwrapMany(state, options) {
 function iterateMany(state, options) {
   return {
     [Symbol.asyncIterator]() {
-      const iterator = toIterator(fetch(state, options))
+      const iterator = createIterator(fetch(state, options))
       return {
         async next() {
           const { done, value } = await iterator.next()
