@@ -9,41 +9,43 @@ function getLastVersion(strategies) {
     .reduce((a, b) => (a > b ? a : b), 0)
 }
 
-export class Migration {
-  constructor(strategies, versionKey = 'version') {
-    this._lastVersion = getLastVersion(strategies)
-    this._strategies = strategies
-    this._versionKey = versionKey
+export function createMigration(strategies, versionKey = 'version') {
+  return {
+    lastVersion: getLastVersion(strategies),
+    strategies,
+    versionKey
+  }
+}
+
+function getVersion(data, versionKey) {
+  return data[versionKey] || 0
+}
+
+export async function migrateStatus(
+  { lastVersion, strategies, versionKey },
+  status
+) {
+  const vCurr = getVersion(status.target, versionKey)
+  if (vCurr >= lastVersion) {
+    return status
   }
 
-  getVersion(data) {
-    return data[this._versionKey] || 0
-  }
-
-  async migrateStatus(status) {
-    const vLast = this._lastVersion
-    const vCurr = this.getVersion(status.target)
-    if (vCurr >= vLast) {
-      return status
+  let data = status.target
+  for (let v = vCurr + 1; v <= lastVersion; v++) {
+    const strategy = strategies[v]
+    if (typeof strategy !== 'function') {
+      throw new Herry('EMUT_MISSING_STRATEGY', 'Missing migration strategy', {
+        version: v
+      })
     }
-
-    let data = status.target
-    for (let v = vCurr + 1; v <= vLast; v++) {
-      const strategy = this._strategies[v]
-      if (typeof strategy !== 'function') {
-        throw new Herry('EMUT_MISSING_STRATEGY', 'Missing migration strategy', {
-          version: v
-        })
-      }
-      data = await strategy(data)
-      if (this.getVersion(data) !== v) {
-        throw new Herry('EMUT_EXPECTED_UPGRADE', 'Expected version upgrade', {
-          version: v,
-          data
-        })
-      }
+    data = await strategy(data)
+    if (getVersion(data, versionKey) !== v) {
+      throw new Herry('EMUT_EXPECTED_UPGRADE', 'Expected version upgrade', {
+        version: v,
+        data
+      })
     }
-
-    return updateStatus(status, data)
   }
+
+  return updateStatus(status, data)
 }

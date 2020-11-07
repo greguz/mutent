@@ -8,7 +8,7 @@ import {
 } from './driver'
 import { createEngine } from './engine'
 import { createInstance } from './instance'
-import { Migration } from './migration'
+import { createMigration } from './migration'
 
 function compileSchema(settings) {
   let { engine, schema } = settings
@@ -18,20 +18,16 @@ function compileSchema(settings) {
   }
 }
 
-function createMigration({ migrationStrategies, versionKey }) {
-  if (migrationStrategies) {
-    return new Migration(migrationStrategies, versionKey)
-  }
-}
-
 export function createStore(settings) {
   const {
     adapter,
     classy,
     historySize,
     manualCommit,
+    migrationStrategies,
     prepare,
-    unsafe
+    unsafe,
+    versionKey
   } = settings
 
   const driver = new Driver(adapter)
@@ -41,7 +37,9 @@ export function createStore(settings) {
     driver,
     historySize,
     manualCommit,
-    migration: createMigration(settings),
+    migration: migrationStrategies
+      ? createMigration(migrationStrategies, versionKey)
+      : undefined,
     prepare,
     schema: compileSchema(settings),
     unsafe

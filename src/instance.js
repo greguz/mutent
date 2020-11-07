@@ -3,6 +3,7 @@ import Herry from 'herry'
 
 import { mutateStatus } from './ast'
 import { isCreationIntent, isIntentIterable } from './driver'
+import { migrateStatus } from './migration'
 import {
   assignMethod,
   commitMethod,
@@ -91,7 +92,7 @@ async function unwrapStatus(
 
   // Apply migration strategies
   if (migration) {
-    status = await migration.migrateStatus(status)
+    status = await migrateStatus(migration, status)
   }
 
   // First validation and parsing

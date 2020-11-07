@@ -3,7 +3,7 @@ import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
 import { Driver, intentCreate, intentFilter, intentFrom } from './driver'
 import { createInstance } from './instance'
-import { Migration } from './migration'
+import { createMigration } from './migration'
 import { createMutation } from './mutation'
 
 const defaultAdapter = {
@@ -586,7 +586,7 @@ test('redo entitites', async t => {
 })
 
 test('migration', async t => {
-  const migration = new Migration({
+  const migration = createMigration({
     1: function (data) {
       return {
         ...data,
