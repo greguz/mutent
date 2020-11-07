@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { Driver } from './driver'
+import { adapterCount, adapterExists, writeStatus } from './adapter'
 import {
   commitStatus,
   createStatus,
@@ -8,49 +8,45 @@ import {
   updateStatus
 } from './status'
 
-function createDriver(definition = {}) {
-  return new Driver(definition)
-}
-
-function writeStatus(status, definition = {}, options = {}) {
-  const driver = new Driver(definition)
-  return driver.writeStatus(status, options)
+function write(status, adapter = {}, options = {}) {
+  return writeStatus(adapter, status, options)
 }
 
 test('reader:count', async t => {
-  const driver = createDriver({
+  const adapter = {
     count(query, options) {
       t.deepEqual(query, { imma: 'query' })
       t.deepEqual(options, { imma: 'options' })
       return 42
     }
-  })
-  t.is(await driver.count({ imma: 'query' }, { imma: 'options' }), 42)
-  await t.throwsAsync(createDriver().count(), {
+  }
+  t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 42)
+
+  await t.throwsAsync(adapterCount({}), {
     code: 'EMUT_EXPECTED_DRIVER_METHOD'
   })
 })
 
 test('reader:exists', async t => {
-  const a = createDriver({
+  const a = {
     exists(query, options) {
       t.deepEqual(query, { imma: 'query' })
       t.deepEqual(options, { imma: 'options' })
       return true
     }
-  })
-  t.true(await a.exists({ imma: 'query' }, { imma: 'options' }))
+  }
+  t.true(await adapterExists(a, { imma: 'query' }, { imma: 'options' }))
 
-  const b = createDriver({
+  const b = {
     find(query, options) {
       t.deepEqual(query, { imma: 'query' })
       t.deepEqual(options, { imma: 'options' })
       return { a: 'document' }
     }
-  })
-  t.true(await b.exists({ imma: 'query' }, { imma: 'options' }))
+  }
+  t.true(await adapterExists(b, { imma: 'query' }, { imma: 'options' }))
 
-  await t.throwsAsync(createDriver().exists(), {
+  await t.throwsAsync(adapterExists({}), {
     code: 'EMUT_EXPECTED_DRIVER_METHOD'
   })
 })
@@ -111,7 +107,7 @@ test('sCreate', async t => {
     }
   }
 
-  const status = await writeStatus(sCreate(0), writer, { hello: 'world' })
+  const status = await write(sCreate(0), writer, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -141,9 +137,9 @@ test('sVoid', async t => {
     }
   }
 
-  const status = await writeStatus(sVoid(0), writer, { hello: 'world' })
+  const status = await write(sVoid(0), writer, { hello: 'world' })
 
-  t.deepEqual(status, await writeStatus(sVoid(0), {}))
+  t.deepEqual(status, await write(sVoid(0), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -186,7 +182,7 @@ test('sUpdate', async t => {
     }
   }
 
-  const status = await writeStatus(sUpdate(0, 'UPDATE'), writer, {
+  const status = await write(sUpdate(0, 'UPDATE'), writer, {
     hello: 'world'
   })
 
@@ -225,7 +221,7 @@ test('sDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sDelete(0), writer, { hello: 'world' })
+  const status = await write(sDelete(0), writer, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -259,7 +255,7 @@ test('sCreateUpdate', async t => {
     }
   }
 
-  const status = await writeStatus(sCreateUpdate(0, 'UPDATE'), writer, {
+  const status = await write(sCreateUpdate(0, 'UPDATE'), writer, {
     hello: 'world'
   })
 
@@ -293,7 +289,9 @@ test('sCreateDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sCreateDelete(0), writer, { hello: 'world' })
+  const status = await write(sCreateDelete(0), writer, {
+    hello: 'world'
+  })
 
   t.deepEqual(status, {
     created: false,
@@ -326,7 +324,7 @@ test('sUpdateDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sUpdateDelete(0, 'UPDATE'), writer, {
+  const status = await write(sUpdateDelete(0, 'UPDATE'), writer, {
     hello: 'world'
   })
 
@@ -357,7 +355,7 @@ test('sCreateUpdateDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sCreateUpdateDelete(0, 'UPDATE'), writer, {
+  const status = await write(sCreateUpdateDelete(0, 'UPDATE'), writer, {
     hello: 'world'
   })
 
@@ -375,13 +373,13 @@ test('sCreateUpdateDelete', async t => {
 
 test('writer defaults', async t => {
   const driver = {}
-  await t.throwsAsync(writeStatus(sCreate(0), driver), {
+  await t.throwsAsync(write(sCreate(0), driver), {
     code: 'EMUT_EXPECTED_DRIVER_METHOD'
   })
-  await t.throwsAsync(writeStatus(sUpdate(0, 'UPDATE'), driver), {
+  await t.throwsAsync(write(sUpdate(0, 'UPDATE'), driver), {
     code: 'EMUT_EXPECTED_DRIVER_METHOD'
   })
-  await t.throwsAsync(writeStatus(sDelete(0), driver), {
+  await t.throwsAsync(write(sDelete(0), driver), {
     code: 'EMUT_EXPECTED_DRIVER_METHOD'
   })
 })

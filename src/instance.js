@@ -1,8 +1,9 @@
 import fluente from 'fluente'
 import Herry from 'herry'
 
+import { writeStatus } from './adapter'
 import { mutateStatus } from './ast'
-import { isCreationIntent, isIntentIterable } from './driver'
+import { isCreationIntent, isIntentIterable, unwrapIntent } from './intent'
 import { migrateStatus } from './migration'
 import {
   assignMethod,
@@ -75,7 +76,7 @@ function iterateMany(input, mutate) {
 
 async function unwrapStatus(
   status,
-  { driver, manualCommit, migration, prepare, schema, tree, unsafe },
+  { adapter, manualCommit, migration, prepare, schema, tree, unsafe },
   options
 ) {
   if (isNull(status.target)) {
@@ -106,7 +107,7 @@ async function unwrapStatus(
 
   // Apply mutations and validate
   if (tree.length > 0) {
-    status = await mutateStatus(status, tree, driver, options)
+    status = await mutateStatus(status, tree, adapter, options)
     if (schema) {
       schema.validate(
         status.target,
@@ -119,7 +120,7 @@ async function unwrapStatus(
   // Handle manualCommit/unsafe features
   if (shouldCommit(status)) {
     if (!coalesce(options.manualCommit, manualCommit)) {
-      status = await driver.writeStatus(status, options)
+      status = await writeStatus(adapter, status, options)
     } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         source: status.source,
@@ -133,15 +134,15 @@ async function unwrapStatus(
 }
 
 async function unwrapMethod(state, options = {}) {
-  const { driver, intent, toPromise, toStatus } = state
-  return toPromise(driver.unwrapIntent(intent, options), data =>
+  const { adapter, intent, toPromise, toStatus } = state
+  return toPromise(unwrapIntent(adapter, intent, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
 
 function iterateMethod(state, options = {}) {
-  const { driver, intent, toIterable, toStatus } = state
-  return toIterable(driver.unwrapIntent(intent, options), data =>
+  const { adapter, intent, toIterable, toStatus } = state
+  return toIterable(unwrapIntent(adapter, intent, options), data =>
     unwrapStatus(toStatus(data), state, options)
   )
 }
@@ -149,8 +150,8 @@ function iterateMethod(state, options = {}) {
 export function createInstance(
   intent,
   {
+    adapter,
     classy,
-    driver,
     historySize,
     manualCommit,
     migration,
@@ -162,8 +163,8 @@ export function createInstance(
   const isIterable = isIntentIterable(intent)
 
   const state = {
+    adapter,
     intent,
-    driver,
     manualCommit,
     migration,
     prepare,

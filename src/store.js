@@ -1,11 +1,11 @@
+import { adapterCount, adapterExists } from './adapter'
 import {
-  Driver,
   intentCreate,
   intentFilter,
   intentFind,
   intentFrom,
   intentRead
-} from './driver'
+} from './intent'
 import { createEngine } from './engine'
 import { createInstance } from './instance'
 import { createMigration } from './migration'
@@ -30,11 +30,13 @@ export function createStore(settings) {
     versionKey
   } = settings
 
-  const driver = new Driver(adapter)
+  if (!adapter) {
+    throw new Error('Expected adapter')
+  }
 
   const instanceSettings = {
+    adapter,
     classy,
-    driver,
     historySize,
     manualCommit,
     migration: migrationStrategies
@@ -47,13 +49,13 @@ export function createStore(settings) {
 
   return {
     count(query, options = {}) {
-      return driver.count(query, options)
+      return adapterCount(adapter, query, options)
     },
     create(data) {
       return createInstance(intentCreate(data), instanceSettings)
     },
     exists(query, options = {}) {
-      return driver.exists(query, options)
+      return adapterExists(adapter, query, options)
     },
     find(query) {
       return createInstance(intentFind(query), instanceSettings)

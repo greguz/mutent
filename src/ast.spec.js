@@ -7,12 +7,11 @@ import {
   nodeDelete,
   nodeUpdate
 } from './ast'
-import { Driver } from './driver'
 import { createStatus, readStatus } from './status'
 
 test('ast:commit', async t => {
   t.plan(3)
-  const driver = new Driver({
+  const adapter = {
     create(data, options) {
       t.is(data, 42)
       t.deepEqual(options, { it: 'works' })
@@ -23,8 +22,8 @@ test('ast:commit', async t => {
     delete() {
       t.fail()
     }
-  })
-  const status = await mutateStatus(createStatus(42), [nodeCommit()], driver, {
+  }
+  const status = await mutateStatus(createStatus(42), [nodeCommit()], adapter, {
     it: 'works'
   })
   t.deepEqual(status, {
@@ -37,7 +36,7 @@ test('ast:commit', async t => {
 })
 
 test('ast:condition', async t => {
-  const driver = new Driver({
+  const adapter = {
     create() {
       t.fail()
     },
@@ -47,9 +46,9 @@ test('ast:condition', async t => {
     delete() {
       t.fail()
     }
-  })
+  }
   const condition = nodeCondition(value => value !== 42, [nodeDelete()])
-  const a = await mutateStatus(createStatus('UGLY'), [condition], driver)
+  const a = await mutateStatus(createStatus('UGLY'), [condition], adapter)
   t.deepEqual(a, {
     created: true,
     updated: false,
@@ -57,7 +56,7 @@ test('ast:condition', async t => {
     source: null,
     target: 'UGLY'
   })
-  const b = await mutateStatus(createStatus(42), [condition], driver)
+  const b = await mutateStatus(createStatus(42), [condition], adapter)
   t.deepEqual(b, {
     created: true,
     updated: false,
@@ -68,7 +67,7 @@ test('ast:condition', async t => {
 })
 
 test('ast:delete', async t => {
-  const driver = new Driver({
+  const adapter = {
     create() {
       t.fail()
     },
@@ -78,9 +77,9 @@ test('ast:delete', async t => {
     delete() {
       t.fail()
     }
-  })
+  }
   const value = 'DELETEME.md'
-  const status = await mutateStatus(readStatus(value), [nodeDelete()], driver)
+  const status = await mutateStatus(readStatus(value), [nodeDelete()], adapter)
   t.deepEqual(status, {
     created: false,
     updated: false,
@@ -91,7 +90,7 @@ test('ast:delete', async t => {
 })
 
 test('ast:update', async t => {
-  const driver = new Driver({
+  const adapter = {
     create() {
       t.fail()
     },
@@ -101,11 +100,11 @@ test('ast:update', async t => {
     delete() {
       t.fail()
     }
-  })
+  }
   const status = await mutateStatus(
     createStatus(41.8),
     [nodeUpdate(Math.round)],
-    driver
+    adapter
   )
   t.deepEqual(status, {
     created: true,

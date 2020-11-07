@@ -1,8 +1,8 @@
 import test from 'ava'
 import { Readable, Writable, collect, pipeline, subscribe } from 'fluido'
 
-import { Driver, intentCreate, intentFilter, intentFrom } from './driver'
 import { createInstance } from './instance'
+import { intentCreate, intentFilter, intentFrom } from './intent'
 import { createMigration } from './migration'
 import { createMutation } from './mutation'
 
@@ -15,7 +15,7 @@ const defaultAdapter = {
 function prepareSettings(settings = {}) {
   return {
     ...settings,
-    driver: new Driver(settings.adapter || defaultAdapter)
+    adapter: settings.adapter || defaultAdapter
   }
 }
 
