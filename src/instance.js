@@ -17,73 +17,23 @@ import {
 import { createStatus, readStatus, shouldCommit } from './status'
 import { coalesce, isFunction, isNil, isNull } from './utils'
 
-async function unwrapOne(input, mutate) {
-  return mutate(await input)
+function toStatus(intent, data) {
+  return isCreationIntent(intent) ? createStatus(data) : readStatus(data)
 }
 
-function iterateOne(input, mutate) {
-  return {
-    [Symbol.asyncIterator]: async function* () {
-      const value = await unwrapOne(input, mutate)
-      if (!isNull(value)) {
-        yield value
-      }
-    }
-  }
-}
-
-function createIterator(value) {
-  if (!isNull(value) && isFunction(value[Symbol.asyncIterator])) {
-    return value[Symbol.asyncIterator]()
-  } else if (!isNull(value) && isFunction(value[Symbol.iterator])) {
-    return value[Symbol.iterator]()
-  } else {
-    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', { value })
-  }
-}
-
-async function unwrapMany(input, mutate) {
-  const iterator = createIterator(input)
-  const results = []
-  let active = true
-  while (active) {
-    const { done, value } = await iterator.next()
-    if (done) {
-      active = false
-    } else {
-      results.push(await mutate(value))
-    }
-  }
-  return results
-}
-
-function iterateMany(input, mutate) {
-  return {
-    [Symbol.asyncIterator]() {
-      return {
-        iterator: createIterator(input),
-        async next() {
-          const { done, value } = await this.iterator.next()
-          return {
-            done,
-            value: done ? undefined : await mutate(value)
-          }
-        }
-      }
-    }
-  }
-}
-
-async function unwrapStatus(
-  status,
-  { adapter, manualCommit, migration, prepare, schema, tree, unsafe },
+async function processData(
+  data,
+  { adapter, intent, manualCommit, migration, prepare, schema, tree, unsafe },
   options
 ) {
-  if (isNull(status.target)) {
+  if (isNull(data)) {
     return null
   }
 
   // Initialize status
+  let status = toStatus(intent, data)
+
+  // Prepare object (creation time)
   if (status.created && prepare) {
     const out = prepare(status.target, options)
     if (!isNil(out)) {
@@ -133,18 +83,77 @@ async function unwrapStatus(
   return status.target
 }
 
+function fetch({ adapter, intent }, options) {
+  return unwrapIntent(adapter, intent, options)
+}
+
+async function unwrapOne(state, options) {
+  return processData(await fetch(state, options), state, options)
+}
+
+function iterateOne(state, options) {
+  return {
+    [Symbol.asyncIterator]: async function* () {
+      const value = await unwrapOne(state, options)
+      if (!isNull(value)) {
+        yield value
+      }
+    }
+  }
+}
+
+function toIterator(value) {
+  if (!isNull(value) && isFunction(value[Symbol.asyncIterator])) {
+    return value[Symbol.asyncIterator]()
+  } else if (!isNull(value) && isFunction(value[Symbol.iterator])) {
+    return value[Symbol.iterator]()
+  } else {
+    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', { value })
+  }
+}
+
+async function unwrapMany(state, options) {
+  const iterator = toIterator(fetch(state, options))
+  const results = []
+  let active = true
+  while (active) {
+    const { done, value } = await iterator.next()
+    if (done) {
+      active = false
+    } else {
+      results.push(await processData(value, state, options))
+    }
+  }
+  return results
+}
+
+function iterateMany(state, options) {
+  return {
+    [Symbol.asyncIterator]() {
+      const iterator = toIterator(fetch(state, options))
+      return {
+        async next() {
+          const { done, value } = await iterator.next()
+          return {
+            done,
+            value: done ? undefined : await processData(value, state, options)
+          }
+        }
+      }
+    }
+  }
+}
+
 async function unwrapMethod(state, options = {}) {
-  const { adapter, intent, toPromise, toStatus } = state
-  return toPromise(unwrapIntent(adapter, intent, options), data =>
-    unwrapStatus(toStatus(data), state, options)
-  )
+  return isIntentIterable(state.intent)
+    ? unwrapMany(state, options)
+    : unwrapOne(state, options)
 }
 
 function iterateMethod(state, options = {}) {
-  const { adapter, intent, toIterable, toStatus } = state
-  return toIterable(unwrapIntent(adapter, intent, options), data =>
-    unwrapStatus(toStatus(data), state, options)
-  )
+  return isIntentIterable(state.intent)
+    ? iterateMany(state, options)
+    : iterateOne(state, options)
 }
 
 export function createInstance(
@@ -160,8 +169,6 @@ export function createInstance(
     unsafe
   }
 ) {
-  const isIterable = isIntentIterable(intent)
-
   const state = {
     adapter,
     intent,
@@ -169,9 +176,6 @@ export function createInstance(
     migration,
     prepare,
     schema,
-    toIterable: isIterable ? iterateMany : iterateOne,
-    toPromise: isIterable ? unwrapMany : unwrapOne,
-    toStatus: isCreationIntent(intent) ? createStatus : readStatus,
     tree: [],
     unsafe
   }
