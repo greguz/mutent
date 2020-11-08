@@ -1,7 +1,25 @@
 import Ajv from 'ajv'
 import Herry from 'herry'
 
-import { parseData } from './schema/parse-data'
+function describeParser(value) {
+  if (typeof value === 'string') {
+    return {
+      key: value,
+      args: []
+    }
+  } else if (Array.isArray(value)) {
+    return {
+      key: value[0],
+      args: value.slice(1)
+    }
+  } else {
+    const key = Object.keys(value)[0]
+    return {
+      key,
+      args: value[key]
+    }
+  }
+}
 
 function defaultAjv() {
   return new Ajv({
@@ -28,12 +46,9 @@ function hasOwnProperty(object, key) {
 }
 
 class Schema {
-  constructor(ajv, parsers, schema) {
-    this._ajv = ajv
-    this._parsers = parsers
+  constructor(schema, validate) {
     this._schema = schema
-
-    this._validate = this._ajv.compile(schema)
+    this._validate = validate
   }
 
   validate(
@@ -52,7 +67,7 @@ class Schema {
 
   parse(data, code, message) {
     this.validate(data, code, message)
-    return parseData(this._ajv, data, this._schema, this._parsers)
+    return data
   }
 }
 
@@ -89,6 +104,7 @@ class Engine {
 
     setAjvKeyword(this._ajv, 'parse', {
       errors: false,
+      modifying: true,
       metaSchema: {
         type: ['array', 'string', 'object'],
         items: [{ type: 'string' }],
@@ -97,12 +113,23 @@ class Engine {
         additionalProperties: { type: 'array' },
         minProperties: 1,
         maxProperties: 1
+      },
+      compile: schema => {
+        return (data, path, parentData, property) => {
+          const { key, args } = describeParser(schema)
+          const fn = this._parsers[key]
+          const ok = typeof fn === 'function'
+          if (ok) {
+            parentData[property] = fn(data, ...args)
+          }
+          return ok
+        }
       }
     })
   }
 
   compile(schema) {
-    return new Schema(this._ajv, this._parsers, schema)
+    return new Schema(schema, this._ajv.compile(schema))
   }
 
   defineConstructor(key, fn) {

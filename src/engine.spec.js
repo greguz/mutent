@@ -60,11 +60,11 @@ test('engine:defineParser', t => {
       },
       b: {
         type: 'number',
-        parse: 'floor'
+        parse: ['floor']
       },
       c: {
         type: 'number',
-        parse: 'round'
+        parse: { round: [] }
       }
     }
   })
@@ -79,7 +79,7 @@ test('engine:defineParser', t => {
     code: 'EMUT_INVALID_DATA'
   })
   t.throws(() => schema.parse({ c: 42.1 }), {
-    code: 'EMUT_EXPECTED_PARSER'
+    code: 'EMUT_INVALID_DATA'
   })
 })
 
