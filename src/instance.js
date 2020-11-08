@@ -48,11 +48,7 @@ async function processData(
 
   // First validation and parsing
   if (schema) {
-    status.target = schema.parse(
-      status.target,
-      'EMUT_INVALID_DATA',
-      'Unusable data found'
-    )
+    schema.validate(status.target, 'EMUT_INVALID_DATA', 'Unusable data found')
   }
 
   // Apply mutations and validate

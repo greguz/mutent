@@ -58,15 +58,11 @@ class Schema {
   ) {
     if (!this._validate(data)) {
       throw new Herry(code, message, {
-        data,
         errors: this._validate.errors,
+        data,
         schema: this._schema
       })
     }
-  }
-
-  parse(data, code, message) {
-    this.validate(data, code, message)
     return data
   }
 }

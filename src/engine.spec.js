@@ -69,16 +69,16 @@ test('engine:defineParser', t => {
     }
   })
 
-  schema.parse({})
-  t.deepEqual(schema.parse({ a: 41.5 }), { a: 42 })
-  t.deepEqual(schema.parse({ b: 42.4 }), { b: 42 })
-  t.throws(() => schema.parse({ a: 'nope' }), {
+  schema.validate({})
+  t.deepEqual(schema.validate({ a: 41.5 }), { a: 42 })
+  t.deepEqual(schema.validate({ b: 42.4 }), { b: 42 })
+  t.throws(() => schema.validate({ a: 'nope' }), {
     code: 'EMUT_INVALID_DATA'
   })
-  t.throws(() => schema.parse({ b: 'nope' }), {
+  t.throws(() => schema.validate({ b: 'nope' }), {
     code: 'EMUT_INVALID_DATA'
   })
-  t.throws(() => schema.parse({ c: 42.1 }), {
+  t.throws(() => schema.validate({ c: 42.1 }), {
     code: 'EMUT_INVALID_DATA'
   })
 })
