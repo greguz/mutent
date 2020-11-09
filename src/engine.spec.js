@@ -12,6 +12,8 @@ test('engine:defineConstructor', t => {
     constructors: { Tweedledum }
   }).defineConstructor('Tweedledee', Tweedledee)
 
+  t.throws(() => engine.defineConstructor('nope', null))
+
   const schema = engine.compile({
     type: 'object',
     properties: {
@@ -49,6 +51,8 @@ test('engine:defineParser', t => {
       parseInt: parseInt
     }
   }).defineParser('floor', Math.floor)
+
+  t.throws(() => engine.defineParser('nope', null))
 
   const schema = engine.compile({
     type: 'object',

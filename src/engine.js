@@ -1,6 +1,13 @@
 import Ajv from 'ajv'
 import Herry from 'herry'
 
+function ensureFunction(value) {
+  if (typeof value !== 'function') {
+    throw new Error('Not a function')
+  }
+  return value
+}
+
 function describeParser(value) {
   if (typeof value === 'string') {
     return {
@@ -179,12 +186,12 @@ class Engine {
   }
 
   defineConstructor(key, fn) {
-    this._constructors[key] = fn
+    this._constructors[key] = ensureFunction(fn)
     return this
   }
 
   defineParser(key, fn) {
-    this._parsers[key] = fn
+    this._parsers[key] = ensureFunction(fn)
     return this
   }
 }
