@@ -44,7 +44,7 @@ function setAjvKeyword(ajv, keyword, definition) {
 
 function instanceofKeyword(constructors) {
   return {
-    errors: false,
+    errors: true,
     metaSchema: {
       type: 'string'
     },
@@ -57,7 +57,25 @@ function instanceofKeyword(constructors) {
           { key: schema }
         )
       }
-      return data => data instanceof Constructor
+
+      return function validate(data, dataPath) {
+        validate.errors = validate.errors || []
+
+        if (data instanceof Constructor) {
+          return true
+        } else {
+          validate.errors.push({
+            keyword: 'instanceof',
+            dataPath,
+            schemaPath: '#/instanceof',
+            params: {
+              constructor: schema,
+              data
+            },
+            message: `Expected instance of "${schema}"`
+          })
+        }
+      }
     }
   }
 }
@@ -91,7 +109,6 @@ function parseKeyword(parsers) {
 
         try {
           parentData[property] = parse(data, ...args)
-          return true
         } catch (err) {
           validate.errors.push({
             keyword: 'parse',
@@ -104,7 +121,6 @@ function parseKeyword(parsers) {
             },
             message: 'Data parsing failed'
           })
-          return false
         }
       }
     }
