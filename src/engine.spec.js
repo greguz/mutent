@@ -91,3 +91,29 @@ test('engine:keywordsCheck', t => {
   c.addKeyword('parse', {})
   t.throws(() => createEngine({ ajv: c }), { code: 'EMUT_RESERVED_KEYWORD' })
 })
+
+test('engine:parsingError', t => {
+  const engine = createEngine({
+    parsers: {
+      error() {
+        throw new Error('STOP')
+      }
+    }
+  })
+
+  const schema = engine.compile({
+    type: 'object',
+    parse: 'error'
+  })
+
+  try {
+    schema.validate({})
+    t.fail()
+  } catch (err) {
+    t.true(Array.isArray(err.info.errors))
+    t.true(err.info.errors.length === 1)
+    const e = err.info.errors[0]
+    t.true(e.params.error instanceof Error)
+    t.true(e.params.error.message === 'STOP')
+  }
+})

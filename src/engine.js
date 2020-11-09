@@ -64,7 +64,7 @@ function instanceofKeyword(constructors) {
 
 function parseKeyword(parsers) {
   return {
-    errors: false,
+    errors: 'full',
     modifying: true,
     metaSchema: {
       type: ['array', 'string', 'object'],
@@ -86,9 +86,26 @@ function parseKeyword(parsers) {
         })
       }
 
-      return (data, path, parentData, property) => {
-        parentData[property] = parse(data, ...args)
-        return true
+      return function validate(data, dataPath, parentData, property) {
+        validate.errors = validate.errors || []
+
+        try {
+          parentData[property] = parse(data, ...args)
+          return true
+        } catch (err) {
+          validate.errors.push({
+            keyword: 'parse',
+            dataPath,
+            schemaPath: '#/parse',
+            params: {
+              parser: key,
+              arguments: args,
+              error: err
+            },
+            message: 'Data parsing failed'
+          })
+          return false
+        }
       }
     }
   }
