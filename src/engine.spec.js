@@ -22,15 +22,10 @@ test('engine:defineConstructor', t => {
       b: {
         type: 'object',
         instanceof: 'Tweedledee'
-      },
-      c: {
-        type: 'object',
-        instanceof: 'Alice'
       }
     }
   })
 
-  schema.validate({})
   schema.validate({
     a: new Tweedledum(),
     b: new Tweedledee()
@@ -41,14 +36,18 @@ test('engine:defineConstructor', t => {
   t.throws(() => schema.validate({ b: {} }), {
     code: 'EMUT_INVALID_DATA'
   })
-  t.throws(() => schema.validate({ c: {} }), {
-    code: 'EMUT_INVALID_DATA'
+
+  t.throws(() => engine.compile({ instanceof: 'nope' }), {
+    code: 'EMUT_UNKNOWN_CONSTRUCTOR'
   })
 })
 
 test('engine:defineParser', t => {
   const engine = createEngine({
-    parsers: { ceil: Math.ceil }
+    parsers: {
+      ceil: Math.ceil,
+      parseInt: parseInt
+    }
   }).defineParser('floor', Math.floor)
 
   const schema = engine.compile({
@@ -63,23 +62,18 @@ test('engine:defineParser', t => {
         parse: ['floor']
       },
       c: {
-        type: 'number',
-        parse: { round: [] }
+        type: 'string',
+        parse: { parseInt: [16] }
       }
     }
   })
 
-  schema.validate({})
   t.deepEqual(schema.validate({ a: 41.5 }), { a: 42 })
   t.deepEqual(schema.validate({ b: 42.4 }), { b: 42 })
-  t.throws(() => schema.validate({ a: 'nope' }), {
-    code: 'EMUT_INVALID_DATA'
-  })
-  t.throws(() => schema.validate({ b: 'nope' }), {
-    code: 'EMUT_INVALID_DATA'
-  })
-  t.throws(() => schema.validate({ c: 42.1 }), {
-    code: 'EMUT_INVALID_DATA'
+  t.deepEqual(schema.validate({ c: '2A' }), { c: 42 })
+
+  t.throws(() => engine.compile({ parse: 'nope' }), {
+    code: 'EMUT_UNKNOWN_PARSER'
   })
 })
 

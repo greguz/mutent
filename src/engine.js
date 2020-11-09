@@ -41,8 +41,56 @@ function setAjvKeyword(ajv, keyword, definition) {
   ajv.addKeyword(keyword, definition)
 }
 
-function hasOwnProperty(object, key) {
-  return Object.prototype.hasOwnProperty.call(object, key)
+function instanceofKeyword(constructors) {
+  return {
+    errors: false,
+    metaSchema: {
+      type: 'string'
+    },
+    compile(schema) {
+      const Constructor = constructors[schema]
+      if (!Constructor) {
+        throw new Herry(
+          'EMUT_UNKNOWN_CONSTRUCTOR',
+          'Unknown constructor described',
+          { key: schema }
+        )
+      }
+      return data => data instanceof Constructor
+    }
+  }
+}
+
+function parseKeyword(parsers) {
+  return {
+    errors: false,
+    modifying: true,
+    metaSchema: {
+      type: ['array', 'string', 'object'],
+      items: [{ type: 'string' }],
+      minItems: 1,
+      additionalItems: true,
+      additionalProperties: { type: 'array' },
+      minProperties: 1,
+      maxProperties: 1
+    },
+    compile(schema) {
+      const { key, args } = describeParser(schema)
+
+      const parse = parsers[key]
+      if (!parse) {
+        throw new Herry('EMUT_UNKNOWN_PARSER', 'Unknown parser required', {
+          key,
+          args
+        })
+      }
+
+      return (data, path, parentData, property) => {
+        parentData[property] = parse(data, ...args)
+        return true
+      }
+    }
+  }
 }
 
 class Schema {
@@ -81,47 +129,15 @@ class Engine {
       String,
       ...constructors
     }
-
     this._parsers = { ...parsers }
-
     this._ajv = ajv || defaultAjv()
 
-    setAjvKeyword(this._ajv, 'instanceof', {
-      errors: false,
-      metaSchema: {
-        type: 'string'
-      },
-      validate: (schema, data) => {
-        return hasOwnProperty(this._constructors, schema)
-          ? data instanceof this._constructors[schema]
-          : false
-      }
-    })
-
-    setAjvKeyword(this._ajv, 'parse', {
-      errors: false,
-      modifying: true,
-      metaSchema: {
-        type: ['array', 'string', 'object'],
-        items: [{ type: 'string' }],
-        minItems: 1,
-        additionalItems: true,
-        additionalProperties: { type: 'array' },
-        minProperties: 1,
-        maxProperties: 1
-      },
-      compile: schema => {
-        return (data, path, parentData, property) => {
-          const { key, args } = describeParser(schema)
-          const fn = this._parsers[key]
-          const ok = typeof fn === 'function'
-          if (ok) {
-            parentData[property] = fn(data, ...args)
-          }
-          return ok
-        }
-      }
-    })
+    setAjvKeyword(
+      this._ajv,
+      'instanceof',
+      instanceofKeyword(this._constructors)
+    )
+    setAjvKeyword(this._ajv, 'parse', parseKeyword(this._parsers))
   }
 
   compile(schema) {
