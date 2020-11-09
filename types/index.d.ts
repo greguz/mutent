@@ -66,6 +66,7 @@ export interface Store<T, Q, O> {
 
 export interface EngineSettings {
   ajv?: Ajv.Ajv
+  ajvOptions?: Ajv.Options
   constructors?: Constructors
   parsers?: Parsers
 }

@@ -21,12 +21,13 @@ function describeParser(value) {
   }
 }
 
-function defaultAjv() {
+function defaultAjv(options) {
   return new Ajv({
     coerceTypes: true,
     nullable: true,
     removeAdditional: true,
-    useDefaults: true
+    useDefaults: true,
+    ...options
   })
 }
 
@@ -116,7 +117,7 @@ class Schema {
 }
 
 class Engine {
-  constructor({ ajv, constructors, parsers } = {}) {
+  constructor({ ajv, ajvOptions, constructors, parsers } = {}) {
     this._constructors = {
       Array,
       Buffer,
@@ -130,7 +131,7 @@ class Engine {
       ...constructors
     }
     this._parsers = { ...parsers }
-    this._ajv = ajv || defaultAjv()
+    this._ajv = ajv || defaultAjv(ajvOptions)
 
     setAjvKeyword(
       this._ajv,
