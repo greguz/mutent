@@ -73,3 +73,18 @@ export function unwrapIntent(adapter, { data, query, type }, options) {
       return adapterFilter(adapter, query, options)
   }
 }
+
+export function describeIntent({ data, query, type }) {
+  switch (type) {
+    case INTENT_TYPE.CREATE:
+      return { type: 'CREATE', data }
+    case INTENT_TYPE.FIND:
+      return { type: 'FIND', query }
+    case INTENT_TYPE.READ:
+      return { type: 'READ', query }
+    case INTENT_TYPE.FILTER:
+      return { type: 'FILTER', query }
+    case INTENT_TYPE.FROM:
+      return { type: 'FROM', data }
+  }
+}

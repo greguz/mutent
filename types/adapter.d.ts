@@ -8,6 +8,10 @@ export declare type AdapterResult<T> = Result<T | null | undefined | void>
 
 export interface Adapter<T, Q, O> {
   /**
+   * Used to identify this adapter
+   */
+  signature?: any
+  /**
    * Fetch one entity
    */
   find?(

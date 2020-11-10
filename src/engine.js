@@ -134,28 +134,6 @@ function parseKeyword(parsers) {
   }
 }
 
-class Schema {
-  constructor(schema, validate) {
-    this._schema = schema
-    this._validate = validate
-  }
-
-  validate(
-    data,
-    code = 'EMUT_INVALID_DATA',
-    message = 'Invalid data detected'
-  ) {
-    if (!this._validate(data)) {
-      throw new Herry(code, message, {
-        errors: this._validate.errors,
-        data,
-        schema: this._schema
-      })
-    }
-    return data
-  }
-}
-
 class Engine {
   constructor({ ajv, ajvOptions, constructors, parsers } = {}) {
     this._constructors = {
@@ -182,7 +160,7 @@ class Engine {
   }
 
   compile(schema) {
-    return new Schema(schema, this._ajv.compile(schema))
+    return this._ajv.compile(schema)
   }
 
   defineConstructor(key, fn) {

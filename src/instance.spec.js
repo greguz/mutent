@@ -116,7 +116,7 @@ test('instance:mutate', async t => {
 test('instance:invalid-mutation', async t => {
   const engine = createEngine()
 
-  const schema = engine.compile({
+  const validate = engine.compile({
     type: 'object',
     properties: {
       value: {
@@ -127,7 +127,7 @@ test('instance:invalid-mutation', async t => {
   })
 
   await t.throwsAsync(
-    read({ value: 42 }, { schema }).update(JSON.stringify).unwrap(),
+    read({ value: 42 }, { validate }).update(JSON.stringify).unwrap(),
     { code: 'EMUT_INVALID_MUTATION' }
   )
 })

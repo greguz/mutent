@@ -1,8 +1,18 @@
 import test from 'ava'
 
 import Ajv from 'ajv'
+import Herry from 'herry'
 
 import { createEngine } from './engine'
+
+function handle(validate, data) {
+  if (!validate(data)) {
+    throw new Herry('EMUT_INVALID_DATA', 'Invalid data', {
+      errors: validate.errors
+    })
+  }
+  return data
+}
 
 test('engine:defineConstructor', t => {
   class Tweedledum {}
@@ -14,7 +24,7 @@ test('engine:defineConstructor', t => {
 
   t.throws(() => engine.defineConstructor('nope', null))
 
-  const schema = engine.compile({
+  const validate = engine.compile({
     type: 'object',
     properties: {
       a: {
@@ -28,14 +38,14 @@ test('engine:defineConstructor', t => {
     }
   })
 
-  schema.validate({
+  handle(validate, {
     a: new Tweedledum(),
     b: new Tweedledee()
   })
-  t.throws(() => schema.validate({ a: {} }), {
+  t.throws(() => handle(validate, { a: {} }), {
     code: 'EMUT_INVALID_DATA'
   })
-  t.throws(() => schema.validate({ b: {} }), {
+  t.throws(() => handle(validate, { b: {} }), {
     code: 'EMUT_INVALID_DATA'
   })
 
@@ -54,7 +64,7 @@ test('engine:defineParser', t => {
 
   t.throws(() => engine.defineParser('nope', null))
 
-  const schema = engine.compile({
+  const validate = engine.compile({
     type: 'object',
     properties: {
       a: {
@@ -72,9 +82,9 @@ test('engine:defineParser', t => {
     }
   })
 
-  t.deepEqual(schema.validate({ a: 41.5 }), { a: 42 })
-  t.deepEqual(schema.validate({ b: 42.4 }), { b: 42 })
-  t.deepEqual(schema.validate({ c: '2A' }), { c: 42 })
+  t.deepEqual(handle(validate, { a: 41.5 }), { a: 42 })
+  t.deepEqual(handle(validate, { b: 42.4 }), { b: 42 })
+  t.deepEqual(handle(validate, { c: '2A' }), { c: 42 })
 
   t.throws(() => engine.compile({ parse: 'nope' }), {
     code: 'EMUT_UNKNOWN_PARSER'
@@ -105,13 +115,13 @@ test('engine:parsingError', t => {
     }
   })
 
-  const schema = engine.compile({
+  const validate = engine.compile({
     type: 'object',
     parse: 'error'
   })
 
   try {
-    schema.validate({})
+    handle(validate, {})
     t.fail()
   } catch (err) {
     t.true(Array.isArray(err.info.errors))

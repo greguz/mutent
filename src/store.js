@@ -43,8 +43,8 @@ export function createStore(settings) {
       ? createMigration(migrationStrategies, versionKey)
       : undefined,
     prepare,
-    schema: compileSchema(settings),
-    unsafe
+    unsafe,
+    validate: compileSchema(settings)
   }
 
   return {

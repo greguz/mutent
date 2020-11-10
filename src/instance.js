@@ -3,7 +3,12 @@ import Herry from 'herry'
 
 import { writeStatus } from './adapter'
 import { mutateStatus } from './ast'
-import { isCreationIntent, isIntentIterable, unwrapIntent } from './intent'
+import {
+  describeIntent,
+  isCreationIntent,
+  isIntentIterable,
+  unwrapIntent
+} from './intent'
 import { migrateStatus } from './migration'
 import {
   assignMethod,
@@ -23,7 +28,7 @@ function toStatus(intent, data) {
 
 async function processData(
   data,
-  { adapter, intent, manualCommit, migration, prepare, schema, tree, unsafe },
+  { adapter, intent, manualCommit, migration, prepare, tree, unsafe, validate },
   options
 ) {
   if (isNull(data)) {
@@ -47,18 +52,30 @@ async function processData(
   }
 
   // First validation and parsing
-  if (schema) {
-    schema.validate(status.target, 'EMUT_INVALID_DATA', 'Unusable data found')
+  if (validate && !validate(status.target)) {
+    throw new Herry('EMUT_INVALID_DATA', 'Unusable data found', {
+      intent: describeIntent(intent),
+      adapter: adapter.signature,
+      data: status.target,
+      options,
+      errors: validate.errors
+    })
   }
 
   // Apply mutations and validate
   if (tree.length > 0) {
     status = await mutateStatus(status, tree, adapter, options)
-    if (schema) {
-      schema.validate(
-        status.target,
+    if (validate && !validate(status.target)) {
+      throw new Herry(
         'EMUT_INVALID_MUTATION',
-        'A mutation has generated an invalid output'
+        'A mutation has generated an invalid output',
+        {
+          intent: describeIntent(intent),
+          adapter: adapter.signature,
+          status,
+          options,
+          errors: validate.errors
+        }
       )
     }
   }
@@ -69,8 +86,9 @@ async function processData(
       status = await writeStatus(adapter, status, options)
     } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
-        source: status.source,
-        target: status.target,
+        intent: describeIntent(intent),
+        adapter: adapter.signature,
+        status,
         options
       })
     }
@@ -98,18 +116,23 @@ function iterateOne(state, options) {
   }
 }
 
-function createIterator(value) {
+function createIterator(state, options) {
+  const value = fetch(state, options)
   if (!isNull(value) && isFunction(value[Symbol.asyncIterator])) {
     return value[Symbol.asyncIterator]()
   } else if (!isNull(value) && isFunction(value[Symbol.iterator])) {
     return value[Symbol.iterator]()
   } else {
-    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', { value })
+    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', {
+      intent: describeIntent(state.intent),
+      adapter: state.adapter.signature,
+      options
+    })
   }
 }
 
 async function unwrapMany(state, options) {
-  const iterator = createIterator(fetch(state, options))
+  const iterator = createIterator(state, options)
   const results = []
   let active = true
   while (active) {
@@ -126,7 +149,7 @@ async function unwrapMany(state, options) {
 function iterateMany(state, options) {
   return {
     [Symbol.asyncIterator]() {
-      const iterator = createIterator(fetch(state, options))
+      const iterator = createIterator(state, options)
       return {
         async next() {
           const { done, value } = await iterator.next()
@@ -161,8 +184,8 @@ export function createInstance(
     manualCommit,
     migration,
     prepare,
-    schema,
-    unsafe
+    unsafe,
+    validate
   }
 ) {
   const state = {
@@ -171,9 +194,9 @@ export function createInstance(
     manualCommit,
     migration,
     prepare,
-    schema,
     tree: [],
-    unsafe
+    unsafe,
+    validate
   }
 
   return fluente({
