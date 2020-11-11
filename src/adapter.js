@@ -22,7 +22,8 @@ export async function adapterRead(adapter, query, options) {
   const data = await adapterFind(adapter, query, options, true)
   if (isNil(data)) {
     throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
-      query,
+      intent: { type: 'READ', query },
+      adapter: adapter.signature,
       options
     })
   }
