@@ -7,6 +7,7 @@ import {
   nodeDelete,
   nodeUpdate
 } from './ast'
+import { createDriver } from './driver'
 import { createStatus, readStatus } from './status'
 
 test('ast:commit', async t => {
@@ -23,9 +24,12 @@ test('ast:commit', async t => {
       t.fail()
     }
   }
-  const status = await mutateStatus(createStatus(42), [nodeCommit()], adapter, {
-    it: 'works'
-  })
+  const status = await mutateStatus(
+    createStatus(42),
+    [nodeCommit()],
+    createDriver(adapter),
+    { it: 'works' }
+  )
   t.deepEqual(status, {
     created: false,
     updated: false,

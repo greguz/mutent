@@ -3,6 +3,7 @@
 import Ajv from 'ajv'
 
 import { Adapter } from './adapter'
+import { Hooks } from './hooks'
 import { Mutation, MutationSettings } from './mutation'
 import { Options } from './options'
 import { JSONSchema7Definition } from './schema'
@@ -44,6 +45,7 @@ export interface StoreSettings<T, Q, O>
     MutationSettings {
   adapter: Adapter<T, Q, O>
   engine?: Engine
+  hooks?: Hooks<T, Q, O>
   manualCommit?: boolean
   migrationStrategies?: Strategies
   name: string

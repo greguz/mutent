@@ -1,8 +1,8 @@
 import fluente from 'fluente'
 import Herry from 'herry'
 
-import { writeStatus } from './adapter'
 import { mutateStatus } from './ast'
+import { write } from './driver'
 import {
   describeIntent,
   isCreationIntent,
@@ -30,7 +30,7 @@ function toStatus(intent, data) {
 async function processData(
   data,
   {
-    adapter,
+    driver,
     intent,
     manualCommit,
     migration,
@@ -84,7 +84,7 @@ async function processData(
 
   // Apply mutations and validate
   if (tree.length > 0) {
-    status = await mutateStatus(status, tree, adapter, options)
+    status = await mutateStatus(status, tree, driver, options)
     if (validate && !validate(status.target)) {
       throw new Herry(
         'EMUT_INVALID_MUTATION',
@@ -103,7 +103,7 @@ async function processData(
   // Handle manualCommit/unsafe features
   if (shouldCommit(status)) {
     if (!coalesce(options.manualCommit, manualCommit)) {
-      status = await writeStatus(adapter, status, options)
+      status = await write(driver, status, options)
     } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         store,
@@ -117,8 +117,8 @@ async function processData(
   return status.target
 }
 
-function fetch({ adapter, intent }, options) {
-  return unwrapIntent(adapter, intent, options)
+function fetch({ driver, intent }, options) {
+  return unwrapIntent(driver, intent, options)
 }
 
 async function unwrapOne(state, options) {
@@ -198,8 +198,8 @@ function iterateMethod(state, options = {}) {
 export function createInstance(
   intent,
   {
-    adapter,
     classy,
+    driver,
     historySize,
     manualCommit,
     migration,
@@ -210,7 +210,7 @@ export function createInstance(
   }
 ) {
   const state = {
-    adapter,
+    driver,
     intent,
     manualCommit,
     migration,

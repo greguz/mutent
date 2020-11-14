@@ -255,3 +255,110 @@ test('store:migration', async t => {
     name: 'Sam'
   })
 })
+
+test('hooks:find', async t => {
+  t.plan(4)
+
+  const store = createStore({
+    name: 'hooks:find',
+    adapter: createAdapter(),
+    hooks: {
+      onFind(query, options) {
+        t.true(typeof query === 'function')
+        t.deepEqual(options, { some: 'options' })
+      }
+    }
+  })
+
+  await store.find(() => true).unwrap({ some: 'options' })
+  await store.exists(() => true, { some: 'options' })
+})
+
+test('hooks:filter', async t => {
+  t.plan(4)
+
+  const store = createStore({
+    name: 'hooks:filter',
+    adapter: createAdapter(),
+    hooks: {
+      onFilter(query, options) {
+        t.true(typeof query === 'function')
+        t.deepEqual(options, { some: 'options' })
+      }
+    }
+  })
+
+  await store.filter(() => true).unwrap({ some: 'options' })
+  await store.count(() => true, { some: 'options' })
+})
+
+test('hooks:create', async t => {
+  t.plan(4)
+
+  const store = createStore({
+    name: 'hooks:filter',
+    adapter: createAdapter(),
+    hooks: {
+      beforeCreate(data, options) {
+        t.deepEqual(data, { a: 'document' })
+        t.deepEqual(options, { some: 'options' })
+      },
+      afterCreate(data, options) {
+        t.deepEqual(data, { a: 'document' })
+        t.deepEqual(options, { some: 'options' })
+      }
+    }
+  })
+
+  await store.create({ a: 'document' }).unwrap({ some: 'options' })
+})
+
+test('hooks:update', async t => {
+  t.plan(6)
+
+  const store = createStore({
+    name: 'hooks:update',
+    adapter: createAdapter([{ a: 'document' }]),
+    hooks: {
+      beforeUpdate(oldData, newData, options) {
+        t.deepEqual(oldData, { a: 'document' })
+        t.deepEqual(newData, { a: 'document', updated: true })
+        t.deepEqual(options, { some: 'options' })
+      },
+      afterUpdate(oldData, newData, options) {
+        t.deepEqual(oldData, { a: 'document' })
+        t.deepEqual(newData, { a: 'document', updated: true })
+        t.deepEqual(options, { some: 'options' })
+      }
+    }
+  })
+
+  await store
+    .read(() => true)
+    .assign({ updated: true })
+    .unwrap({ some: 'options' })
+})
+
+test('hooks:delete', async t => {
+  t.plan(4)
+
+  const store = createStore({
+    name: 'hooks:delete',
+    adapter: createAdapter([{ a: 'document' }]),
+    hooks: {
+      beforeDelete(data, options) {
+        t.deepEqual(data, { a: 'document' })
+        t.deepEqual(options, { some: 'options' })
+      },
+      afterDelete(data, options) {
+        t.deepEqual(data, { a: 'document' })
+        t.deepEqual(options, { some: 'options' })
+      }
+    }
+  })
+
+  await store
+    .read(() => true)
+    .delete()
+    .unwrap({ some: 'options' })
+})

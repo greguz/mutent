@@ -1,12 +1,6 @@
 import test from 'ava'
 
-import {
-  adapterCount,
-  adapterExists,
-  adapterFilter,
-  adapterFind,
-  writeStatus
-} from './adapter'
+import { count, createDriver, exists, filter, find, write } from './driver'
 import {
   commitStatus,
   createStatus,
@@ -46,14 +40,30 @@ function sCreateUpdateDelete(id, value) {
   return deleteStatus(sCreateUpdate(id, value))
 }
 
-function write(status, adapter = {}, options = {}) {
-  return writeStatus(adapter, status, options)
+function adapterFind(adapter, query, options = {}) {
+  return find(createDriver(adapter), query, options)
 }
 
-test('adapter:defaults', async t => {
+function adapterFilter(adapter, query, options = {}) {
+  return filter(createDriver(adapter), query, options)
+}
+
+function adapterExists(adapter, query, options = {}) {
+  return exists(createDriver(adapter), query, options)
+}
+
+function adapterCount(adapter, query, options = {}) {
+  return count(createDriver(adapter), query, options)
+}
+
+function writeStatus(status, adapter = {}, options = {}) {
+  return write(createDriver(adapter), status, options)
+}
+
+test('driver:defaults', async t => {
   const adapter = {}
 
-  await t.throwsAsync(() => adapterFind(adapter), {
+  t.throws(() => adapterFind(adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
   t.throws(() => adapterFilter(adapter), {
@@ -67,18 +77,18 @@ test('adapter:defaults', async t => {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
 
-  await t.throwsAsync(() => write(sCreate(0), adapter), {
+  await t.throwsAsync(() => writeStatus(sCreate(0), adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
-  await t.throwsAsync(() => write(sUpdate(0, 'UPDATE'), adapter), {
+  await t.throwsAsync(() => writeStatus(sUpdate(0, 'UPDATE'), adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
-  await t.throwsAsync(() => write(sDelete(0), adapter), {
+  await t.throwsAsync(() => writeStatus(sDelete(0), adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
 })
 
-test('adapter:count', async t => {
+test('driver:count', async t => {
   const adapter = {
     count(query, options) {
       t.deepEqual(query, { imma: 'query' })
@@ -89,27 +99,40 @@ test('adapter:count', async t => {
   t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 42)
 })
 
-test('adapter:exists', async t => {
-  const a = {
+test('driver:filterCount', async t => {
+  const adapter = {
+    filter(query, options) {
+      t.deepEqual(query, { imma: 'query' })
+      t.deepEqual(options, { imma: 'options' })
+      return [{ a: 'document' }, { another: 'document' }]
+    }
+  }
+  t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 2)
+})
+
+test('driver:exists', async t => {
+  const adapter = {
     exists(query, options) {
       t.deepEqual(query, { imma: 'query' })
       t.deepEqual(options, { imma: 'options' })
       return true
     }
   }
-  t.true(await adapterExists(a, { imma: 'query' }, { imma: 'options' }))
+  t.true(await adapterExists(adapter, { imma: 'query' }, { imma: 'options' }))
+})
 
-  const b = {
+test('driver:findExists', async t => {
+  const adapter = {
     find(query, options) {
       t.deepEqual(query, { imma: 'query' })
       t.deepEqual(options, { imma: 'options' })
       return { a: 'document' }
     }
   }
-  t.true(await adapterExists(b, { imma: 'query' }, { imma: 'options' }))
+  t.true(await adapterExists(adapter, { imma: 'query' }, { imma: 'options' }))
 })
 
-test('sCreate', async t => {
+test('driver:sCreate', async t => {
   t.plan(3)
 
   const adapter = {
@@ -133,7 +156,7 @@ test('sCreate', async t => {
     }
   }
 
-  const status = await write(sCreate(0), adapter, { hello: 'world' })
+  const status = await writeStatus(sCreate(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -148,7 +171,7 @@ test('sCreate', async t => {
   })
 })
 
-test('sVoid', async t => {
+test('driver:sVoid', async t => {
   t.plan(2)
 
   const adapter = {
@@ -163,9 +186,9 @@ test('sVoid', async t => {
     }
   }
 
-  const status = await write(sVoid(0), adapter, { hello: 'world' })
+  const status = await writeStatus(sVoid(0), adapter, { hello: 'world' })
 
-  t.deepEqual(status, await write(sVoid(0), {}))
+  t.deepEqual(status, await writeStatus(sVoid(0), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -180,7 +203,7 @@ test('sVoid', async t => {
   })
 })
 
-test('sUpdate', async t => {
+test('driver:sUpdate', async t => {
   t.plan(4)
 
   const adapter = {
@@ -208,7 +231,7 @@ test('sUpdate', async t => {
     }
   }
 
-  const status = await write(sUpdate(0, 'UPDATE'), adapter, {
+  const status = await writeStatus(sUpdate(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -227,7 +250,7 @@ test('sUpdate', async t => {
   })
 })
 
-test('sDelete', async t => {
+test('driver:sDelete', async t => {
   t.plan(3)
 
   const adapter = {
@@ -247,7 +270,7 @@ test('sDelete', async t => {
     }
   }
 
-  const status = await write(sDelete(0), adapter, { hello: 'world' })
+  const status = await writeStatus(sDelete(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -260,7 +283,7 @@ test('sDelete', async t => {
   })
 })
 
-test('sCreateUpdate', async t => {
+test('driver:sCreateUpdate', async t => {
   t.plan(3)
 
   const adapter = {
@@ -281,7 +304,7 @@ test('sCreateUpdate', async t => {
     }
   }
 
-  const status = await write(sCreateUpdate(0, 'UPDATE'), adapter, {
+  const status = await writeStatus(sCreateUpdate(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -300,7 +323,7 @@ test('sCreateUpdate', async t => {
   })
 })
 
-test('sCreateDelete', async t => {
+test('driver:sCreateDelete', async t => {
   t.plan(1)
 
   const adapter = {
@@ -315,7 +338,7 @@ test('sCreateDelete', async t => {
     }
   }
 
-  const status = await write(sCreateDelete(0), adapter, {
+  const status = await writeStatus(sCreateDelete(0), adapter, {
     hello: 'world'
   })
 
@@ -330,7 +353,7 @@ test('sCreateDelete', async t => {
   })
 })
 
-test('sUpdateDelete', async t => {
+test('driver:sUpdateDelete', async t => {
   t.plan(3)
 
   const adapter = {
@@ -350,7 +373,7 @@ test('sUpdateDelete', async t => {
     }
   }
 
-  const status = await write(sUpdateDelete(0, 'UPDATE'), adapter, {
+  const status = await writeStatus(sUpdateDelete(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -366,7 +389,7 @@ test('sUpdateDelete', async t => {
   })
 })
 
-test('sCreateUpdateDelete', async t => {
+test('driver:sCreateUpdateDelete', async t => {
   t.plan(1)
 
   const adapter = {
@@ -381,7 +404,7 @@ test('sCreateUpdateDelete', async t => {
     }
   }
 
-  const status = await write(sCreateUpdateDelete(0, 'UPDATE'), adapter, {
+  const status = await writeStatus(sCreateUpdateDelete(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 

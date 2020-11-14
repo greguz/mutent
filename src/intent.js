@@ -1,4 +1,4 @@
-import { adapterFilter, adapterFind } from './adapter'
+import { filter, find } from './driver'
 
 const INTENT_TYPE = {
   CREATE: 0,
@@ -64,16 +64,16 @@ export function isIntentIterable({ data, type }) {
   }
 }
 
-export function unwrapIntent(adapter, { data, query, type }, options) {
+export function unwrapIntent(driver, { data, query, type }, options) {
   switch (type) {
     case INTENT_TYPE.CREATE:
     case INTENT_TYPE.FROM:
       return data
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
-      return adapterFind(adapter, query, options)
+      return find(driver, query, options)
     case INTENT_TYPE.FILTER:
-      return adapterFilter(adapter, query, options)
+      return filter(driver, query, options)
   }
 }
 

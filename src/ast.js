@@ -1,4 +1,4 @@
-import { writeStatus } from './adapter'
+import { write } from './driver'
 import { deleteStatus, updateStatus } from './status'
 import { unlazy } from './utils'
 
@@ -43,25 +43,25 @@ async function handleUpdateNode(status, { mutator }) {
 async function handleConditionalNode(
   status,
   { condition, tree },
-  adapter,
+  driver,
   options
 ) {
   const ok = unlazy(condition, status.target)
   if (!ok) {
     return status
   } else {
-    return mutateStatus(status, tree, adapter, options)
+    return mutateStatus(status, tree, driver, options)
   }
 }
 
-export async function mutateStatus(status, tree, adapter, options) {
+export async function mutateStatus(status, tree, driver, options) {
   for (const node of tree) {
     switch (node.type) {
       case NODE_TYPE.COMMIT:
-        status = writeStatus(adapter, status, options)
+        status = await write(driver, status, options)
         break
       case NODE_TYPE.CONDITION:
-        status = await handleConditionalNode(status, node, adapter, options)
+        status = await handleConditionalNode(status, node, driver, options)
         break
       case NODE_TYPE.DELETE:
         status = deleteStatus(status)

@@ -1,6 +1,7 @@
 import test from 'ava'
 import { Readable, Writable, pipeline } from 'fluido'
 
+import { createDriver } from './driver'
 import { createEngine } from './engine'
 import { createInstance } from './instance'
 import { intentCreate, intentFilter, intentFrom } from './intent'
@@ -16,7 +17,7 @@ const defaultAdapter = {
 function prepareSettings(settings = {}) {
   return {
     ...settings,
-    adapter: settings.adapter || defaultAdapter
+    driver: createDriver(settings.adapter || defaultAdapter, settings.hooks)
   }
 }
 
@@ -668,7 +669,9 @@ test('instance:not-iterable', async t => {
       return null
     }
   }
-  const iterable = createInstance(intentFilter(), { adapter }).iterate()
+  const iterable = createInstance(intentFilter(), {
+    driver: createDriver(adapter)
+  }).iterate()
   await t.throwsAsync(
     consumeIterable(iterable, () => t.fail()),
     { code: 'EMUT_NOT_ITERABLE' }

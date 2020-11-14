@@ -1,4 +1,4 @@
-import { adapterCount, adapterExists } from './adapter'
+import { createDriver, count, exists } from './driver'
 import {
   intentCreate,
   intentFilter,
@@ -23,6 +23,7 @@ export function createStore(settings) {
     adapter,
     classy,
     historySize,
+    hooks,
     manualCommit,
     migrationStrategies,
     name,
@@ -38,9 +39,11 @@ export function createStore(settings) {
     throw new Error('Expected adapter')
   }
 
+  const driver = createDriver(adapter, hooks)
+
   const instanceSettings = {
-    adapter,
     classy,
+    driver,
     historySize,
     manualCommit,
     migration: migrationStrategies
@@ -54,13 +57,13 @@ export function createStore(settings) {
 
   return {
     count(query, options = {}) {
-      return adapterCount(adapter, query, options)
+      return count(driver, query, options)
     },
     create(data) {
       return createInstance(intentCreate(data), instanceSettings)
     },
     exists(query, options = {}) {
-      return adapterExists(adapter, query, options)
+      return exists(driver, query, options)
     },
     find(query) {
       return createInstance(intentFind(query), instanceSettings)
