@@ -25,11 +25,15 @@ export function createStore(settings) {
     historySize,
     manualCommit,
     migrationStrategies,
+    name,
     prepare,
     unsafe,
     versionKey
   } = settings
 
+  if (typeof name !== 'string' || name === '') {
+    throw new Error('Expected valid store name')
+  }
   if (!adapter) {
     throw new Error('Expected adapter')
   }
@@ -43,6 +47,7 @@ export function createStore(settings) {
       ? createMigration(migrationStrategies, versionKey)
       : undefined,
     prepare,
+    store: name,
     unsafe,
     validate: compileSchema(settings)
   }

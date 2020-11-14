@@ -38,11 +38,18 @@ function createAdapter(items = []) {
 test('store:settings', t => {
   t.throws(() => createStore())
   t.throws(() => createStore({}))
+  t.throws(() => createStore({ name: '', adapter: {} }))
+  t.throws(() => createStore({ name: 'store:settings' }))
+  t.throws(() => createStore({ adapter: {} }))
+  createStore({ name: 'store:settings', adapter: {} })
 })
 
 test('store:create', async t => {
   const items = []
-  const store = createStore({ adapter: createAdapter(items) })
+  const store = createStore({
+    name: 'store:create',
+    adapter: createAdapter(items)
+  })
 
   const a = { id: 0, name: 'Huey' }
   const b = { id: 1, name: 'Dewey' }
@@ -65,7 +72,10 @@ test('store:find', async t => {
     { id: 1, name: 'March Hare' },
     { id: 2, name: 'Dormouse' }
   ]
-  const store = createStore({ adapter: createAdapter(items) })
+  const store = createStore({
+    name: 'store:find',
+    adapter: createAdapter(items)
+  })
 
   t.is(await store.find(item => item.id === 0).unwrap(), items[0])
   t.is(await store.find(item => item.name === 'March Hare').unwrap(), items[1])
@@ -75,7 +85,10 @@ test('store:find', async t => {
 
 test('store:read', async t => {
   const items = [{ id: 0, name: 'Tom Orvoloson Riddle', nose: false }]
-  const store = createStore({ adapter: createAdapter(items) })
+  const store = createStore({
+    name: 'store:read',
+    adapter: createAdapter(items)
+  })
 
   t.is(await store.read(item => item.nose !== true).unwrap(), items[0])
   await t.throwsAsync(store.read(item => item.nose === true).unwrap(), {
@@ -93,7 +106,10 @@ test('store:filter', async t => {
     { id: 5, name: 'Ralph T. Guard', gender: 'male', human: true },
     { id: 6, name: 'Thaddeus Plotz ', gender: 'male', human: true }
   ]
-  const store = createStore({ adapter: createAdapter(items) })
+  const store = createStore({
+    name: 'store:filter',
+    adapter: createAdapter(items)
+  })
 
   const a = await store.filter(item => item.protagonist === true).unwrap()
   t.is(a.length, 3)
@@ -113,7 +129,10 @@ test('store:count', async t => {
     { id: 3, name: 'Professor Utonium', human: true },
     { id: 4, name: 'Mojo Jojo' }
   ]
-  const store = createStore({ adapter: createAdapter(items) })
+  const store = createStore({
+    name: 'store:count',
+    adapter: createAdapter(items)
+  })
 
   t.is(await store.count(item => item.human === true), 4)
   t.is(await store.count(item => item.super === true), 3)
@@ -122,7 +141,10 @@ test('store:count', async t => {
 
 test('store:exists', async t => {
   const items = [{ id: 0, name: 'The Narrator' }]
-  const store = createStore({ adapter: createAdapter(items) })
+  const store = createStore({
+    name: 'store:exists',
+    adapter: createAdapter(items)
+  })
 
   t.true(await store.exists(item => item.name === 'The Narrator'))
   t.false(await store.exists(item => item.name === 'Tyler Durden'))
@@ -157,6 +179,7 @@ test('store:schema', async t => {
   }
 
   const store = createStore({
+    name: 'store:schema',
     constructors: {
       Teapot
     },
@@ -186,6 +209,7 @@ test('store:migration', async t => {
   const items = [{ id: 0, name: 'Gandalf' }]
 
   const store = createStore({
+    name: 'store:migration',
     adapter: createAdapter(items),
     migrationStrategies: {
       1: data => ({ ...data, v: 1, migrated: true })

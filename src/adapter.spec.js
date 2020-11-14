@@ -5,7 +5,6 @@ import {
   adapterExists,
   adapterFilter,
   adapterFind,
-  adapterRead,
   writeStatus
 } from './adapter'
 import {
@@ -55,9 +54,6 @@ test('adapter:defaults', async t => {
   const adapter = {}
 
   await t.throwsAsync(() => adapterFind(adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
-  })
-  await t.throwsAsync(() => adapterRead(adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
   t.throws(() => adapterFilter(adapter), {

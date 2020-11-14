@@ -8,17 +8,9 @@ export declare type AdapterResult<T> = Result<T | null | undefined | void>
 
 export interface Adapter<T, Q, O> {
   /**
-   * Used to identify this adapter
-   */
-  signature?: any
-  /**
    * Fetch one entity
    */
-  find?(
-    query: Q,
-    options: Partial<O>,
-    required: boolean
-  ): Value<T | null | undefined>
+  find?(query: Q, options: Partial<O>): Value<T | null | undefined>
   /**
    * Fetch multiple entities
    */

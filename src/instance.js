@@ -7,6 +7,7 @@ import {
   describeIntent,
   isCreationIntent,
   isIntentIterable,
+  isRequired,
   unwrapIntent
 } from './intent'
 import { migrateStatus } from './migration'
@@ -28,11 +29,30 @@ function toStatus(intent, data) {
 
 async function processData(
   data,
-  { adapter, intent, manualCommit, migration, prepare, tree, unsafe, validate },
+  {
+    adapter,
+    intent,
+    manualCommit,
+    migration,
+    prepare,
+    store,
+    tree,
+    unsafe,
+    validate
+  },
   options
 ) {
-  if (isNull(data)) {
-    return null
+  if (isNil(data)) {
+    if (isRequired(intent)) {
+      throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
+        store,
+        intent: describeIntent(intent),
+        data,
+        options
+      })
+    } else {
+      return null
+    }
   }
 
   // Initialize status
@@ -54,8 +74,8 @@ async function processData(
   // First validation and parsing
   if (validate && !validate(status.target)) {
     throw new Herry('EMUT_INVALID_DATA', 'Unusable data found', {
+      store,
       intent: describeIntent(intent),
-      adapter: adapter.signature,
       data: status.target,
       options,
       errors: validate.errors
@@ -70,8 +90,8 @@ async function processData(
         'EMUT_INVALID_MUTATION',
         'A mutation has generated an invalid output',
         {
+          store,
           intent: describeIntent(intent),
-          adapter: adapter.signature,
           status,
           options,
           errors: validate.errors
@@ -86,8 +106,8 @@ async function processData(
       status = await writeStatus(adapter, status, options)
     } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
+        store,
         intent: describeIntent(intent),
-        adapter: adapter.signature,
         status,
         options
       })
@@ -124,8 +144,8 @@ function createIterator(state, options) {
     return value[Symbol.iterator]()
   } else {
     throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', {
+      store: state.store,
       intent: describeIntent(state.intent),
-      adapter: state.adapter.signature,
       options
     })
   }
@@ -184,6 +204,7 @@ export function createInstance(
     manualCommit,
     migration,
     prepare,
+    store,
     unsafe,
     validate
   }
@@ -194,6 +215,7 @@ export function createInstance(
     manualCommit,
     migration,
     prepare,
+    store,
     tree: [],
     unsafe,
     validate

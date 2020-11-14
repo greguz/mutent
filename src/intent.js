@@ -1,4 +1,4 @@
-import { adapterFilter, adapterFind, adapterRead } from './adapter'
+import { adapterFilter, adapterFind } from './adapter'
 
 const INTENT_TYPE = {
   CREATE: 0,
@@ -47,6 +47,10 @@ export function isCreationIntent({ type }) {
   return type === INTENT_TYPE.CREATE
 }
 
+export function isRequired({ type }) {
+  return type !== INTENT_TYPE.FIND
+}
+
 export function isIntentIterable({ data, type }) {
   switch (type) {
     case INTENT_TYPE.CREATE:
@@ -66,9 +70,8 @@ export function unwrapIntent(adapter, { data, query, type }, options) {
     case INTENT_TYPE.FROM:
       return data
     case INTENT_TYPE.FIND:
-      return adapterFind(adapter, query, options)
     case INTENT_TYPE.READ:
-      return adapterRead(adapter, query, options)
+      return adapterFind(adapter, query, options)
     case INTENT_TYPE.FILTER:
       return adapterFilter(adapter, query, options)
   }

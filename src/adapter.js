@@ -14,20 +14,8 @@ function call(adapter, key, a1, a2, a3) {
   return method.call(adapter, a1, a2, a3)
 }
 
-export async function adapterFind(adapter, query, options, required = false) {
-  return call(adapter, 'find', query, options, required)
-}
-
-export async function adapterRead(adapter, query, options) {
-  const data = await adapterFind(adapter, query, options, true)
-  if (isNil(data)) {
-    throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
-      intent: { type: 'READ', query },
-      adapter: adapter.signature,
-      options
-    })
-  }
-  return data
+export async function adapterFind(adapter, query, options) {
+  return call(adapter, 'find', query, options)
 }
 
 export function adapterFilter(adapter, query, options) {

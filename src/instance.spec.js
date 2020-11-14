@@ -262,15 +262,6 @@ test('instance:redo', async t => {
   t.is(result, -4)
 })
 
-test('instance:ignore-null', async t => {
-  const result = await read(null)
-    .update(value => value * -1)
-    .update(value => value * 2)
-    .update(value => value * 10)
-    .unwrap()
-  t.is(result, null)
-})
-
 test('instance:classy', async t => {
   const entity = create({ id: 0 }, { classy: true })
   entity.update(next)
@@ -682,9 +673,4 @@ test('instance:not-iterable', async t => {
     consumeIterable(iterable, () => t.fail()),
     { code: 'EMUT_NOT_ITERABLE' }
   )
-})
-
-test('instance:null-iterable', async t => {
-  const out = await consumeIterable(read(null).iterate())
-  t.deepEqual(out, [])
 })
