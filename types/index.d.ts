@@ -63,8 +63,6 @@ export interface Store<T, Q, O> {
   filter(query: Q): Entities<T, O>
   from(data: T): Entity<T, O>
   from(data: T[]): Entities<T, O>
-  count(query: Q, options?: Options<O>): Promise<number>
-  exists(query: Q, options?: Options<O>): Promise<boolean>
 }
 
 export interface EngineSettings {

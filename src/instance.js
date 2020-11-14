@@ -82,6 +82,8 @@ async function processData(
     })
   }
 
+  // TODO: onData(status.target, options)
+
   // Apply mutations and validate
   if (tree.length > 0) {
     status = await mutateStatus(status, tree, driver, options)

@@ -4,7 +4,7 @@ export declare type Value<T> = T | Promise<T>
 
 export declare type Values<T> = Iterable<T> | AsyncIterable<T>
 
-export declare type AdapterResult<T> = Result<T | null | undefined | void>
+export declare type WriteResult<T> = Result<T | null | undefined | void>
 
 export interface Adapter<T, Q, O> {
   /**
@@ -18,21 +18,13 @@ export interface Adapter<T, Q, O> {
   /**
    * Create a new entity
    */
-  create?(data: T, options: Partial<O>): AdapterResult<T>
+  create?(data: T, options: Partial<O>): WriteResult<T>
   /**
    * Update an entity
    */
-  update?(oldData: T, newData: T, options: Partial<O>): AdapterResult<T>
+  update?(oldData: T, newData: T, options: Partial<O>): WriteResult<T>
   /**
    * Delete an entity
    */
-  delete?(data: T, options: Partial<O>): AdapterResult<T>
-  /**
-   * Count requested entities
-   */
-  count?(query: Q, options: Partial<O>): Result<number>
-  /**
-   * Check entity existence
-   */
-  exists?(query: Q, options: Partial<O>): Result<boolean>
+  delete?(data: T, options: Partial<O>): WriteResult<T>
 }

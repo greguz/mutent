@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { count, createDriver, exists, filter, find, write } from './driver'
+import { createDriver, filter, find, write } from './driver'
 import {
   commitStatus,
   createStatus,
@@ -48,14 +48,6 @@ function adapterFilter(adapter, query, options = {}) {
   return filter(createDriver(adapter), query, options)
 }
 
-function adapterExists(adapter, query, options = {}) {
-  return exists(createDriver(adapter), query, options)
-}
-
-function adapterCount(adapter, query, options = {}) {
-  return count(createDriver(adapter), query, options)
-}
-
 function writeStatus(status, adapter = {}, options = {}) {
   return write(createDriver(adapter), status, options)
 }
@@ -70,13 +62,6 @@ test('driver:defaults', async t => {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
 
-  await t.throwsAsync(() => adapterCount(adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
-  })
-  await t.throwsAsync(() => adapterExists(adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
-  })
-
   await t.throwsAsync(() => writeStatus(sCreate(0), adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
@@ -86,50 +71,6 @@ test('driver:defaults', async t => {
   await t.throwsAsync(() => writeStatus(sDelete(0), adapter), {
     code: 'EMUT_EXPECTED_ADAPTER_METHOD'
   })
-})
-
-test('driver:count', async t => {
-  const adapter = {
-    count(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return 42
-    }
-  }
-  t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 42)
-})
-
-test('driver:filterCount', async t => {
-  const adapter = {
-    filter(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return [{ a: 'document' }, { another: 'document' }]
-    }
-  }
-  t.is(await adapterCount(adapter, { imma: 'query' }, { imma: 'options' }), 2)
-})
-
-test('driver:exists', async t => {
-  const adapter = {
-    exists(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return true
-    }
-  }
-  t.true(await adapterExists(adapter, { imma: 'query' }, { imma: 'options' }))
-})
-
-test('driver:findExists', async t => {
-  const adapter = {
-    find(query, options) {
-      t.deepEqual(query, { imma: 'query' })
-      t.deepEqual(options, { imma: 'options' })
-      return { a: 'document' }
-    }
-  }
-  t.true(await adapterExists(adapter, { imma: 'query' }, { imma: 'options' }))
 })
 
 test('driver:sCreate', async t => {

@@ -1,4 +1,4 @@
-import { createDriver, count, exists } from './driver'
+import { createDriver } from './driver'
 import {
   intentCreate,
   intentFilter,
@@ -56,14 +56,8 @@ export function createStore(settings) {
   }
 
   return {
-    count(query, options = {}) {
-      return count(driver, query, options)
-    },
     create(data) {
       return createInstance(intentCreate(data), instanceSettings)
-    },
-    exists(query, options = {}) {
-      return exists(driver, query, options)
     },
     find(query) {
       return createInstance(intentFind(query), instanceSettings)

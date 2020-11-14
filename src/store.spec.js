@@ -25,12 +25,6 @@ function createAdapter(items = []) {
         items.findIndex(item => item === data),
         1
       )
-    },
-    count(predicate) {
-      return items.filter(predicate).length
-    },
-    exists(predicate) {
-      return items.findIndex(predicate) >= 0
     }
   }
 }
@@ -119,35 +113,6 @@ test('store:filter', async t => {
 
   const c = await store.filter(item => item.human === true).unwrap()
   t.is(c.length, 4)
-})
-
-test('store:count', async t => {
-  const items = [
-    { id: 0, name: 'Blossom', human: true, super: true },
-    { id: 1, name: 'Bubbles', human: true, super: true },
-    { id: 2, name: 'Buttercup', human: true, super: true },
-    { id: 3, name: 'Professor Utonium', human: true },
-    { id: 4, name: 'Mojo Jojo' }
-  ]
-  const store = createStore({
-    name: 'store:count',
-    adapter: createAdapter(items)
-  })
-
-  t.is(await store.count(item => item.human === true), 4)
-  t.is(await store.count(item => item.super === true), 3)
-  t.is(await store.count(item => !item.human), 1)
-})
-
-test('store:exists', async t => {
-  const items = [{ id: 0, name: 'The Narrator' }]
-  const store = createStore({
-    name: 'store:exists',
-    adapter: createAdapter(items)
-  })
-
-  t.true(await store.exists(item => item.name === 'The Narrator'))
-  t.false(await store.exists(item => item.name === 'Tyler Durden'))
 })
 
 test('store:schema', async t => {
@@ -257,7 +222,7 @@ test('store:migration', async t => {
 })
 
 test('hooks:find', async t => {
-  t.plan(4)
+  t.plan(2)
 
   const store = createStore({
     name: 'hooks:find',
@@ -271,11 +236,10 @@ test('hooks:find', async t => {
   })
 
   await store.find(() => true).unwrap({ some: 'options' })
-  await store.exists(() => true, { some: 'options' })
 })
 
 test('hooks:filter', async t => {
-  t.plan(4)
+  t.plan(2)
 
   const store = createStore({
     name: 'hooks:filter',
@@ -289,7 +253,6 @@ test('hooks:filter', async t => {
   })
 
   await store.filter(() => true).unwrap({ some: 'options' })
-  await store.count(() => true, { some: 'options' })
 })
 
 test('hooks:create', async t => {
