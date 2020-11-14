@@ -1,5 +1,3 @@
-import { filter, find } from './driver'
-
 const INTENT_TYPE = {
   CREATE: 0,
   FIND: 1,
@@ -71,9 +69,9 @@ export function unwrapIntent(driver, { data, query, type }, options) {
       return data
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
-      return find(driver, query, options)
+      return driver.find(query, options)
     case INTENT_TYPE.FILTER:
-      return filter(driver, query, options)
+      return driver.filter(query, options)
   }
 }
 

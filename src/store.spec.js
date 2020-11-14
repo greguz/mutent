@@ -255,6 +255,24 @@ test('hooks:filter', async t => {
   await store.filter(() => true).unwrap({ some: 'options' })
 })
 
+test('hooks:data', async t => {
+  t.plan(2)
+
+  const store = createStore({
+    name: 'hooks:data',
+    adapter: createAdapter([{ a: 'document' }]),
+    hooks: {
+      onData(data, options) {
+        t.deepEqual(data, { a: 'document' })
+        t.deepEqual(options, { some: 'options' })
+      }
+    }
+  })
+
+  await store.find(() => false).unwrap()
+  await store.read(() => true).unwrap({ some: 'options' })
+})
+
 test('hooks:create', async t => {
   t.plan(4)
 

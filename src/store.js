@@ -18,6 +18,13 @@ function compileSchema(settings) {
   }
 }
 
+function createInstanceHook(hooks = {}) {
+  const fn = hooks.onData
+  if (typeof fn === 'function') {
+    return fn.bind(hooks)
+  }
+}
+
 export function createStore(settings) {
   const {
     adapter,
@@ -45,6 +52,7 @@ export function createStore(settings) {
     classy,
     driver,
     historySize,
+    hook: createInstanceHook(hooks),
     manualCommit,
     migration: migrationStrategies
       ? createMigration(migrationStrategies, versionKey)

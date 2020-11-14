@@ -1,12 +1,20 @@
 import test from 'ava'
 
-import { createDriver, filter, find, write } from './driver'
+import { createDriver, write } from './driver'
 import {
   commitStatus,
   createStatus,
   deleteStatus,
   updateStatus
 } from './status'
+
+function find(driver, query, options) {
+  return driver.find(query, options)
+}
+
+function filter(driver, query, options) {
+  return driver.filter(query, options)
+}
 
 function sCreate(id) {
   return createStatus({ id })

@@ -31,6 +31,7 @@ async function processData(
   data,
   {
     driver,
+    hook,
     intent,
     manualCommit,
     migration,
@@ -82,7 +83,10 @@ async function processData(
     })
   }
 
-  // TODO: onData(status.target, options)
+  // Trigger "onData" hook
+  if (hook) {
+    await hook(status.target, options)
+  }
 
   // Apply mutations and validate
   if (tree.length > 0) {
@@ -203,6 +207,7 @@ export function createInstance(
     classy,
     driver,
     historySize,
+    hook,
     manualCommit,
     migration,
     prepare,
@@ -213,6 +218,7 @@ export function createInstance(
 ) {
   const state = {
     driver,
+    hook,
     intent,
     manualCommit,
     migration,

@@ -1,14 +1,23 @@
 import Herry from 'herry'
 
 import { commitStatus, updateStatus } from './status'
-import { isFunction, isNil } from './utils'
+import { isNil } from './utils'
 
-function hasMethod(obj, key) {
-  return isFunction(obj[key])
+function noop() {
+  // nothing to do
 }
 
-function ensureMethod(obj, key) {
-  if (!hasMethod(obj, key)) {
+function pickMethod(obj, key, def) {
+  const val = obj[key]
+  if (typeof val === 'function') {
+    return val.bind(obj)
+  } else {
+    return def
+  }
+}
+
+function fallback(key) {
+  return function () {
     throw new Herry(
       'EMUT_EXPECTED_ADAPTER_METHOD',
       `Adapter ".${key}" method is required for this operation`
@@ -16,58 +25,74 @@ function ensureMethod(obj, key) {
   }
 }
 
-async function triggerAsyncHook(hooks, name, a1, a2, a3) {
-  const fn = hooks[name]
-  if (isFunction(fn)) {
-    await fn.call(hooks, a1, a2, a3)
+function typeA(adapter, hooks, kAdapter, kHook) {
+  const fn = pickMethod(adapter, kAdapter, fallback(kAdapter))
+
+  const hook = pickMethod(hooks, kHook, noop)
+  if (hook === noop) {
+    return fn
+  }
+
+  return function (query, options) {
+    hook(query, options)
+    return fn(query, options)
   }
 }
 
-function triggerSyncHook(hooks, name, a1, a2) {
-  const fn = hooks[name]
-  if (isFunction(fn)) {
-    fn.call(hooks, a1, a2)
+function typeB(adapter, hooks, kAdapter, kBefore, kAfter) {
+  const fn = pickMethod(adapter, kAdapter, fallback(kAdapter))
+
+  const before = pickMethod(hooks, kBefore, noop)
+  const after = pickMethod(hooks, kAfter, noop)
+  if (before === noop && after === noop) {
+    return fn
+  }
+
+  return async function (data, options) {
+    await before(data, options)
+    const result = await fn(data, options)
+    await after(data, options)
+    return result
+  }
+}
+
+function typeC(adapter, hooks, kAdapter, kBefore, kAfter) {
+  const fn = pickMethod(adapter, kAdapter, fallback(kAdapter))
+
+  const before = pickMethod(hooks, kBefore, noop)
+  const after = pickMethod(hooks, kAfter, noop)
+  if (before === noop && after === noop) {
+    return fn
+  }
+
+  return async function (oldData, newData, options) {
+    await before(oldData, newData, options)
+    const result = await fn(oldData, newData, options)
+    await after(oldData, newData, options)
+    return result
   }
 }
 
 export function createDriver(adapter, hooks = {}) {
   return {
-    adapter,
-    hooks
+    find: typeA(adapter, hooks, 'find', 'onFind'),
+    filter: typeA(adapter, hooks, 'filter', 'onFilter'),
+    create: typeB(adapter, hooks, 'create', 'beforeCreate', 'afterCreate'),
+    update: typeC(adapter, hooks, 'update', 'beforeUpdate', 'afterUpdate'),
+    delete: typeB(adapter, hooks, 'delete', 'beforeDelete', 'afterDelete')
   }
 }
 
-export function find({ adapter, hooks }, query, options) {
-  ensureMethod(adapter, 'find')
-  triggerSyncHook(hooks, 'onFind', query, options)
-  return adapter.find(query, options)
-}
-
-export function filter({ adapter, hooks }, query, options) {
-  ensureMethod(adapter, 'filter')
-  triggerSyncHook(hooks, 'onFilter', query, options)
-  return adapter.filter(query, options)
-}
-
-export async function write({ adapter, hooks }, status, options) {
+export async function write(driver, status, options) {
   const { created, updated, deleted, source, target } = status
 
   let data
   if (isNil(source) && created && !deleted) {
-    ensureMethod(adapter, 'create')
-    await triggerAsyncHook(hooks, 'beforeCreate', target, options)
-    data = await adapter.create(target, options)
-    await triggerAsyncHook(hooks, 'afterCreate', target, options)
+    data = await driver.create(target, options)
   } else if (!isNil(source) && updated && !deleted) {
-    ensureMethod(adapter, 'update')
-    await triggerAsyncHook(hooks, 'beforeUpdate', source, target, options)
-    data = await adapter.update(source, target, options)
-    await triggerAsyncHook(hooks, 'afterUpdate', source, target, options)
+    data = await driver.update(source, target, options)
   } else if (!isNil(source) && deleted) {
-    ensureMethod(adapter, 'delete')
-    await triggerAsyncHook(hooks, 'beforeDelete', source, options)
-    data = await adapter.delete(source, options)
-    await triggerAsyncHook(hooks, 'afterDelete', source, options)
+    data = await driver.delete(source, options)
   }
 
   return commitStatus(isNil(data) ? status : updateStatus(status, data))
