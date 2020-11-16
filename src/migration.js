@@ -1,7 +1,5 @@
 import Herry from 'herry'
 
-import { updateStatus } from './status'
-
 function getLastVersion(strategies) {
   return Object.keys(strategies)
     .map(key => parseInt(key, 10))
@@ -21,16 +19,15 @@ function getVersion(data, versionKey) {
   return data[versionKey] || 0
 }
 
-export async function migrateStatus(
+export async function migrateData(
   { lastVersion, strategies, versionKey },
-  status
+  data
 ) {
-  const vCurr = getVersion(status.target, versionKey)
+  const vCurr = getVersion(data, versionKey)
   if (vCurr >= lastVersion) {
-    return status
+    return data
   }
 
-  let data = status.target
   for (let v = vCurr + 1; v <= lastVersion; v++) {
     const strategy = strategies[v]
     if (typeof strategy !== 'function') {
@@ -47,5 +44,5 @@ export async function migrateStatus(
     }
   }
 
-  return updateStatus(status, data)
+  return data
 }

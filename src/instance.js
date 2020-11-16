@@ -9,7 +9,7 @@ import {
   isRequired,
   unwrapIntent
 } from './intent'
-import { migrateStatus } from './migration'
+import { migrateData } from './migration'
 import {
   assignMethod,
   commitMethod,
@@ -58,8 +58,8 @@ async function processData(
   // Initialize status
   let status = toStatus(intent, data)
 
-  // Prepare object (creation time)
-  if (status.created && prepare) {
+  // Handle "prepare" hook (only creation time)
+  if (isCreationIntent(intent) && prepare) {
     const out = prepare(status.target, options)
     if (!isNil(out)) {
       status.target = out
@@ -68,7 +68,7 @@ async function processData(
 
   // Apply migration strategies
   if (migration) {
-    status = await migrateStatus(migration, status)
+    status.target = await migrateData(migration, status.target)
   }
 
   // First validation and parsing

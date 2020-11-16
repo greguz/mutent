@@ -1,7 +1,6 @@
 import test from 'ava'
 
-import { createMigration, migrateStatus } from './migration'
-import { readStatus } from './status'
+import { createMigration, migrateData } from './migration'
 
 test('migration:smoke', async t => {
   const migration = createMigration({
@@ -19,23 +18,12 @@ test('migration:smoke', async t => {
     })
   })
 
-  const out = await migrateStatus(
-    migration,
-    readStatus({
-      value: '41.7'
-    })
-  )
+  const out = await migrateData(migration, {
+    value: '41.7'
+  })
   t.deepEqual(out, {
-    created: false,
-    updated: true,
-    deleted: false,
-    source: {
-      value: '41.7'
-    },
-    target: {
-      version: 3,
-      number: 42
-    }
+    version: 3,
+    number: 42
   })
 })
 
@@ -43,7 +31,7 @@ test('migration:missingStrategy', async t => {
   const migration = createMigration({
     2: data => data
   })
-  await t.throwsAsync(migrateStatus(migration, readStatus({})), {
+  await t.throwsAsync(migrateData(migration, {}), {
     code: 'EMUT_MISSING_STRATEGY'
   })
 })
@@ -52,7 +40,7 @@ test('migration:expectedUpgrade', async t => {
   const migration = createMigration({
     1: data => data
   })
-  await t.throwsAsync(migrateStatus(migration, readStatus({})), {
+  await t.throwsAsync(migrateData(migration, {}), {
     code: 'EMUT_EXPECTED_UPGRADE'
   })
 })
@@ -61,21 +49,9 @@ test('migration:futureVersion', async t => {
   const migration = createMigration({
     1: data => ({ ...data, version: 1 })
   })
-  const out = await migrateStatus(
-    migration,
-    readStatus({ version: 2, value: 'TEST' })
-  )
+  const out = await migrateData(migration, { version: 2, value: 'TEST' })
   t.deepEqual(out, {
-    created: false,
-    updated: false,
-    deleted: false,
-    source: {
-      version: 2,
-      value: 'TEST'
-    },
-    target: {
-      version: 2,
-      value: 'TEST'
-    }
+    version: 2,
+    value: 'TEST'
   })
 })
