@@ -1,9 +1,9 @@
 const INTENT_TYPE = {
-  CREATE: 0,
-  FIND: 1,
-  READ: 2,
-  FILTER: 3,
-  FROM: 4
+  CREATE: 'CREATE',
+  FIND: 'FIND',
+  READ: 'READ',
+  FILTER: 'FILTER',
+  FROM: 'FROM'
 }
 
 export function intentCreate(data) {
@@ -72,20 +72,5 @@ export function unwrapIntent(driver, { data, query, type }, options) {
       return driver.find(query, options)
     case INTENT_TYPE.FILTER:
       return driver.filter(query, options)
-  }
-}
-
-export function describeIntent({ data, query, type }) {
-  switch (type) {
-    case INTENT_TYPE.CREATE:
-      return { type: 'CREATE', data }
-    case INTENT_TYPE.FIND:
-      return { type: 'FIND', query }
-    case INTENT_TYPE.READ:
-      return { type: 'READ', query }
-    case INTENT_TYPE.FILTER:
-      return { type: 'FILTER', query }
-    case INTENT_TYPE.FROM:
-      return { type: 'FROM', data }
   }
 }

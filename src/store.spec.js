@@ -256,13 +256,16 @@ test('hooks:filter', async t => {
 })
 
 test('hooks:data', async t => {
-  t.plan(2)
+  t.plan(15)
+
+  let expectedIntent
 
   const store = createStore({
     name: 'hooks:data',
-    adapter: createAdapter([{ a: 'document' }]),
+    adapter: createAdapter(),
     hooks: {
-      onData(data, options) {
+      onData(intent, data, options) {
+        t.is(intent, expectedIntent)
         t.deepEqual(data, { a: 'document' })
         t.deepEqual(options, { some: 'options' })
       }
@@ -270,7 +273,21 @@ test('hooks:data', async t => {
   })
 
   await store.find(() => false).unwrap()
-  await store.read(() => true).unwrap({ some: 'options' })
+
+  expectedIntent = 'CREATE'
+  await store.create({ a: 'document' }).unwrap({ some: 'options' })
+
+  expectedIntent = 'FIND'
+  await store.find(() => true).unwrap({ some: 'options' })
+
+  expectedIntent = 'READ'
+  const data = await store.read(() => true).unwrap({ some: 'options' })
+
+  expectedIntent = 'FILTER'
+  await store.filter(() => true).unwrap({ some: 'options' })
+
+  expectedIntent = 'FROM'
+  await store.from(data).unwrap({ some: 'options' })
 })
 
 test('hooks:create', async t => {

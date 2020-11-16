@@ -4,7 +4,6 @@ import Herry from 'herry'
 import { mutateStatus } from './ast'
 import { write } from './driver'
 import {
-  describeIntent,
   isCreationIntent,
   isIntentIterable,
   isRequired,
@@ -47,7 +46,7 @@ async function processData(
     if (isRequired(intent)) {
       throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
         store,
-        intent: describeIntent(intent),
+        intent,
         data,
         options
       })
@@ -76,7 +75,7 @@ async function processData(
   if (validate && !validate(status.target)) {
     throw new Herry('EMUT_INVALID_DATA', 'Unusable data found', {
       store,
-      intent: describeIntent(intent),
+      intent,
       data: status.target,
       options,
       errors: validate.errors
@@ -85,7 +84,7 @@ async function processData(
 
   // Trigger "onData" hook
   if (hook) {
-    await hook(status.target, options)
+    await hook(intent.type, status.target, options)
   }
 
   // Apply mutations and validate
@@ -97,7 +96,7 @@ async function processData(
         'A mutation has generated an invalid output',
         {
           store,
-          intent: describeIntent(intent),
+          intent,
           status,
           options,
           errors: validate.errors
@@ -113,7 +112,7 @@ async function processData(
     } else if (!coalesce(options.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         store,
-        intent: describeIntent(intent),
+        intent,
         status,
         options
       })
@@ -151,7 +150,7 @@ function createIterator(state, options) {
   } else {
     throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', {
       store: state.store,
-      intent: describeIntent(state.intent),
+      intent: state.intent,
       options
     })
   }
