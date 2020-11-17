@@ -20,7 +20,7 @@ import {
   updateMethod
 } from './mutation'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { coalesce, isFunction, isNil, isNull } from './utils'
+import { coalesce, isNil } from './utils'
 
 function toStatus(intent, data) {
   return isCreationIntent(intent) ? createStatus(data) : readStatus(data)
@@ -134,7 +134,7 @@ function iterateOne(state, options) {
   return {
     [Symbol.asyncIterator]: async function* () {
       const value = await unwrapOne(state, options)
-      if (!isNull(value)) {
+      if (value !== null) {
         yield value
       }
     }
@@ -143,9 +143,9 @@ function iterateOne(state, options) {
 
 function createIterator(state, options) {
   const value = fetch(state, options)
-  if (!isNull(value) && isFunction(value[Symbol.asyncIterator])) {
+  if (value !== null && typeof value[Symbol.asyncIterator] === 'function') {
     return value[Symbol.asyncIterator]()
-  } else if (!isNull(value) && isFunction(value[Symbol.iterator])) {
+  } else if (value !== null && typeof value[Symbol.iterator] === 'function') {
     return value[Symbol.iterator]()
   } else {
     throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', {

@@ -1,23 +1,11 @@
-export function isFunction(value) {
-  return typeof value === 'function'
-}
-
 export function unlazy(lazy, arg) {
-  return isFunction(lazy) ? lazy(arg) : lazy
-}
-
-export function isUndefined(value) {
-  return value === undefined
-}
-
-export function isNull(value) {
-  return value === null
+  return typeof lazy === 'function' ? lazy(arg) : lazy
 }
 
 export function isNil(value) {
-  return isNull(value) || isUndefined(value)
+  return value === null || value === undefined
 }
 
 export function coalesce(a, b) {
-  return !isNil(a) ? a : b
+  return isNil(a) ? b : a
 }

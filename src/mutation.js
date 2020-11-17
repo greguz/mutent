@@ -1,7 +1,7 @@
 import fluente from 'fluente'
 
 import { nodeCommit, nodeCondition, nodeDelete, nodeUpdate } from './ast'
-import { isFunction, unlazy } from './utils'
+import { unlazy } from './utils'
 
 function pushNode({ tree }, node) {
   return {
@@ -32,9 +32,10 @@ export function commitMethod(state) {
 }
 
 function renderAlteration(alteration, settings) {
-  const mutation = isFunction(alteration)
-    ? alteration(createMutation(settings))
-    : alteration
+  const mutation =
+    typeof alteration === 'function'
+      ? alteration(createMutation(settings))
+      : alteration
 
   return mutation.render()
 }
