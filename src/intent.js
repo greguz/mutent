@@ -1,3 +1,5 @@
+import { isAsyncIterable, isIterable } from './utils'
+
 const INTENT_TYPE = {
   CREATE: 'CREATE',
   FIND: 'FIND',
@@ -53,7 +55,7 @@ export function isIntentIterable({ data, type }) {
   switch (type) {
     case INTENT_TYPE.CREATE:
     case INTENT_TYPE.FROM:
-      return Array.isArray(data)
+      return isAsyncIterable(data) || isIterable(data)
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
       return false

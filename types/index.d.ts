@@ -57,12 +57,12 @@ export interface StoreSettings<T, Q, O>
 
 export interface Store<T, Q, O> {
   create(data: T): Entity<T, O>
-  create(data: T[]): Entities<T, O>
+  create(data: Iterable<T> | AsyncIterable<T>): Entities<T, O>
   find(query: Q): Entity<T | null, O>
   read(query: Q): Entity<T, O>
   filter(query: Q): Entities<T, O>
   from(data: T): Entity<T, O>
-  from(data: T[]): Entities<T, O>
+  from(data: Iterable<T> | AsyncIterable<T>): Entities<T, O>
 }
 
 export interface EngineSettings {

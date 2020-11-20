@@ -29,6 +29,29 @@ function createAdapter(items = []) {
   }
 }
 
+function createIterator(iterable) {
+  return iterable[Symbol.asyncIterator]
+    ? iterable[Symbol.asyncIterator]()
+    : iterable[Symbol.iterator]()
+}
+
+async function consume(iterable, handler) {
+  const iterator = createIterator(iterable)
+  let active = true
+  const results = []
+  while (active) {
+    const { done, value } = await iterator.next()
+    if (done) {
+      active = false
+    } else if (handler) {
+      results.push(await handler(value))
+    } else {
+      results.push(value)
+    }
+  }
+  return results
+}
+
 test('store:settings', t => {
   t.throws(() => createStore())
   t.throws(() => createStore({}))
@@ -45,19 +68,35 @@ test('store:create', async t => {
     adapter: createAdapter(items)
   })
 
-  const a = { id: 0, name: 'Huey' }
-  const b = { id: 1, name: 'Dewey' }
-  const c = { id: 2, name: 'Louie' }
+  const huey = { id: 0, name: 'Huey Duck' }
+  const dewey = { id: 1, name: 'Dewey Duck' }
+  const louie = { id: 2, name: 'Louie Duck' }
+  const donald = { id: 3, name: 'Donald Duck' }
+  const scrooge = { id: 4, name: 'Scrooge McDuck' }
 
-  const d = await store.create(a).unwrap()
-  t.true(d === a)
-  t.true(d === items[0])
+  const uZero = await store.create([]).unwrap()
+  t.deepEqual(uZero, [])
+  t.is(items.length, 0)
 
-  const [e, f] = await store.create([b, c]).unwrap()
-  t.true(e === b)
-  t.true(e === items[1])
-  t.true(f === c)
-  t.true(f === items[2])
+  const uOne = await store.create(huey).unwrap()
+  t.deepEqual(uOne, huey)
+  t.deepEqual(items, [huey])
+
+  const uMany = await store.create([dewey, louie]).unwrap()
+  t.deepEqual(uMany, [dewey, louie])
+  t.deepEqual(items, [huey, dewey, louie])
+
+  const iZero = await consume(store.create([]).iterate())
+  t.deepEqual(iZero, [])
+  t.is(items.length, 3)
+
+  const iOne = await consume(store.create(donald).iterate())
+  t.deepEqual(iOne, [donald])
+  t.deepEqual(items, [huey, dewey, louie, donald])
+
+  const iMany = await consume(store.create([scrooge]).iterate())
+  t.deepEqual(iMany, [scrooge])
+  t.deepEqual(items, [huey, dewey, louie, donald, scrooge])
 })
 
 test('store:find', async t => {
@@ -75,6 +114,11 @@ test('store:find', async t => {
   t.is(await store.find(item => item.name === 'March Hare').unwrap(), items[1])
   t.is(await store.find(item => /mouse/.test(item.name)).unwrap(), items[2])
   t.is(await store.find(item => item.id > 2).unwrap(), null)
+
+  t.deepEqual(await consume(store.find(item => item.id === 2).iterate()), [
+    items[2]
+  ])
+  t.deepEqual(await consume(store.find(() => false).iterate()), [])
 })
 
 test('store:read', async t => {
@@ -86,6 +130,13 @@ test('store:read', async t => {
 
   t.is(await store.read(item => item.nose !== true).unwrap(), items[0])
   await t.throwsAsync(store.read(item => item.nose === true).unwrap(), {
+    code: 'EMUT_NOT_FOUND'
+  })
+
+  t.deepEqual(await consume(store.read(item => item.id === 0).iterate()), [
+    items[0]
+  ])
+  await t.throwsAsync(consume(store.read(() => false).iterate()), {
     code: 'EMUT_NOT_FOUND'
   })
 })
@@ -113,6 +164,9 @@ test('store:filter', async t => {
 
   const c = await store.filter(item => item.human === true).unwrap()
   t.is(c.length, 4)
+
+  const d = await consume(store.filter(() => true).iterate())
+  t.is(d.length, items.length)
 })
 
 test('store:schema', async t => {
@@ -168,6 +222,13 @@ test('store:schema', async t => {
   await t.throwsAsync(store.from({}).unwrap(), {
     code: 'EMUT_INVALID_DATA'
   })
+  await t.throwsAsync(
+    store
+      .read(() => true)
+      .assign({ teapot: {} })
+      .unwrap(),
+    { code: 'EMUT_INVALID_MUTATION' }
+  )
 })
 
 test('store:migration', async t => {
@@ -359,4 +420,54 @@ test('hooks:delete', async t => {
     .read(() => true)
     .delete()
     .unwrap({ some: 'options' })
+})
+
+test('store:manualCommit', async t => {
+  const items = []
+
+  const store = createStore({
+    name: 'store:manualCommit',
+    adapter: createAdapter(items),
+    manualCommit: true,
+    unsafe: false
+  })
+
+  await t.throwsAsync(store.create({ id: 0 }).unwrap(), {
+    code: 'EMUT_UNSAFE'
+  })
+  t.is(items.length, 0)
+
+  await store.create({ id: 1 }).unwrap({ unsafe: true })
+  t.is(items.length, 0)
+
+  await store.create({ id: 2 }).commit().unwrap()
+  t.deepEqual(items, [{ id: 2 }])
+
+  await store.create({ id: 3 }).unwrap({ manualCommit: false })
+  t.deepEqual(items, [{ id: 2 }, { id: 3 }])
+})
+
+test('store:unsafe', async t => {
+  const items = []
+
+  const store = createStore({
+    name: 'store:unsafe',
+    adapter: createAdapter(items),
+    manualCommit: true,
+    unsafe: true
+  })
+
+  await store.create({ id: 0 }).unwrap()
+  t.is(items.length, 0)
+
+  await t.throwsAsync(store.create({ id: 1 }).unwrap({ unsafe: false }), {
+    code: 'EMUT_UNSAFE'
+  })
+  t.is(items.length, 0)
+
+  await store.create({ id: 2 }).commit().unwrap()
+  t.deepEqual(items, [{ id: 2 }])
+
+  await store.create({ id: 3 }).unwrap({ manualCommit: false })
+  t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
