@@ -42,7 +42,7 @@ async function processData(
   },
   options
 ) {
-  if (isNil(data)) {
+  if (data === null || data === undefined) {
     if (isRequired(intent)) {
       throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
         store,
@@ -130,14 +130,10 @@ async function unwrapOne(state, options) {
   return processData(await fetch(state, options), state, options)
 }
 
-function iterateOne(state, options) {
-  return {
-    [Symbol.asyncIterator]: async function* () {
-      const value = await unwrapOne(state, options)
-      if (value !== null) {
-        yield value
-      }
-    }
+async function* iterateOne(state, options) {
+  const value = await unwrapOne(state, options)
+  if (value !== null) {
+    yield value
   }
 }
 
@@ -159,31 +155,32 @@ function createIterator(state, options) {
 async function unwrapMany(state, options) {
   const iterator = createIterator(state, options)
   const results = []
+
   let active = true
   while (active) {
     const { done, value } = await iterator.next()
+
     if (done) {
       active = false
     } else {
       results.push(await processData(value, state, options))
     }
   }
+
   return results
 }
 
-function iterateMany(state, options) {
-  return {
-    [Symbol.asyncIterator]() {
-      const iterator = createIterator(state, options)
-      return {
-        async next() {
-          const { done, value } = await iterator.next()
-          return {
-            done,
-            value: done ? undefined : await processData(value, state, options)
-          }
-        }
-      }
+async function* iterateMany(state, options) {
+  const iterator = createIterator(state, options)
+
+  let active = true
+  while (active) {
+    const { done, value } = await iterator.next()
+
+    if (done) {
+      active = false
+    } else {
+      yield processData(value, state, options)
     }
   }
 }
