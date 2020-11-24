@@ -34,7 +34,6 @@ export function createStore(settings) {
     manualCommit,
     migrationStrategies,
     name,
-    prepare,
     unsafe,
     versionKey
   } = settings
@@ -57,7 +56,6 @@ export function createStore(settings) {
     migration: migrationStrategies
       ? createMigration(migrationStrategies, versionKey)
       : undefined,
-    prepare,
     store: name,
     unsafe,
     validate: compileSchema(settings)

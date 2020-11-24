@@ -49,7 +49,6 @@ export interface StoreSettings<T, Q, O>
   manualCommit?: boolean
   migrationStrategies?: Strategies
   name: string
-  prepare?: (data: T, options: Partial<O>) => T | null | undefined | void
   schema?: JSONSchema7Definition
   unsafe?: boolean
   versionKey?: string

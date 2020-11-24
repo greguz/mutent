@@ -20,7 +20,7 @@ import {
   updateMethod
 } from './mutation'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { coalesce, isAsyncIterable, isIterable, isNil } from './utils'
+import { coalesce, isAsyncIterable, isIterable } from './utils'
 
 function toStatus(intent, data) {
   return isCreationIntent(intent) ? createStatus(data) : readStatus(data)
@@ -34,7 +34,6 @@ async function processData(
     intent,
     manualCommit,
     migration,
-    prepare,
     store,
     tree,
     unsafe,
@@ -56,12 +55,9 @@ async function processData(
     }
   }
 
-  // Handle "prepare" hook (only creation time)
-  if (isCreationIntent(intent) && prepare) {
-    const out = prepare(data, options)
-    if (!isNil(out)) {
-      data = out
-    }
+  // Trigger "onData" hook
+  if (hook) {
+    await hook(intent.type, data, options)
   }
 
   // Apply migration strategies
@@ -78,11 +74,6 @@ async function processData(
       options,
       errors: validate.errors
     })
-  }
-
-  // Trigger "onData" hook
-  if (hook) {
-    await hook(intent.type, data, options)
   }
 
   // Initialize status
@@ -207,7 +198,6 @@ export function createInstance(
     hook,
     manualCommit,
     migration,
-    prepare,
     store,
     unsafe,
     validate
@@ -219,7 +209,6 @@ export function createInstance(
     intent,
     manualCommit,
     migration,
-    prepare,
     store,
     tree: [],
     unsafe,
