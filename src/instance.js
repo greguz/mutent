@@ -42,6 +42,7 @@ async function processData(
   },
   options
 ) {
+  // Check data requirement
   if (data === null || data === undefined) {
     if (isRequired(intent)) {
       throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
@@ -55,28 +56,25 @@ async function processData(
     }
   }
 
-  // Initialize status
-  let status = toStatus(intent, data)
-
   // Handle "prepare" hook (only creation time)
   if (isCreationIntent(intent) && prepare) {
-    const out = prepare(status.target, options)
+    const out = prepare(data, options)
     if (!isNil(out)) {
-      status.target = out
+      data = out
     }
   }
 
   // Apply migration strategies
   if (migration) {
-    status.target = await migrateData(migration, status.target)
+    data = await migrateData(migration, data)
   }
 
   // First validation and parsing
-  if (validate && !validate(status.target)) {
+  if (validate && !validate(data)) {
     throw new Herry('EMUT_INVALID_DATA', 'Unusable data found', {
       store,
       intent,
-      data: status.target,
+      data,
       options,
       errors: validate.errors
     })
@@ -84,8 +82,11 @@ async function processData(
 
   // Trigger "onData" hook
   if (hook) {
-    await hook(intent.type, status.target, options)
+    await hook(intent.type, data, options)
   }
+
+  // Initialize status
+  let status = toStatus(intent, data)
 
   // Apply mutations and validate
   if (tree.length > 0) {
