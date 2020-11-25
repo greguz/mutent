@@ -1,10 +1,9 @@
 import test from 'ava'
-import { Readable, Writable, pipeline } from 'fluido'
 
 import { createDriver } from './driver'
 import { createEngine } from './engine'
 import { createInstance } from './instance'
-import { intentCreate, intentFilter, intentFrom } from './intent'
+import { intentCreate, intentFrom } from './intent'
 import { createMigration } from './migration'
 import { createMutation } from './mutation'
 
@@ -363,73 +362,6 @@ test('insert-error', async t => {
         throw new Error('TEST')
       })
       .unwrap()
-  })
-})
-
-test('stream many', async t => {
-  t.plan(48)
-  await new Promise((resolve, reject) => {
-    let index = 0
-    pipeline(
-      Readable.from(
-        create(getItems(), bind(t, { create: true }))
-          .commit()
-          .iterate({ db: 'test' })
-      ),
-      new Writable({
-        objectMode: true,
-        write(data, encoding, callback) {
-          t.is(data.id, index++ * 2)
-          callback()
-        }
-      }),
-      err => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      }
-    )
-  })
-})
-
-test('stream-error', async t => {
-  function getErroredStream(err) {
-    return new Readable({
-      read() {
-        this.emit('error', err)
-      }
-    })
-  }
-
-  await t.throwsAsync(async () => {
-    await new Promise((resolve, reject) => {
-      pipeline(
-        Readable.from(
-          createInstance(intentFilter(), {
-            adapter: {
-              filter() {
-                return getErroredStream(new Error())
-              }
-            }
-          }).iterate()
-        ),
-        new Writable({
-          objectMode: true,
-          write(chunk, encoding, callback) {
-            callback()
-          }
-        }),
-        err => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        }
-      )
-    })
   })
 })
 

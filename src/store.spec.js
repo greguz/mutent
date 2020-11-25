@@ -1,4 +1,5 @@
 import test from 'ava'
+import { Readable } from 'stream'
 
 import { createStore } from './store'
 
@@ -541,4 +542,20 @@ test('store:constant', async t => {
   await t.throwsAsync(store.read(first).assign({ b: 'error' }).unwrap(), {
     code: 'EMUT_CONSTANT'
   })
+})
+
+test('store:stream', async t => {
+  const store = createStore({
+    name: 'store:stream',
+    adapter: {
+      filter() {
+        return Readable.from([{ name: 'Kuzco' }, { name: 'Pacha' }])
+      }
+    }
+  })
+
+  t.deepEqual(await store.filter().unwrap(), [
+    { name: 'Kuzco' },
+    { name: 'Pacha' }
+  ])
 })
