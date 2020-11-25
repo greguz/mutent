@@ -437,13 +437,13 @@ test('store:manualCommit', async t => {
   })
   t.is(items.length, 0)
 
-  await store.create({ id: 1 }).unwrap({ unsafe: true })
+  await store.create({ id: 1 }).unwrap({ mutent: { unsafe: true } })
   t.is(items.length, 0)
 
   await store.create({ id: 2 }).commit().unwrap()
   t.deepEqual(items, [{ id: 2 }])
 
-  await store.create({ id: 3 }).unwrap({ manualCommit: false })
+  await store.create({ id: 3 }).unwrap({ mutent: { manualCommit: false } })
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
 
@@ -460,14 +460,50 @@ test('store:unsafe', async t => {
   await store.create({ id: 0 }).unwrap()
   t.is(items.length, 0)
 
-  await t.throwsAsync(store.create({ id: 1 }).unwrap({ unsafe: false }), {
-    code: 'EMUT_UNSAFE'
-  })
+  await t.throwsAsync(
+    store.create({ id: 1 }).unwrap({ mutent: { unsafe: false } }),
+    { code: 'EMUT_UNSAFE' }
+  )
   t.is(items.length, 0)
 
   await store.create({ id: 2 }).commit().unwrap()
   t.deepEqual(items, [{ id: 2 }])
 
-  await store.create({ id: 3 }).unwrap({ manualCommit: false })
+  await store.create({ id: 3 }).unwrap({ mutent: { manualCommit: false } })
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
+})
+
+test('store:mutable', async t => {
+  const immStore = createStore({
+    name: 'store:mutable',
+    adapter: createAdapter()
+    // mutable: false (default)
+  })
+
+  const a = immStore.read()
+  const b = a.update(data => data)
+  t.false(a === b)
+
+  const mutStore = createStore({
+    name: 'store:mutable',
+    adapter: createAdapter(),
+    mutable: true
+  })
+
+  const c = mutStore.read()
+  const d = c.update(data => data)
+  t.true(c === d)
+})
+
+test('store:EMUT_NOT_ITERABLE', async t => {
+  const store = createStore({
+    name: 'store:test',
+    adapter: {
+      filter() {
+        return null
+      }
+    }
+  })
+
+  await t.throwsAsync(store.filter().unwrap(), { code: 'EMUT_NOT_ITERABLE' })
 })

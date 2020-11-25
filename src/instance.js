@@ -99,9 +99,10 @@ async function processData(
 
   // Handle manualCommit/unsafe features
   if (shouldCommit(status)) {
-    if (!coalesce(options.manualCommit, manualCommit)) {
+    const mutentOptions = options.mutent || {}
+    if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
       status = await write(driver, status, options)
-    } else if (!coalesce(options.unsafe, unsafe)) {
+    } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
       throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
         store,
         intent,

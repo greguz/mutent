@@ -3,4 +3,4 @@ export interface MutentOptions {
   unsafe?: boolean
 }
 
-export declare type Options<O> = MutentOptions & Partial<O>
+export declare type Options<O> = { mutent?: MutentOptions } & Partial<O>
