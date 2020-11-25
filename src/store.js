@@ -28,11 +28,11 @@ function createInstanceHook(hooks = {}) {
 export function createStore(settings) {
   const {
     adapter,
-    classy,
     historySize,
     hooks,
     manualCommit,
     migrationStrategies,
+    mutable,
     name,
     unsafe,
     versionKey
@@ -48,7 +48,6 @@ export function createStore(settings) {
   const driver = createDriver(adapter, hooks)
 
   const instanceSettings = {
-    classy,
     driver,
     historySize,
     hook: createInstanceHook(hooks),
@@ -56,6 +55,7 @@ export function createStore(settings) {
     migration: migrationStrategies
       ? createMigration(migrationStrategies, versionKey)
       : undefined,
+    mutable,
     store: name,
     unsafe,
     validate: compileSchema(settings)

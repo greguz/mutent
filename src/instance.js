@@ -192,12 +192,12 @@ function iterateMethod(state, options = {}) {
 export function createInstance(
   intent,
   {
-    classy,
     driver,
     historySize,
     hook,
     manualCommit,
     migration,
+    mutable,
     store,
     unsafe,
     validate
@@ -217,7 +217,7 @@ export function createInstance(
 
   return fluente({
     historySize,
-    isMutable: classy,
+    isMutable: mutable,
     state,
     fluent: {
       update: updateMethod,

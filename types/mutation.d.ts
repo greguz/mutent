@@ -8,8 +8,8 @@ export declare type Mutator<T, A extends any[]> = (
 ) => Result<T>
 
 export interface MutationSettings {
-  classy?: boolean
   historySize?: number
+  mutable?: boolean
 }
 
 export interface Mutation<T> {

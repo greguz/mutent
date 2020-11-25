@@ -69,7 +69,7 @@ export function createMutation(settings = {}) {
 
   return fluente({
     historySize: settings.historySize,
-    isMutable: settings.classy,
+    isMutable: settings.mutable,
     state,
     fluent: {
       update: updateMethod,

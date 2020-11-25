@@ -263,8 +263,8 @@ test('instance:redo', async t => {
   t.is(result, -4)
 })
 
-test('instance:classy', async t => {
-  const entity = create({ id: 0 }, { classy: true })
+test('instance:mutable', async t => {
+  const entity = create({ id: 0 }, { mutable: true })
   entity.update(next)
   entity.update(next)
   entity.update(next)
