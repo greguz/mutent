@@ -1,7 +1,6 @@
 import Herry from 'herry'
 
 import { commitStatus, updateStatus } from './status'
-import { isNil } from './utils'
 
 function noop() {
   // nothing to do
@@ -87,13 +86,15 @@ export async function write(driver, status, options) {
   const { created, updated, deleted, source, target } = status
 
   let data
-  if (isNil(source) && created && !deleted) {
+  if (source === null && created && !deleted) {
     data = await driver.create(target, options)
-  } else if (!isNil(source) && updated && !deleted) {
+  } else if (source !== null && updated && !deleted) {
     data = await driver.update(source, target, options)
-  } else if (!isNil(source) && deleted) {
+  } else if (source !== null && deleted) {
     data = await driver.delete(source, options)
   }
 
-  return commitStatus(isNil(data) ? status : updateStatus(status, data))
+  return commitStatus(
+    data === null || data === undefined ? status : updateStatus(status, data)
+  )
 }
