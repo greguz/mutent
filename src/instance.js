@@ -2,6 +2,7 @@ import fluente from 'fluente'
 import Herry from 'herry'
 
 import { mutateStatus } from './ast'
+import { isConstantValid, readConstants } from './constants'
 import { write } from './driver'
 import {
   isCreationIntent,
@@ -76,12 +77,17 @@ async function processData(
     })
   }
 
+  // Load initial constants
+  const constants = readConstants(data)
+
   // Initialize status
   let status = toStatus(intent, data)
 
-  // Apply mutations and validate
   if (tree.length > 0) {
+    // Apply mutation chain
     status = await mutateStatus(status, tree, driver, options)
+
+    // Validate post-mutation data
     if (validate && !validate(status.target)) {
       throw new Herry(
         'EMUT_INVALID_MUTATION',
@@ -94,6 +100,19 @@ async function processData(
           errors: validate.errors
         }
       )
+    }
+
+    // Validate constant values
+    for (const constant of constants) {
+      if (!isConstantValid(constant, status.target)) {
+        throw new Herry('EMUT_CONSTANT', 'A constant value was changed', {
+          store,
+          intent,
+          status,
+          options,
+          constant
+        })
+      }
     }
   }
 
@@ -112,6 +131,7 @@ async function processData(
     }
   }
 
+  // Return final object
   return status.target
 }
 

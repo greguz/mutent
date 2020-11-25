@@ -1,6 +1,8 @@
 import Ajv from 'ajv'
 import Herry from 'herry'
 
+import { pushConstant } from './constants'
+
 function ensureFunction(value) {
   if (typeof value !== 'function') {
     throw new Error('Not a function')
@@ -47,6 +49,29 @@ function setAjvKeyword(ajv, keyword, definition) {
     )
   }
   ajv.addKeyword(keyword, definition)
+}
+
+function yes() {
+  return true
+}
+
+function constantKeyword() {
+  return {
+    errors: false,
+    metaSchema: {
+      type: 'boolean'
+    },
+    compile(schema) {
+      if (schema !== true) {
+        return yes
+      }
+
+      return function validate(data, path, parentData, property, rootData) {
+        pushConstant(rootData, path.substring(1), data)
+        return true
+      }
+    }
+  }
 }
 
 function instanceofKeyword(constructors) {
@@ -151,6 +176,7 @@ class Engine {
     this._parsers = { ...parsers }
     this._ajv = ajv || defaultAjv(ajvOptions)
 
+    setAjvKeyword(this._ajv, 'constant', constantKeyword())
     setAjvKeyword(
       this._ajv,
       'instanceof',

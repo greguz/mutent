@@ -507,3 +507,38 @@ test('store:EMUT_NOT_ITERABLE', async t => {
 
   await t.throwsAsync(store.filter().unwrap(), { code: 'EMUT_NOT_ITERABLE' })
 })
+
+test('store:constant', async t => {
+  const store = createStore({
+    name: 'store:constant',
+    adapter: createAdapter(),
+    schema: {
+      type: 'object',
+      properties: {
+        a: {
+          type: 'string',
+          constant: false
+        },
+        b: {
+          type: 'string',
+          constant: true
+        },
+        c: {
+          type: 'string',
+          constant: true
+        }
+      },
+      required: ['a', 'b']
+    }
+  })
+
+  await store.create({ a: 'value', b: 'constant' }).unwrap()
+
+  const first = () => true
+
+  await store.read(first).assign({ c: 'constant' }).unwrap()
+
+  await t.throwsAsync(store.read(first).assign({ b: 'error' }).unwrap(), {
+    code: 'EMUT_CONSTANT'
+  })
+})

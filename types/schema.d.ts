@@ -150,6 +150,11 @@ export interface JSONSchema7 {
   /**
    * @custom
    */
+  constant?: boolean
+
+  /**
+   * @custom
+   */
   instanceof?: string
 
   /**
