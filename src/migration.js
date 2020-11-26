@@ -1,4 +1,4 @@
-import Herry from 'herry'
+import { MutentError } from './error'
 
 function getLastVersion(strategies) {
   return Object.keys(strategies)
@@ -31,16 +31,19 @@ export async function migrateData(
   for (let v = vCurr + 1; v <= lastVersion; v++) {
     const strategy = strategies[v]
     if (typeof strategy !== 'function') {
-      throw new Herry('EMUT_MISSING_STRATEGY', 'Missing migration strategy', {
-        version: v
-      })
+      throw new MutentError(
+        'EMUT_MISSING_STRATEGY',
+        'Missing migration strategy',
+        { version: v }
+      )
     }
     data = await strategy(data)
     if (getVersion(data, versionKey) !== v) {
-      throw new Herry('EMUT_EXPECTED_UPGRADE', 'Expected version upgrade', {
-        version: v,
-        data
-      })
+      throw new MutentError(
+        'EMUT_EXPECTED_UPGRADE',
+        'Expected version upgrade',
+        { version: v, data }
+      )
     }
   }
 

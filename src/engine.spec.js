@@ -1,13 +1,12 @@
 import test from 'ava'
-
 import Ajv from 'ajv'
-import Herry from 'herry'
 
 import { createEngine } from './engine'
+import { MutentError } from './error'
 
 function handle(validate, data) {
   if (!validate(data)) {
-    throw new Herry('EMUT_INVALID_DATA', 'Invalid data', {
+    throw new MutentError('EMUT_INVALID_DATA', 'Invalid data', {
       errors: validate.errors
     })
   }

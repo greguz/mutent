@@ -1,5 +1,4 @@
-import Herry from 'herry'
-
+import { MutentError } from './error'
 import { commitStatus, updateStatus } from './status'
 
 function noop() {
@@ -17,7 +16,7 @@ function pickMethod(obj, key, def) {
 
 function fallback(key) {
   return function () {
-    throw new Herry(
+    throw new MutentError(
       'EMUT_EXPECTED_ADAPTER_METHOD',
       `Adapter ".${key}" method is required for this operation`
     )

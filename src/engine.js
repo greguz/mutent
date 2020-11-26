@@ -1,7 +1,7 @@
 import Ajv from 'ajv'
-import Herry from 'herry'
 
 import { pushConstant } from './constants'
+import { MutentError } from './error'
 
 function ensureFunction(value) {
   if (typeof value !== 'function') {
@@ -42,7 +42,7 @@ function defaultAjv(options) {
 
 function setAjvKeyword(ajv, keyword, definition) {
   if (ajv.getKeyword(keyword)) {
-    throw new Herry(
+    throw new MutentError(
       'EMUT_RESERVED_KEYWORD',
       'This custom keyword definition is reserved',
       { ajv, keyword }
@@ -83,7 +83,7 @@ function instanceofKeyword(constructors) {
     compile(schema) {
       const Constructor = constructors[schema]
       if (!Constructor) {
-        throw new Herry(
+        throw new MutentError(
           'EMUT_UNKNOWN_CONSTRUCTOR',
           'Unknown constructor described',
           { key: schema }
@@ -130,10 +130,11 @@ function parseKeyword(parsers) {
 
       const parse = parsers[key]
       if (!parse) {
-        throw new Herry('EMUT_UNKNOWN_PARSER', 'Unknown parser required', {
-          key,
-          args
-        })
+        throw new MutentError(
+          'EMUT_UNKNOWN_PARSER',
+          'Unknown parser required',
+          { key, args }
+        )
       }
 
       return function validate(data, dataPath, parentData, property) {

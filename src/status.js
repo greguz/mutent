@@ -1,4 +1,4 @@
-import Herry from 'herry'
+import { MutentError } from './error'
 
 function noUndef(data) {
   return data === undefined ? null : data
@@ -30,10 +30,11 @@ export function readStatus(data) {
 
 export function updateStatus({ created, deleted, source }, target) {
   if (target === null || target === undefined) {
-    throw new Herry('EMUT_NIL_UPDATE', 'Cannot accept a nil value as entity', {
-      source,
-      target
-    })
+    throw new MutentError(
+      'EMUT_NIL_UPDATE',
+      'Cannot accept a nil value as entity',
+      { source, target }
+    )
   }
   return {
     created,

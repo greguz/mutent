@@ -1,9 +1,9 @@
 import fluente from 'fluente'
-import Herry from 'herry'
 
 import { mutateStatus } from './ast'
 import { isConstantValid, readConstants } from './constants'
 import { write } from './driver'
+import { MutentError } from './error'
 import {
   isCreationIntent,
   isIntentIterable,
@@ -45,7 +45,7 @@ async function processData(
   // Check data requirement
   if (data === null || data === undefined) {
     if (isRequired(intent)) {
-      throw new Herry('EMUT_NOT_FOUND', 'Entity not found', {
+      throw new MutentError('EMUT_NOT_FOUND', 'Entity not found', {
         store,
         intent,
         data,
@@ -68,7 +68,7 @@ async function processData(
 
   // First validation and parsing
   if (validate && !validate(data)) {
-    throw new Herry('EMUT_INVALID_DATA', 'Unusable data found', {
+    throw new MutentError('EMUT_INVALID_DATA', 'Unusable data found', {
       store,
       intent,
       data,
@@ -89,7 +89,7 @@ async function processData(
 
     // Validate post-mutation data
     if (validate && !validate(status.target)) {
-      throw new Herry(
+      throw new MutentError(
         'EMUT_INVALID_MUTATION',
         'A mutation has generated an invalid output',
         {
@@ -105,7 +105,7 @@ async function processData(
     // Validate constant values
     for (const constant of constants) {
       if (!isConstantValid(constant, status.target)) {
-        throw new Herry('EMUT_CONSTANT', 'A constant value was changed', {
+        throw new MutentError('EMUT_CONSTANT', 'A constant value was changed', {
           store,
           intent,
           status,
@@ -122,7 +122,7 @@ async function processData(
     if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
       status = await write(driver, status, options)
     } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
-      throw new Herry('EMUT_UNSAFE', 'Unsafe mutation', {
+      throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
         store,
         intent,
         status,
@@ -157,7 +157,7 @@ function createIterator(state, options) {
   } else if (isIterable(obj)) {
     return obj[Symbol.iterator]()
   } else {
-    throw new Herry('EMUT_NOT_ITERABLE', 'Expected an iterable', {
+    throw new MutentError('EMUT_NOT_ITERABLE', 'Expected an iterable', {
       store: state.store,
       intent: state.intent,
       options
