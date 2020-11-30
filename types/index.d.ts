@@ -1,5 +1,5 @@
 /// <reference types="ajv" />
-/// <reference types="node" />
+
 import Ajv from 'ajv'
 
 import { Adapter } from './adapter'
