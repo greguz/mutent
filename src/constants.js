@@ -15,7 +15,12 @@ export function pushConstant(object, path, value) {
 }
 
 export function readConstants(object) {
-  return object[symbol] || []
+  const constants = object[symbol]
+  if (!constants) {
+    return []
+  }
+  delete object[symbol]
+  return constants
 }
 
 export function isConstantValid({ path, value }, data) {
