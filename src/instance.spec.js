@@ -1,7 +1,6 @@
 import test from 'ava'
 
 import { createDriver } from './driver'
-import { createEngine } from './engine'
 import { createInstance } from './instance'
 import { intentCreate, intentFrom } from './intent'
 import { createMigration } from './migration'
@@ -111,25 +110,6 @@ test('instance:mutate', async t => {
   const mutation = createMutation().assign({ value: 'UPDATE' })
   const out = await entity.mutate(mutation).unwrap()
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
-})
-
-test('instance:invalid-mutation', async t => {
-  const engine = createEngine()
-
-  const validate = engine.compile({
-    type: 'object',
-    properties: {
-      value: {
-        type: 'number'
-      }
-    },
-    required: ['value']
-  })
-
-  await t.throwsAsync(
-    read({ value: 42 }, { validate }).update(JSON.stringify).unwrap(),
-    { code: 'EMUT_INVALID_MUTATION' }
-  )
 })
 
 test('instance:create-one', async t => {

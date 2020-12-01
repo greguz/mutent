@@ -45,7 +45,9 @@ export function createStore(settings) {
     throw new Error('Expected adapter')
   }
 
-  const driver = createDriver(adapter, hooks)
+  const validate = compileSchema(settings)
+
+  const driver = createDriver(adapter, hooks, validate)
 
   const instanceSettings = {
     driver,
@@ -58,7 +60,7 @@ export function createStore(settings) {
     mutable,
     store: name,
     unsafe,
-    validate: compileSchema(settings)
+    validate
   }
 
   return {

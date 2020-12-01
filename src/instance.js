@@ -87,21 +87,6 @@ async function processData(
     // Apply mutation chain
     status = await mutateStatus(status, tree, driver, options)
 
-    // Validate post-mutation data
-    if (validate && !validate(status.target)) {
-      throw new MutentError(
-        'EMUT_INVALID_MUTATION',
-        'A mutation has generated an invalid output',
-        {
-          store,
-          intent,
-          status,
-          options,
-          errors: validate.errors
-        }
-      )
-    }
-
     // Validate constant values
     for (const constant of constants) {
       if (!isConstantValid(constant, status.target)) {

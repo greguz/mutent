@@ -228,7 +228,7 @@ test('store:schema', async t => {
       .read(() => true)
       .assign({ teapot: {} })
       .unwrap(),
-    { code: 'EMUT_INVALID_MUTATION' }
+    { code: 'EMUT_INVALID_WRITE' }
   )
 })
 

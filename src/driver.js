@@ -5,7 +5,7 @@ function noop() {
   // nothing to do
 }
 
-function pickMethod(obj, key, def) {
+function pickMethod(obj, key, def = noop) {
   const val = obj[key]
   if (typeof val === 'function') {
     return val.bind(obj)
@@ -14,39 +14,26 @@ function pickMethod(obj, key, def) {
   }
 }
 
-function fallback(key) {
-  return function () {
+function noMethod(key) {
+  return function fallbackMethod() {
     throw new MutentError(
-      'EMUT_EXPECTED_ADAPTER_METHOD',
-      `Adapter ".${key}" method is required for this operation`
+      'EMUT_PARTIAL_ADAPTER',
+      `Adapter ".${key}" method is required for this operation`,
+      { key }
     )
   }
 }
 
-function typeA(adapter, hooks, kAdapter, kHook) {
-  const fn = pickMethod(adapter, kAdapter, fallback(kAdapter))
-
-  const hook = pickMethod(hooks, kHook, noop)
-  if (hook === noop) {
-    return fn
-  }
-
+function typeA(fn, hook) {
   return function (query, options) {
     hook(query, options)
     return fn(query, options)
   }
 }
 
-function typeB(adapter, hooks, kAdapter, kBefore, kAfter) {
-  const fn = pickMethod(adapter, kAdapter, fallback(kAdapter))
-
-  const before = pickMethod(hooks, kBefore, noop)
-  const after = pickMethod(hooks, kAfter, noop)
-  if (before === noop && after === noop) {
-    return fn
-  }
-
+function typeB(fn, before, after, validate) {
   return async function (data, options) {
+    validate(data)
     await before(data, options)
     const result = await fn(data, options)
     await after(data, options)
@@ -54,16 +41,9 @@ function typeB(adapter, hooks, kAdapter, kBefore, kAfter) {
   }
 }
 
-function typeC(adapter, hooks, kAdapter, kBefore, kAfter) {
-  const fn = pickMethod(adapter, kAdapter, fallback(kAdapter))
-
-  const before = pickMethod(hooks, kBefore, noop)
-  const after = pickMethod(hooks, kAfter, noop)
-  if (before === noop && after === noop) {
-    return fn
-  }
-
+function typeC(fn, before, after, validate) {
   return async function (oldData, newData, options) {
+    validate(newData)
     await before(oldData, newData, options)
     const result = await fn(oldData, newData, options)
     await after(oldData, newData, options)
@@ -71,13 +51,50 @@ function typeC(adapter, hooks, kAdapter, kBefore, kAfter) {
   }
 }
 
-export function createDriver(adapter, hooks = {}) {
+function createWriteValidator(validate) {
+  return function validateWrite(data) {
+    if (!validate(data)) {
+      throw new MutentError(
+        'EMUT_INVALID_WRITE',
+        'Cannot write an invalid entity',
+        {
+          data,
+          errors: validate.errors
+        }
+      )
+    }
+  }
+}
+
+export function createDriver(adapter, hooks = {}, validate) {
+  const validator = validate ? createWriteValidator(validate) : noop
   return {
-    find: typeA(adapter, hooks, 'find', 'onFind'),
-    filter: typeA(adapter, hooks, 'filter', 'onFilter'),
-    create: typeB(adapter, hooks, 'create', 'beforeCreate', 'afterCreate'),
-    update: typeC(adapter, hooks, 'update', 'beforeUpdate', 'afterUpdate'),
-    delete: typeB(adapter, hooks, 'delete', 'beforeDelete', 'afterDelete')
+    find: typeA(
+      pickMethod(adapter, 'find', noMethod('find')),
+      pickMethod(hooks, 'onFind')
+    ),
+    filter: typeA(
+      pickMethod(adapter, 'filter', noMethod('filter')),
+      pickMethod(hooks, 'onFilter')
+    ),
+    create: typeB(
+      pickMethod(adapter, 'create', noMethod('create')),
+      pickMethod(hooks, 'beforeCreate'),
+      pickMethod(hooks, 'afterCreate'),
+      validator
+    ),
+    update: typeC(
+      pickMethod(adapter, 'update', noMethod('update')),
+      pickMethod(hooks, 'beforeUpdate'),
+      pickMethod(hooks, 'afterUpdate'),
+      validator
+    ),
+    delete: typeB(
+      pickMethod(adapter, 'delete', noMethod('delete')),
+      pickMethod(hooks, 'beforeDelete'),
+      pickMethod(hooks, 'afterDelete'),
+      validator
+    )
   }
 }
 

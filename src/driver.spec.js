@@ -64,20 +64,20 @@ test('driver:defaults', async t => {
   const adapter = {}
 
   t.throws(() => adapterFind(adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+    code: 'EMUT_PARTIAL_ADAPTER'
   })
   t.throws(() => adapterFilter(adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+    code: 'EMUT_PARTIAL_ADAPTER'
   })
 
   await t.throwsAsync(() => writeStatus(sCreate(0), adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+    code: 'EMUT_PARTIAL_ADAPTER'
   })
   await t.throwsAsync(() => writeStatus(sUpdate(0, 'UPDATE'), adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+    code: 'EMUT_PARTIAL_ADAPTER'
   })
   await t.throwsAsync(() => writeStatus(sDelete(0), adapter), {
-    code: 'EMUT_EXPECTED_ADAPTER_METHOD'
+    code: 'EMUT_PARTIAL_ADAPTER'
   })
 })
 
