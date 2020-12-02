@@ -2,7 +2,6 @@ import fluente from 'fluente'
 
 import { mutateStatus } from './ast'
 import { isConstantValid, readConstants } from './constants'
-import { write } from './driver'
 import { MutentError } from './error'
 import {
   isCreationIntent,
@@ -105,7 +104,7 @@ async function processData(
   if (shouldCommit(status)) {
     const mutentOptions = options.mutent || {}
     if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
-      status = await write(driver, status, options)
+      status = await driver.write(status, options)
     } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
       throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
         store,

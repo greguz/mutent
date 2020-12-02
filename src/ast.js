@@ -1,4 +1,3 @@
-import { write } from './driver'
 import { deleteStatus, updateStatus } from './status'
 import { unlazy } from './utils'
 
@@ -58,7 +57,7 @@ export async function mutateStatus(status, tree, driver, options) {
   for (const node of tree) {
     switch (node.type) {
       case NODE_TYPE.COMMIT:
-        status = await write(driver, status, options)
+        status = await driver.write(status, options)
         break
       case NODE_TYPE.CONDITION:
         status = await handleConditionalNode(status, node, driver, options)

@@ -1,20 +1,12 @@
 import test from 'ava'
 
-import { createDriver, write } from './driver'
+import { createDriver } from './driver'
 import {
   commitStatus,
   createStatus,
   deleteStatus,
   updateStatus
 } from './status'
-
-function find(driver, query, options) {
-  return driver.find(query, options)
-}
-
-function filter(driver, query, options) {
-  return driver.filter(query, options)
-}
 
 function sCreate(id) {
   return createStatus({ id })
@@ -49,15 +41,15 @@ function sCreateUpdateDelete(id, value) {
 }
 
 function adapterFind(adapter, query, options = {}) {
-  return find(createDriver(adapter), query, options)
+  return createDriver(adapter).find(query, options)
 }
 
 function adapterFilter(adapter, query, options = {}) {
-  return filter(createDriver(adapter), query, options)
+  return createDriver(adapter).filter(query, options)
 }
 
 function writeStatus(status, adapter = {}, options = {}) {
-  return write(createDriver(adapter), status, options)
+  return createDriver(adapter).write(status, options)
 }
 
 test('driver:defaults', async t => {

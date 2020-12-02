@@ -225,6 +225,17 @@ test('store:schema', async t => {
   })
   await t.throwsAsync(
     store
+      .create({
+        date: '2020-09-02T16:29:34.070Z',
+        teapot: new Teapot()
+      })
+      .assign({ teapot: {} })
+      .commit()
+      .unwrap(),
+    { code: 'EMUT_INVALID_WRITE' }
+  )
+  await t.throwsAsync(
+    store
       .read(() => true)
       .assign({ teapot: {} })
       .unwrap(),
