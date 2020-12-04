@@ -1,6 +1,12 @@
 import fluente from 'fluente'
 
-import { nodeCommit, nodeCondition, nodeDelete, nodeUpdate } from './ast'
+import {
+  nodeCommit,
+  nodeCondition,
+  nodeDelete,
+  nodeInspect,
+  nodeUpdate
+} from './ast'
 import { unlazy } from './utils'
 
 function pushNode({ tree }, node) {
@@ -51,6 +57,10 @@ export function unlessMethod(state, condition, alteration) {
   return ifMethod(state, data => !unlazy(condition, data), alteration)
 }
 
+export function inspectMethod(state, inspector) {
+  return pushNode(state, nodeInspect(inspector))
+}
+
 export function mutateMethod({ settings, tree }, alteration) {
   return {
     tree: tree.concat(renderAlteration(alteration, settings))
@@ -78,6 +88,7 @@ export function createMutation(settings = {}) {
       commit: commitMethod,
       if: ifMethod,
       unless: unlessMethod,
+      inspect: inspectMethod,
       mutate: mutateMethod
     },
     methods: {

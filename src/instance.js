@@ -15,6 +15,7 @@ import {
   commitMethod,
   deleteMethod,
   ifMethod,
+  inspectMethod,
   mutateMethod,
   unlessMethod,
   updateMethod
@@ -231,6 +232,7 @@ export function createInstance(
       commit: commitMethod,
       if: ifMethod,
       unless: unlessMethod,
+      inspect: inspectMethod,
       mutate: mutateMethod
     },
     methods: {

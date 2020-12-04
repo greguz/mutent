@@ -5,6 +5,7 @@ import {
   nodeCommit,
   nodeCondition,
   nodeDelete,
+  nodeInspect,
   nodeUpdate
 } from './ast'
 import { createDriver } from './driver'
@@ -110,6 +111,38 @@ test('ast:update', async t => {
   t.deepEqual(status, {
     created: true,
     updated: true,
+    deleted: false,
+    source: null,
+    target: 42
+  })
+})
+
+test('ast:inspect', async t => {
+  t.plan(2)
+  const driver = createDriver({
+    create() {
+      t.fail()
+    },
+    update() {
+      t.fail()
+    },
+    delete() {
+      t.fail()
+    }
+  })
+  const status = await mutateStatus(
+    createStatus(42),
+    [
+      nodeInspect(data => {
+        t.is(data, 42)
+        return null
+      })
+    ],
+    driver
+  )
+  t.deepEqual(status, {
+    created: true,
+    updated: false,
     deleted: false,
     source: null,
     target: 42

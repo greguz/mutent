@@ -7,6 +7,8 @@ export declare type Mutator<T, A extends any[]> = (
   ...args: A
 ) => Result<T>
 
+export declare type Inspector<T> = (data: T) => Result<void>
+
 export interface MutationSettings {
   historySize?: number
   mutable?: boolean
@@ -19,6 +21,7 @@ export interface Mutation<T> {
   commit(): this
   if(condition: Condition<T>, alteration: Alteration<T>): this
   unless(condition: Condition<T>, alteration: Alteration<T>): this
+  inspect(inspector: Inspector<T>): this
   mutate(mutation: Mutation<T>): this
   undo(steps?: number): this
   redo(steps?: number): this

@@ -5,7 +5,8 @@ const NODE_TYPE = {
   COMMIT: 0,
   CONDITION: 1,
   DELETE: 2,
-  UPDATE: 3
+  UPDATE: 3,
+  INSPECT: 4
 }
 
 export function nodeCommit() {
@@ -32,6 +33,13 @@ export function nodeUpdate(mutator) {
   return {
     type: NODE_TYPE.UPDATE,
     mutator
+  }
+}
+
+export function nodeInspect(inspector) {
+  return {
+    type: NODE_TYPE.INSPECT,
+    inspector
   }
 }
 
@@ -67,6 +75,9 @@ export async function mutateStatus(status, tree, driver, options) {
         break
       case NODE_TYPE.UPDATE:
         status = await handleUpdateNode(status, node)
+        break
+      case NODE_TYPE.INSPECT:
+        await node.inspector(status.target)
         break
     }
   }

@@ -570,3 +570,24 @@ test('store:stream', async t => {
     { name: 'Pacha' }
   ])
 })
+
+test('store:inspect', async t => {
+  t.plan(2)
+
+  const items = [{ my: 'document' }]
+
+  const store = createStore({
+    name: 'store:inspect',
+    adapter: createAdapter(items)
+  })
+
+  const results = await store
+    .filter(() => true)
+    .inspect(data => {
+      t.deepEqual(data, items[0])
+      return { nope: true }
+    })
+    .unwrap()
+
+  t.deepEqual(results, items)
+})
