@@ -21,7 +21,7 @@ import {
   updateMethod
 } from './mutation'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { coalesce, isAsyncIterable, isIterable } from './utils'
+import { coalesce } from './utils'
 
 function toStatus(intent, data) {
   return isCreationIntent(intent) ? createStatus(data) : readStatus(data)
@@ -135,52 +135,18 @@ async function* iterateOne(state, options) {
   }
 }
 
-function createIterator(state, options) {
-  const obj = fetch(state, options)
-  if (isAsyncIterable(obj)) {
-    return obj[Symbol.asyncIterator]()
-  } else if (isIterable(obj)) {
-    return obj[Symbol.iterator]()
-  } else {
-    throw new MutentError('EMUT_NOT_ITERABLE', 'Expected an iterable', {
-      store: state.store,
-      intent: state.intent,
-      options
-    })
+async function* iterateMany(state, options) {
+  for await (const data of fetch(state, options)) {
+    yield processData(data, state, options)
   }
 }
 
 async function unwrapMany(state, options) {
-  const iterator = createIterator(state, options)
   const results = []
-
-  let active = true
-  while (active) {
-    const { done, value } = await iterator.next()
-
-    if (done) {
-      active = false
-    } else {
-      results.push(await processData(value, state, options))
-    }
+  for await (const data of iterateMany(state, options)) {
+    results.push(data)
   }
-
   return results
-}
-
-async function* iterateMany(state, options) {
-  const iterator = createIterator(state, options)
-
-  let active = true
-  while (active) {
-    const { done, value } = await iterator.next()
-
-    if (done) {
-      active = false
-    } else {
-      yield processData(value, state, options)
-    }
-  }
 }
 
 async function unwrapMethod(state, options = {}) {

@@ -30,21 +30,10 @@ function createAdapter(items = []) {
   }
 }
 
-function createIterator(iterable) {
-  return iterable[Symbol.asyncIterator]
-    ? iterable[Symbol.asyncIterator]()
-    : iterable[Symbol.iterator]()
-}
-
 async function consume(iterable, handler) {
-  const iterator = createIterator(iterable)
-  let active = true
   const results = []
-  while (active) {
-    const { done, value } = await iterator.next()
-    if (done) {
-      active = false
-    } else if (handler) {
+  for await (const value of iterable) {
+    if (handler) {
       results.push(await handler(value))
     } else {
       results.push(value)
@@ -505,19 +494,6 @@ test('store:mutable', async t => {
   const c = mutStore.read()
   const d = c.update(data => data)
   t.true(c === d)
-})
-
-test('store:EMUT_NOT_ITERABLE', async t => {
-  const store = createStore({
-    name: 'store:test',
-    adapter: {
-      filter() {
-        return null
-      }
-    }
-  })
-
-  await t.throwsAsync(store.filter().unwrap(), { code: 'EMUT_NOT_ITERABLE' })
 })
 
 test('store:constant', async t => {

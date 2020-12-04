@@ -34,21 +34,10 @@ function next(item) {
   }
 }
 
-function createIterator(iterable) {
-  return iterable[Symbol.asyncIterator]
-    ? iterable[Symbol.asyncIterator]()
-    : iterable[Symbol.iterator]()
-}
-
-async function consumeIterable(iterable, handler) {
-  const iterator = createIterator(iterable)
-  let active = true
+async function consume(iterable, handler) {
   const results = []
-  while (active) {
-    const { done, value } = await iterator.next()
-    if (done) {
-      active = false
-    } else if (handler) {
+  for await (const value of iterable) {
+    if (handler) {
       results.push(await handler(value))
     } else {
       results.push(value)
@@ -63,9 +52,7 @@ test('one:unwrap', async t => {
 })
 
 test('one:iterate', async t => {
-  const out = await consumeIterable(
-    create({ id: 0, value: 'ITERATE' }).iterate()
-  )
+  const out = await consume(create({ id: 0, value: 'ITERATE' }).iterate())
   t.deepEqual(out, [{ id: 0, value: 'ITERATE' }])
 })
 
@@ -75,7 +62,7 @@ test('many:unwrap', async t => {
 })
 
 test('many:iterate', async t => {
-  const out = await consumeIterable(read({ id: 0, value: 'ITERATE' }).iterate())
+  const out = await consume(read({ id: 0, value: 'ITERATE' }).iterate())
   t.deepEqual(out, [{ id: 0, value: 'ITERATE' }])
 })
 
