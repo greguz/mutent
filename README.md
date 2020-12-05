@@ -15,6 +15,10 @@ Mutent provides a generalized method to interact with external data sources, plu
 npm install --save mutent
 ```
 
+## ESNext
+
+This project uses **ES2018** syntax (Node.js >= 10). If you need to run Mutent on an older runtime, a transpilation with tools like [Babel](https://babeljs.io/) is required.
+
 ## Example
 
 ```javascript
