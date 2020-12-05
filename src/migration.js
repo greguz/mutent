@@ -1,35 +1,40 @@
 import { MutentError } from './error'
 
-function getLastVersion(strategies) {
-  return Object.keys(strategies)
-    .map(key => parseInt(key, 10))
-    .filter(key => Number.isInteger(key) && key >= 0)
-    .reduce((a, b) => (a > b ? a : b), 0)
-}
-
-export function createMigration(strategies, versionKey = 'version') {
+export function createMigration(strategies = {}, version = 0, key = 'version') {
+  if (!Number.isInteger(version) || version < 0) {
+    throw new MutentError(
+      'EMUT_INVALID_VERSION',
+      'Invalid version configured',
+      { version }
+    )
+  }
   return {
-    lastVersion: getLastVersion(strategies),
+    key,
     strategies,
-    versionKey
+    version
   }
 }
 
-function getVersion(data, versionKey) {
-  return data[versionKey] || 0
+function getVersion(data, key) {
+  return data[key] || 0
 }
 
-export async function migrateData(
-  { lastVersion, strategies, versionKey },
-  data
-) {
-  const vCurr = getVersion(data, versionKey)
-  if (vCurr >= lastVersion) {
-    return data
+export async function migrateData({ key, strategies, version }, data) {
+  let v = getVersion(data, key)
+
+  if (v > version) {
+    throw new MutentError(
+      'EMUT_FUTURE_VERSION',
+      'Found an entity with a future version',
+      { version, data }
+    )
   }
 
-  for (let v = vCurr + 1; v <= lastVersion; v++) {
-    const strategy = strategies[v]
+  while (v < version) {
+    const target = v + 1
+
+    const strategy = strategies[target]
+
     if (typeof strategy !== 'function') {
       throw new MutentError(
         'EMUT_MISSING_STRATEGY',
@@ -37,14 +42,18 @@ export async function migrateData(
         { version: v }
       )
     }
+
     data = await strategy(data)
-    if (getVersion(data, versionKey) !== v) {
+
+    if (getVersion(data, key) !== target) {
       throw new MutentError(
         'EMUT_EXPECTED_UPGRADE',
         'Expected version upgrade',
         { version: v, data }
       )
     }
+
+    v = target
   }
 
   return data

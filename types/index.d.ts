@@ -51,10 +51,13 @@ export interface StoreSettings<T, Q, O>
   name: string
   schema?: JSONSchema7Definition
   unsafe?: boolean
+  version?: number
   versionKey?: string
 }
 
 export interface Store<T, Q, O> {
+  name: string
+  version: number
   create(data: T): Entity<T, O>
   create(data: Iterable<T> | AsyncIterable<T>): Entities<T, O>
   find(query: Q): Entity<T | null, O>

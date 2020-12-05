@@ -25,7 +25,7 @@ function createInstanceHook(hooks = {}) {
   }
 }
 
-export function createStore(settings) {
+export function createStore(storeSettings) {
   const {
     adapter,
     historySize,
@@ -35,8 +35,9 @@ export function createStore(settings) {
     mutable,
     name,
     unsafe,
+    version,
     versionKey
-  } = settings
+  } = storeSettings
 
   if (typeof name !== 'string' || name === '') {
     throw new Error('Expected valid store name')
@@ -45,7 +46,7 @@ export function createStore(settings) {
     throw new Error('Expected adapter')
   }
 
-  const validate = compileSchema(settings)
+  const validate = compileSchema(storeSettings)
 
   const driver = createDriver(adapter, hooks, validate)
 
@@ -55,7 +56,7 @@ export function createStore(settings) {
     hook: createInstanceHook(hooks),
     manualCommit,
     migration: migrationStrategies
-      ? createMigration(migrationStrategies, versionKey)
+      ? createMigration(migrationStrategies, version, versionKey)
       : undefined,
     mutable,
     store: name,
@@ -64,6 +65,8 @@ export function createStore(settings) {
   }
 
   return {
+    name,
+    version: version || 0,
     create(data) {
       return createInstance(intentCreate(data), instanceSettings)
     },

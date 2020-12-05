@@ -241,7 +241,8 @@ test('store:migration', async t => {
     migrationStrategies: {
       1: data => ({ ...data, v: 1, migrated: true })
     },
-    versionKey: 'v'
+    versionKey: 'v',
+    version: 1
   })
 
   const a = await store
