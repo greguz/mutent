@@ -3,27 +3,30 @@ import test from 'ava'
 import { createMigration, migrateData } from './migration'
 
 test('migration:smoke', async t => {
-  t.throws(() => createMigration(undefined, null), {
-    code: 'EMUT_INVALID_VERSION'
+  t.throws(() => createMigration(null), {
+    code: 'EMUT_VERSION_INVALID'
+  })
+  t.throws(() => createMigration(-1), {
+    code: 'EMUT_VERSION_INVALID'
+  })
+  t.throws(() => createMigration(Infinity), {
+    code: 'EMUT_VERSION_INVALID'
   })
 
-  const migration = createMigration(
-    {
-      1: data => ({
-        version: 1,
-        value: parseFloat(data.value)
-      }),
-      2: data => ({
-        version: 2,
-        number: data.value
-      }),
-      3: data => ({
-        version: 3,
-        number: Math.round(data.number)
-      })
-    },
-    3
-  )
+  const migration = createMigration(3, {
+    1: data => ({
+      version: 1,
+      value: parseFloat(data.value)
+    }),
+    2: data => ({
+      version: 2,
+      number: data.value
+    }),
+    3: data => ({
+      version: 3,
+      number: Math.round(data.number)
+    })
+  })
 
   const out = await migrateData(migration, {
     value: '41.7'
@@ -34,38 +37,30 @@ test('migration:smoke', async t => {
   })
 })
 
-test('migration:missed', async t => {
-  const migration = createMigration(
-    {
-      2: data => data
-    },
-    2
-  )
+test('migration:absent', async t => {
+  const migration = createMigration(2, { 2: data => data })
   await t.throwsAsync(migrateData(migration, {}), {
-    code: 'EMUT_MISSING_STRATEGY'
+    code: 'EMUT_MIGRATION_ABSENT'
   })
 })
 
 test('migration:upgrade', async t => {
-  const migration = createMigration(
-    {
-      1: data => data
-    },
-    1
-  )
+  const migration = createMigration(1, { 1: data => data })
   await t.throwsAsync(migrateData(migration, {}), {
-    code: 'EMUT_EXPECTED_UPGRADE'
+    code: 'EMUT_MIGRATION_UPGRADE'
   })
 })
 
 test('migration:future', async t => {
-  const migration = createMigration(
-    {
-      1: data => ({ ...data, version: 1 })
-    },
-    1
-  )
+  const migration = createMigration(1, { 1: data => ({ ...data, version: 1 }) })
   await t.throwsAsync(migrateData(migration, { version: 2, value: 'TEST' }), {
-    code: 'EMUT_FUTURE_VERSION'
+    code: 'EMUT_MIGRATION_FUTURE'
+  })
+})
+
+test('migration:unknown', async t => {
+  const migration = createMigration(1, { 1: data => ({ ...data, version: 1 }) })
+  await t.throwsAsync(migrateData(migration, { version: new Date() }), {
+    code: 'EMUT_MIGRATION_UNKNOWN'
   })
 })

@@ -360,25 +360,22 @@ test('redo entitites', async t => {
 })
 
 test('instance:migration', async t => {
-  const migration = createMigration(
-    {
-      1: function (data) {
-        return {
-          ...data,
-          version: 1,
-          id: data.id + 1
-        }
-      },
-      2: function (data) {
-        return {
-          ...data,
-          version: 2,
-          value: 'MIGRATED'
-        }
+  const migration = createMigration(2, {
+    1: function (data) {
+      return {
+        ...data,
+        version: 1,
+        id: data.id + 1
       }
     },
-    2
-  )
+    2: function (data) {
+      return {
+        ...data,
+        version: 2,
+        value: 'MIGRATED'
+      }
+    }
+  })
 
   const item = {
     version: 0,

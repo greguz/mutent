@@ -1,12 +1,15 @@
 import { MutentError } from './error'
+import { coalesce } from './utils'
 
-export function createMigration(strategies = {}, version = 0, key = 'version') {
-  if (!Number.isInteger(version) || version < 0) {
-    throw new MutentError(
-      'EMUT_INVALID_VERSION',
-      'Invalid version configured',
-      { version }
-    )
+function isValid(version) {
+  return Number.isInteger(version) && version >= 0
+}
+
+export function createMigration(version, strategies = {}, key = 'version') {
+  if (!isValid(version)) {
+    throw new MutentError('EMUT_VERSION_INVALID', 'Invalid version', {
+      version
+    })
   }
   return {
     key,
@@ -16,7 +19,15 @@ export function createMigration(strategies = {}, version = 0, key = 'version') {
 }
 
 function getVersion(data, key) {
-  return data[key] || 0
+  const version = coalesce(data[key], 0)
+  if (!isValid(version)) {
+    throw new MutentError(
+      'EMUT_MIGRATION_UNKNOWN',
+      'Unable to read entity version',
+      { version, data }
+    )
+  }
+  return version
 }
 
 export async function migrateData({ key, strategies, version }, data) {
@@ -24,7 +35,7 @@ export async function migrateData({ key, strategies, version }, data) {
 
   if (v > version) {
     throw new MutentError(
-      'EMUT_FUTURE_VERSION',
+      'EMUT_MIGRATION_FUTURE',
       'Found an entity with a future version',
       { version, data }
     )
@@ -37,18 +48,18 @@ export async function migrateData({ key, strategies, version }, data) {
 
     if (typeof strategy !== 'function') {
       throw new MutentError(
-        'EMUT_MISSING_STRATEGY',
-        'Missing migration strategy',
+        'EMUT_MIGRATION_ABSENT',
+        'Target migration strategy absent',
         { version: v }
       )
     }
 
-    data = await strategy(data)
+    data = await strategy.call(strategies, data)
 
     if (getVersion(data, key) !== target) {
       throw new MutentError(
-        'EMUT_EXPECTED_UPGRADE',
-        'Expected version upgrade',
+        'EMUT_MIGRATION_UPGRADE',
+        'Migrated version mismatch',
         { version: v, data }
       )
     }

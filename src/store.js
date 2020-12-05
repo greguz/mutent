@@ -55,9 +55,10 @@ export function createStore(storeSettings) {
     historySize,
     hook: createInstanceHook(hooks),
     manualCommit,
-    migration: migrationStrategies
-      ? createMigration(migrationStrategies, version, versionKey)
-      : undefined,
+    migration:
+      version !== undefined
+        ? createMigration(version, migrationStrategies, versionKey)
+        : undefined,
     mutable,
     store: name,
     unsafe,
