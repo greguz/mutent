@@ -40,10 +40,13 @@ export function createStore(storeSettings) {
   } = storeSettings
 
   if (typeof name !== 'string' || name === '') {
-    throw new Error('Expected valid store name')
+    throw new Error('Invalid store name')
   }
   if (!adapter) {
-    throw new Error('Expected adapter')
+    throw new Error('Specify adapter')
+  }
+  if (version === undefined && migrationStrategies !== undefined) {
+    throw new Error('Specify target version')
   }
 
   const validate = compileSchema(storeSettings)

@@ -233,16 +233,31 @@ test('store:schema', async t => {
 })
 
 test('store:migration', async t => {
+  t.throws(
+    () =>
+      createStore({
+        name: 'store:migration',
+        adapter: createAdapter(),
+        // version: undefined,
+        migrationStrategies: {}
+      }),
+    { message: 'Specify target version' }
+  )
+
   const items = [{ id: 0, name: 'Gandalf' }]
 
   const store = createStore({
     name: 'store:migration',
     adapter: createAdapter(items),
-    migrationStrategies: {
-      1: data => ({ ...data, v: 1, migrated: true })
-    },
+    version: 1,
     versionKey: 'v',
-    version: 1
+    migrationStrategies: {
+      1: data => ({
+        ...data,
+        v: 1,
+        migrated: true
+      })
+    }
   })
 
   const a = await store
