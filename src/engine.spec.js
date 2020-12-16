@@ -97,12 +97,16 @@ test('engine:keywordsCheck', t => {
   createEngine({ ajv: a })
 
   const b = new Ajv()
-  b.addKeyword('instanceof', {})
+  b.addKeyword({ keyword: 'instanceof' })
   t.throws(() => createEngine({ ajv: b }), { code: 'EMUT_RESERVED_KEYWORD' })
 
   const c = new Ajv()
-  c.addKeyword('parse', {})
+  c.addKeyword({ keyword: 'parse' })
   t.throws(() => createEngine({ ajv: c }), { code: 'EMUT_RESERVED_KEYWORD' })
+
+  const d = new Ajv()
+  d.addKeyword({ keyword: 'constant' })
+  t.throws(() => createEngine({ ajv: d }), { code: 'EMUT_RESERVED_KEYWORD' })
 })
 
 test('engine:parsingError', t => {

@@ -18,7 +18,7 @@ function describeParser(value) {
     }
   } else if (Array.isArray(value)) {
     return {
-      key: value[0],
+      key: '' + value[0],
       args: value.slice(1)
     }
   } else {
@@ -33,22 +33,22 @@ function describeParser(value) {
 function defaultAjv(options) {
   return new Ajv({
     coerceTypes: true,
-    nullable: true,
     removeAdditional: true,
     useDefaults: true,
     ...options
   })
 }
 
-function setAjvKeyword(ajv, keyword, definition) {
-  if (ajv.getKeyword(keyword)) {
+function setAjvKeyword(ajv, definition) {
+  const { keyword } = definition
+  if (ajv.getKeyword(keyword) !== false) {
     throw new MutentError(
       'EMUT_RESERVED_KEYWORD',
       'This custom keyword definition is reserved',
       { ajv, keyword }
     )
   }
-  ajv.addKeyword(keyword, definition)
+  ajv.addKeyword(definition)
 }
 
 function yes() {
@@ -57,6 +57,7 @@ function yes() {
 
 function constantKeyword() {
   return {
+    keyword: 'constant',
     errors: false,
     metaSchema: {
       type: 'boolean'
@@ -66,8 +67,8 @@ function constantKeyword() {
         return yes
       }
 
-      return function validate(data, path, parentData, property, rootData) {
-        pushConstant(rootData, path.substring(1), data)
+      return function validate(data, ctx) {
+        pushConstant(ctx.rootData, ctx.dataPath.substring(1), data)
         return true
       }
     }
@@ -76,6 +77,7 @@ function constantKeyword() {
 
 function instanceofKeyword(constructors) {
   return {
+    keyword: 'instanceof',
     errors: true,
     metaSchema: {
       type: 'string'
@@ -90,7 +92,7 @@ function instanceofKeyword(constructors) {
         )
       }
 
-      return function validate(data, dataPath) {
+      return function validate(data, ctx) {
         validate.errors = validate.errors || []
 
         if (data instanceof Constructor) {
@@ -98,7 +100,7 @@ function instanceofKeyword(constructors) {
         } else {
           validate.errors.push({
             keyword: 'instanceof',
-            dataPath,
+            dataPath: ctx.dataPath,
             schemaPath: '#/instanceof',
             params: {
               constructor: schema,
@@ -114,13 +116,12 @@ function instanceofKeyword(constructors) {
 
 function parseKeyword(parsers) {
   return {
+    keyword: 'parse',
     errors: 'full',
     modifying: true,
     metaSchema: {
       type: ['array', 'string', 'object'],
-      items: [{ type: 'string' }],
       minItems: 1,
-      additionalItems: true,
       additionalProperties: { type: 'array' },
       minProperties: 1,
       maxProperties: 1
@@ -137,15 +138,15 @@ function parseKeyword(parsers) {
         )
       }
 
-      return function validate(data, dataPath, parentData, property) {
+      return function validate(data, ctx) {
         validate.errors = validate.errors || []
 
         try {
-          parentData[property] = parse(data, ...args)
+          ctx.parentData[ctx.parentDataProperty] = parse(data, ...args)
         } catch (err) {
           validate.errors.push({
             keyword: 'parse',
-            dataPath,
+            dataPath: ctx.dataPath,
             schemaPath: '#/parse',
             params: {
               parser: key,
@@ -177,13 +178,9 @@ class Engine {
     this._parsers = { ...parsers }
     this._ajv = ajv || defaultAjv(ajvOptions)
 
-    setAjvKeyword(this._ajv, 'constant', constantKeyword())
-    setAjvKeyword(
-      this._ajv,
-      'instanceof',
-      instanceofKeyword(this._constructors)
-    )
-    setAjvKeyword(this._ajv, 'parse', parseKeyword(this._parsers))
+    setAjvKeyword(this._ajv, constantKeyword())
+    setAjvKeyword(this._ajv, instanceofKeyword(this._constructors))
+    setAjvKeyword(this._ajv, parseKeyword(this._parsers))
   }
 
   compile(schema) {

@@ -169,7 +169,6 @@ test('store:schema', async t => {
         anyOf: [
           {
             type: 'string',
-            format: 'date-time',
             parse: 'toDate'
           },
           {
