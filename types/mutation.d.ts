@@ -22,7 +22,7 @@ export interface Mutation<T> {
   if(condition: Condition<T>, mutation: MutationOrMapper<T>): this
   unless(condition: Condition<T>, mutation: MutationOrMapper<T>): this
   inspect(inspector: Inspector<T>): this
-  mutate(mutation: Mutation<T>): this
+  mutate(mutation: MutationOrMapper<T>): this
   undo(steps?: number): this
   redo(steps?: number): this
 }
