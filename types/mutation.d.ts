@@ -1,49 +1,34 @@
-import { Lazy, Result } from './utils'
+import { Status } from './status'
+import { Options } from './options'
+import { Result } from './utils'
+
+export declare type Lazy<T, A> = ((arg: A) => T) | T
+
+export declare type Mutator<T, O> = (
+  status: Status<T>,
+  options: Options<O>
+) => Result<Status<T>>
+
+export declare type Mutators<T, O> = Array<Mutator<T, O>>
 
 export declare type Condition<T> = Lazy<boolean, T>
 
-export declare type Mutator<T, A extends any[]> = (
-  data: Exclude<T, null>,
+export declare type Mapper<T, A extends any[]> = (
+  data: T,
   ...args: A
 ) => Result<T>
 
 export declare type Tapper<T> = (data: T) => Result<any>
 
-export interface MutationSettings {
-  historySize?: number
-  mutable?: boolean
-}
-
-export interface Mutation<T> {
-  update<A extends any[]>(mutator: Mutator<T, A>, ...args: A): this
+export interface Mutation<T, O> {
+  update<A extends any[]>(mutator: Mapper<T, A>, ...args: A): this
   assign(object: Partial<T>): this
   delete(): this
   commit(): this
-  if<A extends any[]>(
-    condition: Condition<T>,
-    mutation: MutationOrMapper<T, A>,
-    ...args: A
-  ): this
-  unless<A extends any[]>(
-    condition: Condition<T>,
-    mutation: MutationOrMapper<T, A>,
-    ...args: A
-  ): this
+  if(condition: Condition<T>, ...mutators: Mutators<T, O>): this
+  unless(condition: Condition<T>, ...mutators: Mutators<T, O>): this
   tap(tapper: Tapper<T>): this
-  mutate<A extends any[]>(mutation: MutationOrMapper<T, A>, ...args: A): this
+  pipe(...mutators: Mutators<T, O>): this
   undo(steps?: number): this
   redo(steps?: number): this
 }
-
-export type MutationMapper<T, A extends any[]> = (
-  mutation: Mutation<T>,
-  ...args: A
-) => Mutation<T>
-
-export type MutationOrMapper<T, A extends any[]> =
-  | Mutation<T>
-  | MutationMapper<T, A>
-
-export declare function createMutation<T>(
-  settings?: MutationSettings
-): Mutation<T>

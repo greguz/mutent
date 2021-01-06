@@ -1,4 +1,10 @@
-import { isAsyncIterable, isIterable } from './utils'
+function isAsyncIterable(obj) {
+  return obj !== null && typeof obj[Symbol.asyncIterator] === 'function'
+}
+
+function isIterable(obj) {
+  return obj !== null && typeof obj[Symbol.iterator] === 'function'
+}
 
 const INTENT_TYPE = {
   CREATE: 'CREATE',

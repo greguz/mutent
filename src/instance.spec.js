@@ -4,7 +4,7 @@ import { createDriver } from './driver'
 import { createInstance } from './instance'
 import { intentCreate, intentFrom } from './intent'
 import { createMigration } from './migration'
-import { createMutation } from './mutation'
+import { update } from './mutators'
 
 const defaultAdapter = {
   create() {},
@@ -69,8 +69,8 @@ test('many:iterate', async t => {
 test('instance:condition', async t => {
   const entity = read({ id: 0 })
 
-  const mDelete = createMutation().assign({ value: 'DELETE' })
-  const mUpdate = createMutation().assign({ value: 'UPDATE' })
+  const mDelete = update(data => ({ ...data, value: 'DELETE' }))
+  const mUpdate = update(data => ({ ...data, value: 'UPDATE' }))
 
   const a = await entity.if(true, mDelete).unless(true, mUpdate).unwrap()
   t.deepEqual(a, { id: 0, value: 'DELETE' })
@@ -82,20 +82,11 @@ test('instance:condition', async t => {
   t.deepEqual(b, { id: 0, value: 'UPDATE' })
 })
 
-test('instance:alteration', async t => {
-  const data = await create({ a: 'test' })
-    .if(true, mutation => mutation.assign({ b: 'free' }))
+test('instance:pipe', async t => {
+  const out = await read({ id: 0 })
+    .pipe(update(data => ({ ...data, value: 'UPDATE' })))
     .unwrap()
-  t.deepEqual(data, {
-    a: 'test',
-    b: 'free'
-  })
-})
 
-test('instance:mutate', async t => {
-  const entity = read({ id: 0 })
-  const mutation = createMutation().assign({ value: 'UPDATE' })
-  const out = await entity.mutate(mutation).unwrap()
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
 })
 

@@ -1,5 +1,4 @@
 import { MutentError } from './error'
-import { coalesce } from './utils'
 
 function isValid(version) {
   return Number.isInteger(version) && version >= 0
@@ -19,7 +18,7 @@ export function createMigration(version, strategies = {}, key = 'version') {
 }
 
 function getVersion(data, key) {
-  const version = coalesce(data[key], 0)
+  const version = data[key] === undefined ? 0 : data[key]
   if (!isValid(version)) {
     throw new MutentError(
       'EMUT_MIGRATION_UNKNOWN',

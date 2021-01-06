@@ -4,7 +4,7 @@ import Ajv, { Options as AjvOptions } from 'ajv'
 
 import { Adapter } from './adapter'
 import { Hooks } from './hooks'
-import { Mutation, MutationSettings } from './mutation'
+import { Mutation } from './mutation'
 import { Options } from './options'
 import { JSONSchema7Definition } from './schema'
 
@@ -30,24 +30,24 @@ export interface Constructors {
   [key: string]: Function
 }
 
-export interface Entity<T, O> extends Mutation<T> {
+export interface Entity<T, O> extends Mutation<T, O> {
   unwrap(options?: Options<O>): Promise<T>
   iterate(options?: Options<O>): AsyncIterable<T>
 }
 
-export interface Entities<T, O> extends Mutation<T> {
+export interface Entities<T, O> extends Mutation<T, O> {
   unwrap(options?: Options<O>): Promise<T[]>
   iterate(options?: Options<O>): AsyncIterable<T>
 }
 
-export interface StoreSettings<T, Q, O>
-  extends EngineSettings,
-    MutationSettings {
+export interface StoreSettings<T, Q, O> extends EngineSettings {
   adapter: Adapter<T, Q, O>
   engine?: Engine
+  historySize?: number
   hooks?: Hooks<T, Q, O>
   manualCommit?: boolean
   migrationStrategies?: Strategies
+  mutable?: boolean
   name: string
   schema?: JSONSchema7Definition
   unsafe?: boolean

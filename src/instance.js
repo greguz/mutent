@@ -9,19 +9,12 @@ import {
   unwrapIntent
 } from './intent'
 import { migrateData } from './migration'
-import {
-  assignMethod,
-  commitMethod,
-  deleteMethod,
-  ifMethod,
-  mutateMethod,
-  mutateStatus,
-  tapMethod,
-  unlessMethod,
-  updateMethod
-} from './mutation'
+import { _delete, _if, commit, tap, unless, update } from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
-import { coalesce } from './utils'
+
+function coalesce(a, b) {
+  return a === null || a === undefined ? b : a
+}
 
 function toStatus(intent, data) {
   return isCreationIntent(intent) ? createStatus(data) : readStatus(data)
@@ -35,8 +28,8 @@ async function processData(
     intent,
     manualCommit,
     migration,
+    mutators,
     store,
-    tree,
     unsafe,
     validate
   },
@@ -78,26 +71,26 @@ async function processData(
   }
 
   // Load initial constants
-  const constants = readConstants(data)
+  const constants = mutators.length > 0 ? readConstants(data) : []
 
   // Initialize status
   let status = toStatus(intent, data)
 
-  if (tree.length > 0) {
-    // Apply mutation chain
-    status = await mutateStatus(tree, status, options, { driver })
+  // Apply mutation chain
+  for (const mutator of mutators) {
+    status = await mutator.call({ driver }, status, options)
+  }
 
-    // Validate constant values
-    for (const constant of constants) {
-      if (!isConstantValid(constant, status.target)) {
-        throw new MutentError('EMUT_CONSTANT', 'A constant value was changed', {
-          store,
-          intent,
-          status,
-          options,
-          constant
-        })
-      }
+  // Validate constant values
+  for (const constant of constants) {
+    if (!isConstantValid(constant, status.target)) {
+      throw new MutentError('EMUT_CONSTANT', 'A constant value was changed', {
+        store,
+        intent,
+        status,
+        options,
+        constant
+      })
     }
   }
 
@@ -161,6 +154,46 @@ function iterateMethod(state, options = {}) {
     : iterateOne(state, options)
 }
 
+function pipeMethod(state, ...mutators) {
+  return {
+    mutators: state.mutators.concat(mutators)
+  }
+}
+
+function updateMethod(state, mapper, ...args) {
+  return pipeMethod(
+    state,
+    update(data => mapper(data, ...args))
+  )
+}
+
+function assignMethod(state, object) {
+  return pipeMethod(
+    state,
+    update(data => Object.assign({}, data, object))
+  )
+}
+
+function deleteMethod(state) {
+  return pipeMethod(state, _delete())
+}
+
+function commitMethod(state) {
+  return pipeMethod(state, commit())
+}
+
+function ifMethod(state, condition, ...mutators) {
+  return pipeMethod(state, _if(condition, ...mutators))
+}
+
+function unlessMethod(state, condition, ...mutators) {
+  return pipeMethod(state, unless(condition, ...mutators))
+}
+
+function tapMethod(state, tapper) {
+  return pipeMethod(state, tap(tapper))
+}
+
 export function createInstance(
   intent,
   {
@@ -181,8 +214,8 @@ export function createInstance(
     intent,
     manualCommit,
     migration,
+    mutators: [],
     store,
-    tree: [],
     unsafe,
     validate
   }
@@ -199,7 +232,7 @@ export function createInstance(
       if: ifMethod,
       unless: unlessMethod,
       tap: tapMethod,
-      mutate: mutateMethod
+      pipe: pipeMethod
     },
     methods: {
       unwrap: unwrapMethod,
