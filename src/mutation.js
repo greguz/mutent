@@ -20,15 +20,15 @@ function doCondition(condition, tree) {
   }
 }
 
-function doUpdate(mutator) {
+function doUpdate(fn) {
   return async function (status) {
-    return updateStatus(status, await mutator(status.target))
+    return updateStatus(status, await fn(status.target))
   }
 }
 
-function doInspect(inspector) {
+function doTap(fn) {
   return async function (status) {
-    await inspector(status.target)
+    await fn(status.target)
     return status
   }
 }
@@ -88,8 +88,8 @@ export function unlessMethod(state, condition, input, ...args) {
   return ifMethod(state, data => !unlazy(condition, data), input, ...args)
 }
 
-export function inspectMethod(state, inspector) {
-  return pushNode(state, doInspect(inspector))
+export function tapMethod(state, fn) {
+  return pushNode(state, doTap(fn))
 }
 
 export function mutateMethod({ settings, tree }, input, ...args) {
@@ -119,7 +119,7 @@ export function createMutation(settings = {}) {
       commit: commitMethod,
       if: ifMethod,
       unless: unlessMethod,
-      inspect: inspectMethod,
+      tap: tapMethod,
       mutate: mutateMethod
     },
     methods: {

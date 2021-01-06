@@ -7,7 +7,7 @@ export declare type Mutator<T, A extends any[]> = (
   ...args: A
 ) => Result<T>
 
-export declare type Inspector<T> = (data: T) => Result<void>
+export declare type Tapper<T> = (data: T) => Result<any>
 
 export interface MutationSettings {
   historySize?: number
@@ -29,7 +29,7 @@ export interface Mutation<T> {
     mutation: MutationOrMapper<T, A>,
     ...args: A
   ): this
-  inspect(inspector: Inspector<T>): this
+  tap(tapper: Tapper<T>): this
   mutate<A extends any[]>(mutation: MutationOrMapper<T, A>, ...args: A): this
   undo(steps?: number): this
   redo(steps?: number): this

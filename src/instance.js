@@ -14,9 +14,9 @@ import {
   commitMethod,
   deleteMethod,
   ifMethod,
-  inspectMethod,
   mutateMethod,
   mutateStatus,
+  tapMethod,
   unlessMethod,
   updateMethod
 } from './mutation'
@@ -198,7 +198,7 @@ export function createInstance(
       commit: commitMethod,
       if: ifMethod,
       unless: unlessMethod,
-      inspect: inspectMethod,
+      tap: tapMethod,
       mutate: mutateMethod
     },
     methods: {
