@@ -1,6 +1,5 @@
 import fluente from 'fluente'
 
-import { mutateStatus } from './ast'
 import { isConstantValid, readConstants } from './constants'
 import { MutentError } from './error'
 import {
@@ -17,6 +16,7 @@ import {
   ifMethod,
   inspectMethod,
   mutateMethod,
+  mutateStatus,
   unlessMethod,
   updateMethod
 } from './mutation'
@@ -85,7 +85,7 @@ async function processData(
 
   if (tree.length > 0) {
     // Apply mutation chain
-    status = await mutateStatus(status, tree, driver, options)
+    status = await mutateStatus(tree, status, options, { driver })
 
     // Validate constant values
     for (const constant of constants) {
