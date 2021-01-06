@@ -19,17 +19,30 @@ export interface Mutation<T> {
   assign(object: Partial<T>): this
   delete(): this
   commit(): this
-  if(condition: Condition<T>, mutation: MutationOrMapper<T>): this
-  unless(condition: Condition<T>, mutation: MutationOrMapper<T>): this
+  if<A extends any[]>(
+    condition: Condition<T>,
+    mutation: MutationOrMapper<T, A>,
+    ...args: A
+  ): this
+  unless<A extends any[]>(
+    condition: Condition<T>,
+    mutation: MutationOrMapper<T, A>,
+    ...args: A
+  ): this
   inspect(inspector: Inspector<T>): this
-  mutate(mutation: MutationOrMapper<T>): this
+  mutate<A extends any[]>(mutation: MutationOrMapper<T, A>, ...args: A): this
   undo(steps?: number): this
   redo(steps?: number): this
 }
 
-export type MutationMapper<T> = (mutation: Mutation<T>) => Mutation<T>
+export type MutationMapper<T, A extends any[]> = (
+  mutation: Mutation<T>,
+  ...args: A
+) => Mutation<T>
 
-export type MutationOrMapper<T> = Mutation<T> | MutationMapper<T>
+export type MutationOrMapper<T, A extends any[]> =
+  | Mutation<T>
+  | MutationMapper<T, A>
 
 export declare function createMutation<T>(
   settings?: MutationSettings

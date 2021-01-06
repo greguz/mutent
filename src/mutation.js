@@ -37,31 +37,33 @@ export function commitMethod(state) {
   return pushNode(state, nodeCommit())
 }
 
-function renderInputMutation(input, settings) {
+function renderInputMutation(settings, input, args) {
   const mutation =
-    typeof input === 'function' ? input(createMutation(settings)) : input
+    typeof input === 'function'
+      ? input(createMutation(settings), ...args)
+      : input
 
   return mutation.render()
 }
 
-export function ifMethod(state, condition, input) {
+export function ifMethod(state, condition, input, ...args) {
   return pushNode(
     state,
-    nodeCondition(condition, renderInputMutation(input, state.settings))
+    nodeCondition(condition, renderInputMutation(state.settings, input, args))
   )
 }
 
-export function unlessMethod(state, condition, input) {
-  return ifMethod(state, data => !unlazy(condition, data), input)
+export function unlessMethod(state, condition, input, ...args) {
+  return ifMethod(state, data => !unlazy(condition, data), input, ...args)
 }
 
 export function inspectMethod(state, inspector) {
   return pushNode(state, nodeInspect(inspector))
 }
 
-export function mutateMethod({ settings, tree }, input) {
+export function mutateMethod({ settings, tree }, input, ...args) {
   return {
-    tree: tree.concat(renderInputMutation(input, settings))
+    tree: tree.concat(renderInputMutation(settings, input, args))
   }
 }
 

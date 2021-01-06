@@ -582,3 +582,20 @@ test('store:inspect', async t => {
 
   t.deepEqual(results, items)
 })
+
+test('store:mutation-args', async t => {
+  t.plan(1)
+
+  const store = createStore({
+    name: 'store:mutation-args',
+    adapter: createAdapter()
+  })
+
+  function set(mutation, property, value) {
+    return mutation.assign({ [property]: value })
+  }
+
+  const data = await store.create({}).mutate(set, 'value', true).unwrap()
+
+  t.deepEqual(data, { value: true })
+})
