@@ -1,6 +1,6 @@
 /// <reference types="ajv" />
 
-import Ajv from 'ajv'
+import Ajv, { Options as AjvOptions } from 'ajv'
 
 import { Adapter } from './adapter'
 import { Hooks } from './hooks'
@@ -68,8 +68,8 @@ export interface Store<T, Q, O> {
 }
 
 export interface EngineSettings {
-  ajv?: Ajv.Ajv
-  ajvOptions?: Ajv.Options
+  ajv?: Ajv
+  ajvOptions?: AjvOptions
   constructors?: Constructors
   parsers?: Parsers
 }
