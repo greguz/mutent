@@ -14,19 +14,16 @@ function isTrue(condition, data) {
   return typeof condition === 'function' ? condition(data) : condition
 }
 
-export function _if(condition, ...mutators) {
+export function _if(condition, mutator) {
   return async function conditionalMutator(status, options) {
-    if (isTrue(condition, status.target)) {
-      for (const mutator of mutators) {
-        status = await mutator.call(this, status, options)
-      }
-    }
-    return status
+    return isTrue(condition, status.target)
+      ? mutator.call(this, status, options)
+      : status
   }
 }
 
-export function unless(condition, ...mutators) {
-  return _if(data => !isTrue(condition, data), ...mutators)
+export function unless(condition, mutator) {
+  return _if(data => !isTrue(condition, data), mutator)
 }
 
 export function update(mapper) {
