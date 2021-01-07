@@ -1,27 +1,13 @@
-import { Status } from './status'
-import { Options } from './options'
+import { Condition, Mutator, Mutators, Tapper } from './mutators'
 import { Result } from './utils'
 
-export declare type Lazy<T, A> = ((arg: A) => T) | T
-
-export declare type Mutator<T, O> = (
-  status: Status<T>,
-  options: Options<O>
-) => Result<Status<T>>
-
-export declare type Mutators<T, O> = Array<Mutator<T, O>>
-
-export declare type Condition<T> = Lazy<boolean, T>
-
-export declare type Mapper<T, A extends any[]> = (
+export declare type MapperWithArguments<T, A extends any[]> = (
   data: T,
   ...args: A
 ) => Result<T>
 
-export declare type Tapper<T> = (data: T) => Result<any>
-
 export interface Mutation<T, O> {
-  update<A extends any[]>(mutator: Mapper<T, A>, ...args: A): this
+  update<A extends any[]>(mapper: MapperWithArguments<T, A>, ...args: A): this
   assign(object: Partial<T>): this
   delete(): this
   commit(): this

@@ -10,6 +10,7 @@ import { JSONSchema7Definition } from './schema'
 
 export * from './adapter'
 export * from './mutation'
+export * from './mutators'
 export * from './options'
 export * from './schema'
 export * from './utils'
