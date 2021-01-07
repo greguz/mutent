@@ -163,7 +163,7 @@ function pipeMethod(state, ...mutators) {
 function updateMethod(state, mapper, ...args) {
   return pipeMethod(
     state,
-    update(data => mapper(data, ...args))
+    update(args.length > 0 ? data => mapper(data, ...args) : mapper)
   )
 }
 
@@ -205,22 +205,20 @@ export function createInstance(
     validate
   }
 ) {
-  const state = {
-    driver,
-    hook,
-    intent,
-    manualCommit,
-    migration,
-    mutators: [],
-    store,
-    unsafe,
-    validate
-  }
-
   return fluente({
     historySize,
     isMutable: mutable,
-    state,
+    state: {
+      driver,
+      hook,
+      intent,
+      manualCommit,
+      migration,
+      mutators: [],
+      store,
+      unsafe,
+      validate
+    },
     fluent: {
       update: updateMethod,
       assign: assignMethod,
