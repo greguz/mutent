@@ -1,6 +1,6 @@
 import { deleteStatus, updateStatus } from './status'
 
-export function _delete() {
+export function ddelete() {
   return deleteStatus
 }
 
@@ -14,7 +14,7 @@ function isTrue(condition, data) {
   return typeof condition === 'function' ? condition(data) : condition
 }
 
-export function _if(condition, mutator) {
+export function iif(condition, mutator) {
   return async function conditionalMutator(status, options) {
     return isTrue(condition, status.target)
       ? mutator.call(this, status, options)
@@ -23,7 +23,7 @@ export function _if(condition, mutator) {
 }
 
 export function unless(condition, mutator) {
-  return _if(data => !isTrue(condition, data), mutator)
+  return iif(data => !isTrue(condition, data), mutator)
 }
 
 export function update(mapper) {
