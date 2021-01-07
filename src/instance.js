@@ -9,16 +9,7 @@ import {
   unwrapIntent
 } from './intent'
 import { migrateData } from './migration'
-import {
-  _delete,
-  _if,
-  assign,
-  commit,
-  pipe,
-  tap,
-  unless,
-  update
-} from './mutators'
+import { _delete, _if, assign, commit, tap, unless, update } from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
 
 function coalesce(a, b) {

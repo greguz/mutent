@@ -4,7 +4,7 @@ import { createDriver } from './driver'
 import { createInstance } from './instance'
 import { intentCreate, intentFrom } from './intent'
 import { createMigration } from './migration'
-import { update } from './mutators'
+import { assign, pipe, update } from './mutators'
 
 const defaultAdapter = {
   create() {},
@@ -84,7 +84,12 @@ test('instance:condition', async t => {
 
 test('instance:pipe', async t => {
   const out = await read({ id: 0 })
-    .pipe(update(data => ({ ...data, value: 'UPDATE' })))
+    .pipe(
+      pipe(
+        assign({ value: 'update' }),
+        update(data => ({ ...data, value: data.value.toUpperCase() }))
+      )
+    )
     .unwrap()
 
   t.deepEqual(out, { id: 0, value: 'UPDATE' })
