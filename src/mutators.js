@@ -38,3 +38,7 @@ export function tap(tapper) {
     return status
   }
 }
+
+export function assign(object) {
+  return update(data => Object.assign({}, data, object))
+}
