@@ -9,7 +9,16 @@ import {
   unwrapIntent
 } from './intent'
 import { migrateData } from './migration'
-import { _delete, _if, assign, commit, tap, unless, update } from './mutators'
+import {
+  _delete,
+  _if,
+  assign,
+  commit,
+  pipe,
+  tap,
+  unless,
+  update
+} from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
 
 function coalesce(a, b) {
@@ -179,12 +188,12 @@ function commitMethod(state) {
   return pipeMethod(state, commit())
 }
 
-function ifMethod(state, condition, ...mutators) {
-  return pipeMethod(state, _if(condition, ...mutators))
+function ifMethod(state, condition, mutator) {
+  return pipeMethod(state, _if(condition, mutator))
 }
 
-function unlessMethod(state, condition, ...mutators) {
-  return pipeMethod(state, unless(condition, ...mutators))
+function unlessMethod(state, condition, mutator) {
+  return pipeMethod(state, unless(condition, mutator))
 }
 
 function tapMethod(state, tapper) {

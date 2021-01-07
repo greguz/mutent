@@ -25,8 +25,8 @@ export interface Mutation<T, O> {
   assign(object: Partial<T>): this
   delete(): this
   commit(): this
-  if(condition: Condition<T>, ...mutators: Mutators<T, O>): this
-  unless(condition: Condition<T>, ...mutators: Mutators<T, O>): this
+  if(condition: Condition<T>, mutator: Mutator<T, O>): this
+  unless(condition: Condition<T>, mutator: Mutator<T, O>): this
   tap(tapper: Tapper<T>): this
   pipe(...mutators: Mutators<T, O>): this
   undo(steps?: number): this

@@ -42,3 +42,12 @@ export function tap(tapper) {
 export function assign(object) {
   return update(data => Object.assign({}, data, object))
 }
+
+export function pipe(...mutators) {
+  return async function pipeMutator(status, options) {
+    for (const mutator of mutators) {
+      status = await mutator.call(this, status, options)
+    }
+    return status
+  }
+}
