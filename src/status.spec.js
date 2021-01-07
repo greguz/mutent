@@ -8,13 +8,6 @@ import {
 } from './status'
 
 test('create status', t => {
-  t.deepEqual(createStatus(undefined), {
-    created: true,
-    updated: false,
-    deleted: false,
-    source: null,
-    target: null
-  })
   t.deepEqual(createStatus('CREATE'), {
     created: true,
     updated: false,

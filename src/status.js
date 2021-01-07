@@ -1,9 +1,5 @@
 import { MutentError } from './error'
 
-function noUndef(data) {
-  return data === undefined ? null : data
-}
-
 export function commitStatus({ deleted, target }) {
   return {
     created: false,
@@ -20,12 +16,12 @@ export function createStatus(data) {
     updated: false,
     deleted: false,
     source: null,
-    target: noUndef(data)
+    target: data
   }
 }
 
 export function readStatus(data) {
-  return commitStatus(createStatus(noUndef(data)))
+  return commitStatus(createStatus(data))
 }
 
 export function updateStatus({ created, deleted, source }, target) {
