@@ -6,7 +6,7 @@ export function ddelete() {
 
 export function commit() {
   return function commitMutator(status, options) {
-    return this.driver.write(status, options)
+    return this.write(status, options)
   }
 }
 

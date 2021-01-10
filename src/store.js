@@ -51,10 +51,8 @@ export function createStore(storeSettings) {
 
   const validate = compileSchema(storeSettings)
 
-  const driver = createDriver(adapter, hooks, validate)
-
   const instanceSettings = {
-    driver,
+    driver: createDriver(adapter, hooks, validate),
     historySize,
     hook: createInstanceHook(hooks),
     manualCommit,

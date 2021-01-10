@@ -1,12 +1,7 @@
 import { MutentError } from './error'
 import { commitStatus, updateStatus } from './status'
 
-function valid() {
-  return true
-}
-
-function findMethod(query, options) {
-  const { adapter, hooks } = this
+export function doFind({ adapter, hooks }, query, options) {
   if (!adapter.find) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
@@ -19,8 +14,7 @@ function findMethod(query, options) {
   return adapter.find(query, options)
 }
 
-function filterMethod(query, options) {
-  const { adapter, hooks } = this
+export function doFilter({ adapter, hooks }, query, options) {
   if (!adapter.filter) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
@@ -33,8 +27,7 @@ function filterMethod(query, options) {
   return adapter.filter(query, options)
 }
 
-async function createMethod(data, options) {
-  const { adapter, hooks, validate } = this
+async function doCreate({ adapter, hooks, validate }, data, options) {
   if (!adapter.create) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
@@ -61,8 +54,12 @@ async function createMethod(data, options) {
   return result
 }
 
-async function updateMethod(oldData, newData, options) {
-  const { adapter, hooks, validate } = this
+async function doUpdate(
+  { adapter, hooks, validate },
+  oldData,
+  newData,
+  options
+) {
   if (!adapter.update) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
@@ -89,8 +86,7 @@ async function updateMethod(oldData, newData, options) {
   return result
 }
 
-async function deleteMethod(data, options) {
-  const { adapter, hooks } = this
+async function doDelete({ adapter, hooks }, data, options) {
   if (!adapter.delete) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
@@ -107,16 +103,16 @@ async function deleteMethod(data, options) {
   return result
 }
 
-async function writeMethod(status, options) {
+export async function doCommit(driver, status, options) {
   const { created, updated, deleted, source, target } = status
 
   let data
   if (source === null && created && !deleted) {
-    data = await this.create(target, options)
+    data = await doCreate(driver, target, options)
   } else if (source !== null && updated && !deleted) {
-    data = await this.update(source, target, options)
+    data = await doUpdate(driver, source, target, options)
   } else if (source !== null && deleted) {
-    data = await this.delete(source, options)
+    data = await doDelete(driver, source, options)
   }
 
   return commitStatus(
@@ -124,16 +120,14 @@ async function writeMethod(status, options) {
   )
 }
 
-export function createDriver(adapter, hooks = {}, validate = valid) {
+function yes() {
+  return true
+}
+
+export function createDriver(adapter, hooks = {}, validate = yes) {
   return {
     adapter,
     hooks,
-    validate,
-    find: findMethod,
-    filter: filterMethod,
-    create: createMethod,
-    update: updateMethod,
-    delete: deleteMethod,
-    write: writeMethod
+    validate
   }
 }

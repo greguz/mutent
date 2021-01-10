@@ -1,6 +1,7 @@
 import fluente from 'fluente'
 
 import { isConstantValid, readConstants } from './constants'
+import { doCommit } from './driver'
 import { MutentError } from './error'
 import {
   isCreationIntent,
@@ -23,6 +24,7 @@ function toStatus(intent, data) {
 async function processData(
   data,
   {
+    context,
     driver,
     hook,
     intent,
@@ -78,7 +80,7 @@ async function processData(
 
   // Apply mutation chain
   for (const mutator of mutators) {
-    status = await mutator.call({ driver }, status, options)
+    status = await mutator.call(context, status, options)
   }
 
   // Validate constant values
@@ -98,7 +100,7 @@ async function processData(
   if (shouldCommit(status)) {
     const mutentOptions = options.mutent || {}
     if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
-      status = await driver.write(status, options)
+      status = await doCommit(driver, status, options)
     } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
       throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
         store,
@@ -209,6 +211,9 @@ export function createInstance(
     historySize,
     isMutable: mutable,
     state: {
+      context: {
+        write: (status, options) => doCommit(driver, status, options)
+      },
       driver,
       hook,
       intent,

@@ -1,3 +1,5 @@
+import { doFilter, doFind } from './driver'
+
 function isAsyncIterable(obj) {
   return obj !== null && typeof obj[Symbol.asyncIterator] === 'function'
 }
@@ -77,8 +79,8 @@ export function unwrapIntent(driver, { data, query, type }, options) {
       return data
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
-      return driver.find(query, options)
+      return doFind(driver, query, options)
     case INTENT_TYPE.FILTER:
-      return driver.filter(query, options)
+      return doFilter(driver, query, options)
   }
 }
