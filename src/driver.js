@@ -1,3 +1,4 @@
+import { isConstantValid, readConstants } from './constants'
 import { MutentError } from './error'
 import { commitStatus, updateStatus } from './status'
 
@@ -75,6 +76,14 @@ async function doUpdate(
         errors: validate.errors
       }
     )
+  }
+  for (const constant of readConstants(oldData)) {
+    if (!isConstantValid(constant, newData)) {
+      throw new MutentError('EMUT_CONSTANT', 'A constant value was changed', {
+        data: newData,
+        constant
+      })
+    }
   }
   if (hooks.beforeUpdate) {
     await hooks.beforeUpdate(oldData, newData, options)

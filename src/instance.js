@@ -1,6 +1,5 @@
 import fluente from 'fluente'
 
-import { isConstantValid, readConstants } from './constants'
 import { doCommit } from './driver'
 import { MutentError } from './error'
 import { isCreationIntent, isRequired, unwrapIntent } from './intent'
@@ -20,87 +19,19 @@ function coalesce(a, b) {
   return a === null || a === undefined ? b : a
 }
 
-function toStatus(intent, data) {
-  return isCreationIntent(intent) ? createStatus(data) : readStatus(data)
-}
-
 async function processData(
   data,
-  {
-    context,
-    driver,
-    hook,
-    intent,
-    manualCommit,
-    migration,
-    mutators,
-    store,
-    unsafe,
-    validate
-  },
+  { close, context, intent, mutators },
   options
 ) {
-  // Trigger "onData" hook
-  if (hook) {
-    await hook(intent.type, data, options)
-  }
+  let status = isCreationIntent(intent) ? createStatus(data) : readStatus(data)
 
-  // Apply migration strategies
-  if (migration) {
-    data = await migrateData(migration, data)
-  }
-
-  // First validation and parsing
-  if (validate && !validate(data)) {
-    throw new MutentError('EMUT_INVALID_DATA', 'Unusable data found', {
-      store,
-      intent,
-      data,
-      options,
-      errors: validate.errors
-    })
-  }
-
-  // Load initial constants
-  const constants = mutators.length > 0 ? readConstants(data) : []
-
-  // Initialize status
-  let status = toStatus(intent, data)
-
-  // Apply mutation chain
   for (const mutator of mutators) {
     status = await mutator.call(context, status, options)
   }
 
-  // Validate constant values
-  for (const constant of constants) {
-    if (!isConstantValid(constant, status.target)) {
-      throw new MutentError('EMUT_CONSTANT', 'A constant value was changed', {
-        store,
-        intent,
-        status,
-        options,
-        constant
-      })
-    }
-  }
+  status = await close.call(context, status, options)
 
-  // Handle manualCommit/unsafe features
-  if (shouldCommit(status)) {
-    const mutentOptions = options.mutent || {}
-    if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
-      status = await doCommit(driver, status, options)
-    } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
-      throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
-        store,
-        intent,
-        status,
-        options
-      })
-    }
-  }
-
-  // Return final object
   return status.target
 }
 
@@ -207,22 +138,69 @@ export function createInstance(
     validate
   }
 ) {
+  const mutators = []
+
+  if (hook) {
+    mutators.push(async function hookMutator(status, options) {
+      await hook(intent.type, status.target, options)
+      return status
+    })
+  }
+
+  if (migration) {
+    mutators.push(async function migrateMutator(status) {
+      return {
+        ...status,
+        target: await migrateData(migration, status.target)
+      }
+    })
+  }
+
+  if (validate) {
+    mutators.push(async function schemaMutator(status, options) {
+      if (!validate(status.target)) {
+        throw new MutentError('EMUT_INVALID_DATA', 'Unusable data found', {
+          store,
+          intent,
+          data: status.target,
+          options,
+          errors: validate.errors
+        })
+      }
+      return status
+    })
+  }
+
+  const context = {
+    write: (status, options) => doCommit(driver, status, options)
+  }
+
+  async function closeMutator(status, options) {
+    if (shouldCommit(status)) {
+      const mutentOptions = options.mutent || {}
+      if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
+        return this.write(status, options)
+      } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
+        throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
+          store,
+          data: status.target,
+          status,
+          options
+        })
+      }
+    }
+    return status
+  }
+
   return fluente({
     historySize,
     isMutable: mutable,
     state: {
-      context: {
-        write: (status, options) => doCommit(driver, status, options)
-      },
+      close: closeMutator,
+      context,
       driver,
-      hook,
       intent,
-      manualCommit,
-      migration,
-      mutators: [],
-      store,
-      unsafe,
-      validate
+      mutators
     },
     fluent: {
       update: updateMethod,
