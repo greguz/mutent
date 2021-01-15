@@ -13,7 +13,10 @@ export declare type Lazy<T, A> = ((arg: A) => T) | T
 
 export declare type Condition<T> = Lazy<boolean, T>
 
-export declare type Mapper<T> = (data: T) => Result<T>
+export declare type Mapper<T, A extends any[] = []> = (
+  data: T,
+  ...args: A
+) => Result<T>
 
 export declare type Tapper<T> = (data: T) => Result<any>
 

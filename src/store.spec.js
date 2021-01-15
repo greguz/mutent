@@ -87,6 +87,50 @@ test('store:create', async t => {
   const iMany = await consume(store.create([scrooge]).iterate())
   t.deepEqual(iMany, [scrooge])
   t.deepEqual(items, [huey, dewey, louie, donald, scrooge])
+
+  const uPromise = await store.create(Promise.resolve({ id: 5 })).unwrap()
+  t.deepEqual(uPromise, { id: 5 })
+
+  const iPromise = await consume(
+    store.create(Promise.resolve({ id: 6 })).iterate()
+  )
+  t.deepEqual(iPromise, [{ id: 6 }])
+
+  const uPromiseCallback = await store
+    .create(async options => {
+      t.deepEqual(options, { my: 'options' })
+      return { id: 7 }
+    })
+    .unwrap({ my: 'options' })
+  t.deepEqual(uPromiseCallback, { id: 7 })
+
+  const iPromiseCallback = await consume(
+    store
+      .create(async options => {
+        t.deepEqual(options, { my: 'options' })
+        return { id: 8 }
+      })
+      .iterate({ my: 'options' })
+  )
+  t.deepEqual(iPromiseCallback, [{ id: 8 }])
+
+  const uIterableCallback = await store
+    .create(options => {
+      t.deepEqual(options, { my: 'options' })
+      return [{ id: 9 }]
+    })
+    .unwrap({ my: 'options' })
+  t.deepEqual(uIterableCallback, [{ id: 9 }])
+
+  const iIterableCallback = await consume(
+    store
+      .create(options => {
+        t.deepEqual(options, { my: 'options' })
+        return [{ id: 10 }]
+      })
+      .iterate({ my: 'options' })
+  )
+  t.deepEqual(iIterableCallback, [{ id: 10 }])
 })
 
 test('store:find', async t => {

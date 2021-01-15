@@ -1,13 +1,5 @@
 import { doFilter, doFind } from './driver'
 
-function isAsyncIterable(obj) {
-  return obj !== null && typeof obj[Symbol.asyncIterator] === 'function'
-}
-
-function isIterable(obj) {
-  return obj !== null && typeof obj[Symbol.iterator] === 'function'
-}
-
 const INTENT_TYPE = {
   CREATE: 'CREATE',
   FIND: 'FIND',
@@ -59,24 +51,11 @@ export function isRequired({ type }) {
   return type !== INTENT_TYPE.FIND
 }
 
-export function isIntentIterable({ data, type }) {
+export function unwrapIntent({ data, query, type }, driver, options) {
   switch (type) {
     case INTENT_TYPE.CREATE:
     case INTENT_TYPE.FROM:
-      return isAsyncIterable(data) || isIterable(data)
-    case INTENT_TYPE.FIND:
-    case INTENT_TYPE.READ:
-      return false
-    case INTENT_TYPE.FILTER:
-      return true
-  }
-}
-
-export function unwrapIntent(driver, { data, query, type }, options) {
-  switch (type) {
-    case INTENT_TYPE.CREATE:
-    case INTENT_TYPE.FROM:
-      return data
+      return typeof data === 'function' ? data(options) : data
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
       return doFind(driver, query, options)

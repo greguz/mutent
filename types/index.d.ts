@@ -4,12 +4,11 @@ import Ajv, { Options as AjvOptions } from 'ajv'
 
 import { Adapter } from './adapter'
 import { Hooks } from './hooks'
-import { Mutation } from './mutation'
+import { Condition, Mapper, Mutator, Mutators, Tapper } from './mutators'
 import { Options } from './options'
 import { JSONSchema7Definition } from './schema'
 
 export * from './adapter'
-export * from './mutation'
 export * from './mutators'
 export * from './options'
 export * from './schema'
@@ -31,14 +30,31 @@ export interface Constructors {
   [key: string]: Function
 }
 
-export interface Entity<T, O> extends Mutation<T, O> {
-  unwrap(options?: Options<O>): Promise<T>
+export interface Instance<T, O> {
+  update<A extends any[]>(mapper: Mapper<T, A>, ...args: A): this
+  assign(object: Partial<T>): this
+  delete(): this
+  commit(): this
+  if(condition: Condition<T>, mutator: Mutator<T, O>): this
+  unless(condition: Condition<T>, mutator: Mutator<T, O>): this
+  tap(tapper: Tapper<T>): this
+  pipe(...mutators: Mutators<T, O>): this
+  undo(steps?: number): this
+  redo(steps?: number): this
   iterate(options?: Options<O>): AsyncIterable<T>
+  unwrap(options?: Options<O>): unknown
 }
 
-export interface Entities<T, O> extends Mutation<T, O> {
+export interface NullableEntity<T, O> extends Instance<T, O> {
+  unwrap(options?: Options<O>): Promise<T | null>
+}
+
+export interface Entity<T, O> extends Instance<T, O> {
+  unwrap(options?: Options<O>): Promise<T>
+}
+
+export interface Entities<T, O> extends Instance<T, O> {
   unwrap(options?: Options<O>): Promise<T[]>
-  iterate(options?: Options<O>): AsyncIterable<T>
 }
 
 export interface StoreSettings<T, Q, O> extends EngineSettings {
@@ -56,16 +72,22 @@ export interface StoreSettings<T, Q, O> extends EngineSettings {
   versionKey?: string
 }
 
+export type Lazy<T, O> = T | ((options: Options<O>) => T)
+
+export type One<T, O> = Lazy<T | Promise<T>, O>
+
+export type Many<T, O> = Lazy<Iterable<T> | AsyncIterable<T>, O>
+
 export interface Store<T, Q, O> {
   name: string
   version: number
-  create(data: T): Entity<T, O>
-  create(data: Iterable<T> | AsyncIterable<T>): Entities<T, O>
-  find(query: Q): Entity<T | null, O>
+  create(one: One<T, O>): Entity<T, O>
+  create(many: Many<T, O>): Entities<T, O>
+  find(query: Q): NullableEntity<T, O>
   read(query: Q): Entity<T, O>
   filter(query: Q): Entities<T, O>
-  from(data: T): Entity<T, O>
-  from(data: Iterable<T> | AsyncIterable<T>): Entities<T, O>
+  from(one: One<T, O>): Entity<T, O>
+  from(many: Many<T, O>): Entities<T, O>
 }
 
 export interface EngineSettings {

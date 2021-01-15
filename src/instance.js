@@ -3,15 +3,18 @@ import fluente from 'fluente'
 import { isConstantValid, readConstants } from './constants'
 import { doCommit } from './driver'
 import { MutentError } from './error'
-import {
-  isCreationIntent,
-  isIntentIterable,
-  isRequired,
-  unwrapIntent
-} from './intent'
+import { isCreationIntent, isRequired, unwrapIntent } from './intent'
 import { migrateData } from './migration'
 import { assign, commit, ddelete, iif, tap, unless, update } from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
+
+function isAsyncIterable(value) {
+  return Symbol.asyncIterator in Object(value)
+}
+
+function isIterable(value) {
+  return Symbol.iterator in Object(value)
+}
 
 function coalesce(a, b) {
   return a === null || a === undefined ? b : a
@@ -37,20 +40,6 @@ async function processData(
   },
   options
 ) {
-  // Check data requirement
-  if (data === null || data === undefined) {
-    if (isRequired(intent)) {
-      throw new MutentError('EMUT_NOT_FOUND', 'Entity not found', {
-        store,
-        intent,
-        data,
-        options
-      })
-    } else {
-      return null
-    }
-  }
-
   // Trigger "onData" hook
   if (hook) {
     await hook(intent.type, data, options)
@@ -115,45 +104,56 @@ async function processData(
   return status.target
 }
 
-function fetch({ driver, intent }, options) {
-  return unwrapIntent(driver, intent, options)
+async function unwrapOne(blob, state, options) {
+  const data = await blob
+  if (data !== null && data !== undefined) {
+    return processData(data, state, options)
+  } else if (isRequired(state.intent)) {
+    throw new MutentError('EMUT_NOT_FOUND', 'Entity not found', {
+      store: state.store,
+      intent: state.intent,
+      options
+    })
+  } else {
+    return null
+  }
 }
 
-async function unwrapOne(state, options) {
-  return processData(await fetch(state, options), state, options)
-}
-
-async function* iterateOne(state, options) {
-  const value = await unwrapOne(state, options)
+async function* iterateOne(blob, state, options) {
+  const value = await unwrapOne(blob, state, options)
   if (value !== null) {
     yield value
   }
 }
 
-async function* iterateMany(state, options) {
-  for await (const data of fetch(state, options)) {
+async function* iterateMany(blob, state, options) {
+  for await (const data of blob) {
     yield processData(data, state, options)
   }
 }
 
-async function unwrapMany(state, options) {
+async function unwrapMany(blob, state, options) {
   const results = []
-  for await (const data of iterateMany(state, options)) {
+  for await (const data of iterateMany(blob, state, options)) {
     results.push(data)
   }
   return results
 }
 
-async function unwrapMethod(state, options = {}) {
-  return isIntentIterable(state.intent)
-    ? unwrapMany(state, options)
-    : unwrapOne(state, options)
+function unwrapMethod(state, options = {}) {
+  const blob = unwrapIntent(state.intent, state.driver, options)
+
+  return isIterable(blob) || isAsyncIterable(blob)
+    ? unwrapMany(blob, state, options)
+    : unwrapOne(blob, state, options)
 }
 
 function iterateMethod(state, options = {}) {
-  return isIntentIterable(state.intent)
-    ? iterateMany(state, options)
-    : iterateOne(state, options)
+  const blob = unwrapIntent(state.intent, state.driver, options)
+
+  return isIterable(blob) || isAsyncIterable(blob)
+    ? iterateMany(blob, state, options)
+    : iterateOne(blob, state, options)
 }
 
 function pipeMethod(state, ...mutators) {
