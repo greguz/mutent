@@ -26,5 +26,5 @@ export interface Adapter<T, Q, O> {
   /**
    * Delete an entity
    */
-  delete?(data: T, options: Partial<O>): WriteResult<T>
+  delete?(data: T, options: Partial<O>): Result<any>
 }

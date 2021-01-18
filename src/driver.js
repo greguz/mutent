@@ -1,4 +1,4 @@
-import { isConstantValid, readConstants } from './constants'
+import { isConstantValid, readConstants, writeConstants } from './constants'
 import { MutentError } from './error'
 import { commitStatus, updateStatus } from './status'
 
@@ -28,74 +28,78 @@ export function doFilter({ adapter, hooks }, query, options) {
   return adapter.filter(query, options)
 }
 
-async function doCreate({ adapter, hooks, validate }, data, options) {
+async function doCreate({ adapter, hooks, validate }, status, options) {
   if (!adapter.create) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
       'The adapter does not implement the ".create" method'
     )
   }
-  if (!validate(data)) {
+  if (!validate(status.target)) {
     throw new MutentError(
       'EMUT_INVALID_WRITE',
       'Cannot create an invalid entity',
       {
-        data,
+        data: status.target,
         errors: validate.errors
       }
     )
   }
   if (hooks.beforeCreate) {
-    await hooks.beforeCreate(data, options)
+    await hooks.beforeCreate(status.target, options)
   }
-  const result = await adapter.create(data, options)
+  const result = await adapter.create(status.target, options)
+  if (result !== null && result !== undefined) {
+    status = updateStatus(status, result)
+  }
   if (hooks.afterCreate) {
-    await hooks.afterCreate(data, options)
+    await hooks.afterCreate(status.target, options)
   }
-  return result
+  return commitStatus(status)
 }
 
-async function doUpdate(
-  { adapter, hooks, validate },
-  oldData,
-  newData,
-  options
-) {
+async function doUpdate({ adapter, hooks, validate }, status, options) {
   if (!adapter.update) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
       'The adapter does not implement the ".update" method'
     )
   }
-  if (!validate(newData)) {
+  if (!validate(status.target)) {
     throw new MutentError(
       'EMUT_INVALID_WRITE',
       'Cannot update an entity with an invalid value',
       {
-        data: newData,
+        data: status.target,
         errors: validate.errors
       }
     )
   }
-  for (const constant of readConstants(oldData)) {
-    if (!isConstantValid(constant, newData)) {
+  for (const constant of readConstants(status.source)) {
+    if (!isConstantValid(constant, status.target)) {
       throw new MutentError('EMUT_CONSTANT', 'A constant value was changed', {
-        data: newData,
+        data: status.target,
         constant
       })
     }
   }
   if (hooks.beforeUpdate) {
-    await hooks.beforeUpdate(oldData, newData, options)
+    await hooks.beforeUpdate(status.source, status.target, options)
   }
-  const result = await adapter.update(oldData, newData, options)
+  const result = await adapter.update(status.source, status.target, options)
+  if (result !== null && result !== undefined) {
+    status = updateStatus(
+      status,
+      writeConstants(result, readConstants(status.target))
+    )
+  }
   if (hooks.afterUpdate) {
-    await hooks.afterUpdate(oldData, newData, options)
+    await hooks.afterUpdate(status.source, status.target, options)
   }
-  return result
+  return commitStatus(status)
 }
 
-async function doDelete({ adapter, hooks }, data, options) {
+async function doDelete({ adapter, hooks }, status, options) {
   if (!adapter.delete) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
@@ -103,30 +107,27 @@ async function doDelete({ adapter, hooks }, data, options) {
     )
   }
   if (hooks.beforeDelete) {
-    await hooks.beforeDelete(data, options)
+    await hooks.beforeDelete(status.source, options)
   }
-  const result = await adapter.delete(data, options)
+  await adapter.delete(status.source, options)
   if (hooks.afterDelete) {
-    await hooks.afterDelete(data, options)
+    await hooks.afterDelete(status.source, options)
   }
-  return result
+  return commitStatus(status)
 }
 
 export async function doCommit(driver, status, options) {
-  const { created, updated, deleted, source, target } = status
+  const { created, updated, deleted, source } = status
 
-  let data
   if (source === null && created && !deleted) {
-    data = await doCreate(driver, target, options)
+    return doCreate(driver, status, options)
   } else if (source !== null && updated && !deleted) {
-    data = await doUpdate(driver, source, target, options)
+    return doUpdate(driver, status, options)
   } else if (source !== null && deleted) {
-    data = await doDelete(driver, source, options)
+    return doDelete(driver, status, options)
+  } else {
+    return commitStatus(status)
   }
-
-  return commitStatus(
-    data === null || data === undefined ? status : updateStatus(status, data)
-  )
 }
 
 function yes() {
