@@ -42,7 +42,7 @@ export interface Instance<T, O> {
   undo(steps?: number): this
   redo(steps?: number): this
   iterate(options?: Options<O>): AsyncIterable<T>
-  unwrap(options?: Options<O>): unknown
+  unwrap(options?: Options<O>): Promise<unknown>
 }
 
 export interface NullableEntity<T, O> extends Instance<T, O> {
