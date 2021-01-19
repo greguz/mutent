@@ -14,6 +14,7 @@ const defaultAdapter = {
 
 function prepareSettings(settings = {}) {
   return {
+    historySize: 8,
     ...settings,
     driver: createDriver(settings.adapter || defaultAdapter, settings.hooks)
   }
@@ -209,7 +210,7 @@ test('instance:undo', async t => {
     .update(value => value * -1)
     .update(value => value * 2)
     .update(value => value * 10)
-    .undo(-1)
+    .undo(0)
     .unwrap()
   t.is(c, -40)
 })

@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "ajv": "^7.0.3",
-    "fluente": "^3.0.0",
+    "fluente": "^4.0.0",
     "lodash.get": "^4.4.2"
   },
   "devDependencies": {

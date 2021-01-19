@@ -194,7 +194,7 @@ export function createInstance(
 
   return fluente({
     historySize,
-    isMutable: mutable,
+    mutable,
     state: {
       close: closeMutator,
       context,
@@ -202,7 +202,7 @@ export function createInstance(
       intent,
       mutators
     },
-    fluent: {
+    fluents: {
       update: updateMethod,
       assign: assignMethod,
       delete: deleteMethod,
@@ -212,7 +212,7 @@ export function createInstance(
       tap: tapMethod,
       pipe: pipeMethod
     },
-    methods: {
+    mappers: {
       unwrap: unwrapMethod,
       iterate: iterateMethod
     }
