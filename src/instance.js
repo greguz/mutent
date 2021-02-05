@@ -30,7 +30,9 @@ async function processData(
     status = await mutator.call(context, status, options)
   }
 
-  status = await close.call(context, status, options)
+  if (shouldCommit(status)) {
+    status = await close.call(context, status, options)
+  }
 
   return status.target
 }
@@ -176,20 +178,19 @@ export function createInstance(
   }
 
   async function closeMutator(status, options) {
-    if (shouldCommit(status)) {
-      const mutentOptions = options.mutent || {}
-      if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
-        return this.write(status, options)
-      } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
-        throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
-          store,
-          data: status.target,
-          status,
-          options
-        })
-      }
+    const mutentOptions = options.mutent || {}
+    if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
+      return this.write(status, options)
+    } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
+      throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
+        store,
+        data: status.target,
+        status,
+        options
+      })
+    } else {
+      return status
     }
-    return status
   }
 
   return fluente({
