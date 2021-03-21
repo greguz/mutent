@@ -28,18 +28,14 @@ export declare function filter<T, O>(
 
 export declare function iif<T>(
   condition: Condition<T>,
-  mutator: Mutator<T, any>
+  whenTrue?: Mutator<T, any>,
+  whenFalse?: Mutator<T, any>
 ): Mutator<T, any>
 
 export declare function pipe<T, O>(...mutators: Mutators<T, O>): Mutator<T, O>
 
 export declare function tap<T>(
   callback: (data: T, index: number) => any
-): Mutator<T, any>
-
-export declare function unless<T>(
-  condition: Condition<T>,
-  mutator: Mutator<T, any>
 ): Mutator<T, any>
 
 export declare function update<T>(

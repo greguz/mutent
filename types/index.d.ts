@@ -39,8 +39,11 @@ export interface Instance<T, O> {
   assign(object: Partial<T>): this
   delete(): this
   commit(): this
-  if(condition: Condition<T>, mutator: Mutator<T, O>): this
-  unless(condition: Condition<T>, mutator: Mutator<T, O>): this
+  if(
+    condition: Condition<T>,
+    whenTrue?: Mutator<T, O>,
+    whenFalse?: Mutator<T, O>
+  ): this
   tap(callback: (data: T, index: number) => any): this
   pipe(...mutators: Mutators<T, O>): this
   filter(predicate: (data: T, index: number) => boolean): this

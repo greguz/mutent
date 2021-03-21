@@ -4,16 +4,7 @@ import { doCommit } from './driver'
 import { MutentError } from './error'
 import { isCreationIntent, isRequired, unwrapIntent } from './intent'
 import { migrateData } from './migration'
-import {
-  assign,
-  commit,
-  ddelete,
-  filter,
-  iif,
-  tap,
-  unless,
-  update
-} from './mutators'
+import { assign, commit, ddelete, filter, iif, tap, update } from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
 
 function isAsyncIterable(value) {
@@ -137,12 +128,8 @@ function commitMethod(state) {
   return pipeMethod(state, commit())
 }
 
-function ifMethod(state, condition, mutator) {
-  return pipeMethod(state, iif(condition, mutator))
-}
-
-function unlessMethod(state, condition, mutator) {
-  return pipeMethod(state, unless(condition, mutator))
+function ifMethod(state, condition, whenTrue, whenFalse) {
+  return pipeMethod(state, iif(condition, whenTrue, whenFalse))
 }
 
 function tapMethod(state, callback) {
@@ -245,7 +232,6 @@ export function createInstance(
       delete: deleteMethod,
       commit: commitMethod,
       if: ifMethod,
-      unless: unlessMethod,
       tap: tapMethod,
       pipe: pipeMethod,
       filter: filterMethod

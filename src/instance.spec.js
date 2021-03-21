@@ -70,17 +70,29 @@ test('many:iterate', async t => {
 test('instance:condition', async t => {
   const entity = read({ id: 0 })
 
-  const mDelete = update(data => ({ ...data, value: 'DELETE' }))
-  const mUpdate = update(data => ({ ...data, value: 'UPDATE' }))
+  const mDelete = assign({ value: 'DELETE' })
+  const mUpdate = assign({ value: 'UPDATE' })
 
-  const a = await entity.if(true, mDelete).unless(true, mUpdate).unwrap()
-  t.deepEqual(a, { id: 0, value: 'DELETE' })
+  const a = await entity.unwrap()
+  t.deepEqual(a, { id: 0 })
 
-  const b = await entity
-    .unless(() => false, mUpdate)
-    .if(() => false, mDelete)
-    .unwrap()
-  t.deepEqual(b, { id: 0, value: 'UPDATE' })
+  const b = await entity.if(true, mDelete, mUpdate).unwrap()
+  t.deepEqual(b, { id: 0, value: 'DELETE' })
+
+  const c = await entity.if(false, mDelete, mUpdate).unwrap()
+  t.deepEqual(c, { id: 0, value: 'UPDATE' })
+
+  const d = await entity.if(data => data.id === 0, mDelete, mUpdate).unwrap()
+  t.deepEqual(d, { id: 0, value: 'DELETE' })
+
+  const e = await entity.if(data => data.id !== 0, mDelete, mUpdate).unwrap()
+  t.deepEqual(e, { id: 0, value: 'UPDATE' })
+
+  const f = await entity.if(true, undefined, mUpdate).unwrap()
+  t.deepEqual(f, { id: 0 })
+
+  const g = await entity.if(false, mDelete).unwrap()
+  t.deepEqual(g, { id: 0 })
 })
 
 test('instance:pipe', async t => {

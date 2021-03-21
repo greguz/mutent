@@ -626,3 +626,23 @@ test('store:tap', async t => {
 
   t.deepEqual(results, items)
 })
+
+test('store:filter-mutator', async t => {
+  t.plan(5)
+
+  const items = [{ name: 'Shrek' }, { name: 'Fiona' }, { name: 'Donkey' }]
+
+  const store = createStore({
+    name: 'store:filter',
+    adapter: createAdapter(items)
+  })
+
+  const results = await store
+    .filter(() => true)
+    .tap(t.pass)
+    .filter(data => data.name === 'Shrek')
+    .tap(t.pass)
+    .unwrap()
+
+  t.deepEqual(results, [{ name: 'Shrek' }])
+})

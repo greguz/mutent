@@ -27,15 +27,11 @@ export function commit() {
   }
 }
 
-function isTrue(condition, data) {
-  return typeof condition === 'function' ? condition(data) : condition
-}
-
-async function* makeOneShotIterable(item) {
+async function* wrapValue(item) {
   yield item
 }
 
-async function consumeOneShotIterable(iterable) {
+async function unwrapIterable(iterable) {
   let result
   for await (const item of iterable) {
     result = item
@@ -43,20 +39,27 @@ async function consumeOneShotIterable(iterable) {
   return result
 }
 
-export function iif(condition, mutator) {
+function passthrough(value) {
+  return value
+}
+
+export function iif(
+  condition,
+  whenTrue = passthrough,
+  whenFalse = passthrough
+) {
+  if (typeof condition !== 'function') {
+    return condition ? whenTrue : whenFalse
+  }
   return async function* mutatorConditional(iterable) {
     for await (const status of iterable) {
-      if (isTrue(condition, status.target)) {
-        yield consumeOneShotIterable(mutator(makeOneShotIterable(status)))
+      if (condition(status.target)) {
+        yield unwrapIterable(whenTrue(wrapValue(status)))
       } else {
-        yield status
+        yield unwrapIterable(whenFalse(wrapValue(status)))
       }
     }
   }
-}
-
-export function unless(condition, mutator) {
-  return iif(data => !isTrue(condition, data), mutator)
 }
 
 export function update(mapper) {
