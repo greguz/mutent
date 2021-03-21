@@ -1,4 +1,8 @@
-import { isConstantValid, readConstants, writeConstants } from './constants'
+import {
+  isConstantValid,
+  readConstants,
+  writeConstants
+} from './keywords/constant'
 import { MutentError } from './error'
 import { commitStatus, updateStatus } from './status'
 

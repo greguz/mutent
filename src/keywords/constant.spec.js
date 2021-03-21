@@ -5,7 +5,7 @@ import {
   pushConstant,
   readConstants,
   writeConstants
-} from './constants'
+} from './constant'
 
 test('constants', t => {
   const obj = {

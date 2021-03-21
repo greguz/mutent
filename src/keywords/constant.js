@@ -26,3 +26,27 @@ export function pushConstant(object, path, value) {
 export function isConstantValid({ path, value }, data) {
   return get(data, path) === value
 }
+
+function yes() {
+  return true
+}
+
+export function createConstantKeyword() {
+  return {
+    keyword: 'constant',
+    errors: false,
+    metaSchema: {
+      type: 'boolean'
+    },
+    compile(schema) {
+      if (schema !== true) {
+        return yes
+      }
+
+      return function validate(data, ctx) {
+        pushConstant(ctx.rootData, ctx.dataPath.substring(1), data)
+        return true
+      }
+    }
+  }
+}

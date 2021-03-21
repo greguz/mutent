@@ -1,33 +1,16 @@
 import Ajv from 'ajv'
 
-import { pushConstant } from './constants'
 import { MutentError } from './error'
+
+import { createConstantKeyword } from './keywords/constant'
+import { createInstanceofKeyword } from './keywords/instanceof'
+import { createParseKeyword } from './keywords/parse'
 
 function ensureFunction(value) {
   if (typeof value !== 'function') {
     throw new Error('Not a function')
   }
   return value
-}
-
-function describeParser(value) {
-  if (typeof value === 'string') {
-    return {
-      key: value,
-      args: []
-    }
-  } else if (Array.isArray(value)) {
-    return {
-      key: '' + value[0],
-      args: value.slice(1)
-    }
-  } else {
-    const key = Object.keys(value)[0]
-    return {
-      key,
-      args: value[key]
-    }
-  }
 }
 
 function defaultAjv(options) {
@@ -51,116 +34,6 @@ function setAjvKeyword(ajv, definition) {
   ajv.addKeyword(definition)
 }
 
-function yes() {
-  return true
-}
-
-function constantKeyword() {
-  return {
-    keyword: 'constant',
-    errors: false,
-    metaSchema: {
-      type: 'boolean'
-    },
-    compile(schema) {
-      if (schema !== true) {
-        return yes
-      }
-
-      return function validate(data, ctx) {
-        pushConstant(ctx.rootData, ctx.dataPath.substring(1), data)
-        return true
-      }
-    }
-  }
-}
-
-function instanceofKeyword(constructors) {
-  return {
-    keyword: 'instanceof',
-    errors: true,
-    metaSchema: {
-      type: 'string'
-    },
-    compile(schema) {
-      const Constructor = constructors[schema]
-      if (!Constructor) {
-        throw new MutentError(
-          'EMUT_UNKNOWN_CONSTRUCTOR',
-          'Unknown constructor described',
-          { key: schema }
-        )
-      }
-
-      return function validate(data, ctx) {
-        validate.errors = validate.errors || []
-
-        if (data instanceof Constructor) {
-          return true
-        } else {
-          validate.errors.push({
-            keyword: 'instanceof',
-            dataPath: ctx.dataPath,
-            schemaPath: '#/instanceof',
-            params: {
-              constructor: schema,
-              data
-            },
-            message: `Expected instance of "${schema}"`
-          })
-        }
-      }
-    }
-  }
-}
-
-function parseKeyword(parsers) {
-  return {
-    keyword: 'parse',
-    errors: 'full',
-    modifying: true,
-    metaSchema: {
-      type: ['array', 'string', 'object'],
-      minItems: 1,
-      additionalProperties: { type: 'array' },
-      minProperties: 1,
-      maxProperties: 1
-    },
-    compile(schema) {
-      const { key, args } = describeParser(schema)
-
-      const parse = parsers[key]
-      if (!parse) {
-        throw new MutentError(
-          'EMUT_UNKNOWN_PARSER',
-          'Unknown parser required',
-          { key, args }
-        )
-      }
-
-      return function validate(data, ctx) {
-        validate.errors = validate.errors || []
-
-        try {
-          ctx.parentData[ctx.parentDataProperty] = parse(data, ...args)
-        } catch (err) {
-          validate.errors.push({
-            keyword: 'parse',
-            dataPath: ctx.dataPath,
-            schemaPath: '#/parse',
-            params: {
-              parser: key,
-              arguments: args,
-              error: err
-            },
-            message: 'Data parsing failed'
-          })
-        }
-      }
-    }
-  }
-}
-
 class Engine {
   constructor({ ajv, ajvOptions, constructors, parsers } = {}) {
     this._constructors = {
@@ -178,9 +51,9 @@ class Engine {
     this._parsers = { ...parsers }
     this._ajv = ajv || defaultAjv(ajvOptions)
 
-    setAjvKeyword(this._ajv, constantKeyword())
-    setAjvKeyword(this._ajv, instanceofKeyword(this._constructors))
-    setAjvKeyword(this._ajv, parseKeyword(this._parsers))
+    setAjvKeyword(this._ajv, createConstantKeyword())
+    setAjvKeyword(this._ajv, createInstanceofKeyword(this._constructors))
+    setAjvKeyword(this._ajv, createParseKeyword(this._parsers))
   }
 
   compile(schema) {
