@@ -4,7 +4,16 @@ import { doCommit } from './driver'
 import { MutentError } from './error'
 import { isCreationIntent, isRequired, unwrapIntent } from './intent'
 import { migrateData } from './migration'
-import { assign, commit, ddelete, iif, tap, unless, update } from './mutators'
+import {
+  assign,
+  commit,
+  ddelete,
+  filter,
+  iif,
+  tap,
+  unless,
+  update
+} from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
 
 function isAsyncIterable(value) {
@@ -19,49 +28,55 @@ function coalesce(a, b) {
   return a === null || a === undefined ? b : a
 }
 
-async function processData(
-  data,
+async function* fromPromise(blob) {
+  const data = await blob
+  if (data !== null && data !== undefined) {
+    yield data
+  }
+}
+
+async function* iterateNewData(iterable) {
+  for await (const data of iterable) {
+    yield createStatus(data)
+  }
+}
+
+async function* iterateOldData(iterable) {
+  for await (const data of iterable) {
+    yield readStatus(data)
+  }
+}
+
+async function* iterateMany(
+  blob,
   { close, context, intent, mutators },
   options
 ) {
-  let status = isCreationIntent(intent) ? createStatus(data) : readStatus(data)
+  const iterable = mutators.reduce(
+    (accumulator, mutator) => mutator.call(context, accumulator, options),
+    isCreationIntent(intent) ? iterateNewData(blob) : iterateOldData(blob)
+  )
 
-  for (const mutator of mutators) {
-    status = await mutator.call(context, status, options)
-  }
-
-  if (shouldCommit(status)) {
-    status = await close.call(context, status, options)
-  }
-
-  return status.target
-}
-
-async function unwrapOne(blob, state, options) {
-  const data = await blob
-  if (data !== null && data !== undefined) {
-    return processData(data, state, options)
-  } else if (isRequired(state.intent)) {
-    throw new MutentError('EMUT_NOT_FOUND', 'Entity not found', {
-      store: state.store,
-      intent: state.intent,
-      options
-    })
-  } else {
-    return null
+  for await (const status of close.call(context, iterable, options)) {
+    yield status.target
   }
 }
 
 async function* iterateOne(blob, state, options) {
-  const value = await unwrapOne(blob, state, options)
-  if (value !== null) {
-    yield value
+  const { intent, store } = state
+  let count = 0
+  for await (const data of iterateMany(fromPromise(blob), state, options)) {
+    if (count++ > 0) {
+      throw new Error('This is bad')
+    }
+    yield data
   }
-}
-
-async function* iterateMany(blob, state, options) {
-  for await (const data of blob) {
-    yield processData(data, state, options)
+  if (count <= 0 && isRequired(intent)) {
+    throw new MutentError('EMUT_NOT_FOUND', 'Entity not found', {
+      store,
+      intent,
+      options
+    })
   }
 }
 
@@ -71,6 +86,14 @@ async function unwrapMany(blob, state, options) {
     results.push(data)
   }
   return results
+}
+
+async function unwrapOne(blob, state, options) {
+  let result = null
+  for await (const item of iterateOne(blob, state, options)) {
+    result = item
+  }
+  return result
 }
 
 function unwrapMethod(state, options = {}) {
@@ -122,8 +145,12 @@ function unlessMethod(state, condition, mutator) {
   return pipeMethod(state, unless(condition, mutator))
 }
 
-function tapMethod(state, tapper) {
-  return pipeMethod(state, tap(tapper))
+function tapMethod(state, callback) {
+  return pipeMethod(state, tap(callback))
+}
+
+function filterMethod(state, predicate) {
+  return pipeMethod(state, filter(predicate))
 }
 
 export function createInstance(
@@ -143,33 +170,39 @@ export function createInstance(
   const mutators = []
 
   if (hook) {
-    mutators.push(async function hookMutator(status, options) {
-      await hook(intent.type, status.target, options)
-      return status
+    mutators.push(async function* mutatorHook(iterable, options) {
+      for await (const status of iterable) {
+        await hook(intent.type, status.target, options)
+        yield status
+      }
     })
   }
 
   if (migration) {
-    mutators.push(async function migrateMutator(status) {
-      return {
-        ...status,
-        target: await migrateData(migration, status.target)
+    mutators.push(async function* mutatorMigration(iterable, options) {
+      for await (const status of iterable) {
+        yield {
+          ...status,
+          target: await migrateData(migration, status.target)
+        }
       }
     })
   }
 
   if (validate) {
-    mutators.push(async function schemaMutator(status, options) {
-      if (!validate(status.target)) {
-        throw new MutentError('EMUT_INVALID_DATA', 'Unusable data found', {
-          store,
-          intent,
-          data: status.target,
-          options,
-          errors: validate.errors
-        })
+    mutators.push(async function* mutatorSchema(iterable, options) {
+      for await (const status of iterable) {
+        if (!validate(status.target)) {
+          throw new MutentError('EMUT_INVALID_DATA', 'Unusable data found', {
+            store,
+            intent,
+            data: status.target,
+            options,
+            errors: validate.errors
+          })
+        }
+        yield status
       }
-      return status
     })
   }
 
@@ -177,19 +210,22 @@ export function createInstance(
     write: (status, options) => doCommit(driver, status, options)
   }
 
-  async function closeMutator(status, options) {
+  async function* mutatorClose(iterable, options) {
     const mutentOptions = options.mutent || {}
-    if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
-      return this.write(status, options)
-    } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
-      throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
-        store,
-        data: status.target,
-        status,
-        options
-      })
-    } else {
-      return status
+    for await (let status of iterable) {
+      if (shouldCommit(status)) {
+        if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
+          status = await this.write(status, options)
+        } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
+          throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
+            store,
+            data: status.target,
+            status,
+            options
+          })
+        }
+      }
+      yield status
     }
   }
 
@@ -197,7 +233,7 @@ export function createInstance(
     historySize,
     mutable,
     state: {
-      close: closeMutator,
+      close: mutatorClose,
       context,
       driver,
       intent,
@@ -211,7 +247,8 @@ export function createInstance(
       if: ifMethod,
       unless: unlessMethod,
       tap: tapMethod,
-      pipe: pipeMethod
+      pipe: pipeMethod,
+      filter: filterMethod
     },
     mappers: {
       unwrap: unwrapMethod,

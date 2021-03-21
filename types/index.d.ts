@@ -4,9 +4,10 @@ import Ajv, { Options as AjvOptions } from 'ajv'
 
 import { Adapter } from './adapter'
 import { Hooks } from './hooks'
-import { Condition, Mapper, Mutator, Mutators, Tapper } from './mutators'
+import { Condition, Mutator, Mutators } from './mutators'
 import { Options } from './options'
 import { JSONSchema7Definition } from './schema'
+import { Lazy, Result } from './utils'
 
 export * from './adapter'
 export * from './mutators'
@@ -20,7 +21,7 @@ export interface Strategies {
   [version: number]: Strategy | undefined
 }
 
-export type Parser = (value: any, ...args: any[]) => any
+export declare type Parser = (value: any, ...args: any[]) => any
 
 export interface Parsers {
   [key: string]: Parser
@@ -31,14 +32,18 @@ export interface Constructors {
 }
 
 export interface Instance<T, O> {
-  update<A extends any[]>(mapper: Mapper<T, A>, ...args: A): this
+  update<A extends any[]>(
+    mapper: (data: T, ...args: A) => Result<T>,
+    ...args: A
+  ): this
   assign(object: Partial<T>): this
   delete(): this
   commit(): this
   if(condition: Condition<T>, mutator: Mutator<T, O>): this
   unless(condition: Condition<T>, mutator: Mutator<T, O>): this
-  tap(tapper: Tapper<T>): this
+  tap(callback: (data: T, index: number) => any): this
   pipe(...mutators: Mutators<T, O>): this
+  filter(predicate: (data: T, index: number) => boolean): this
   undo(steps?: number): this
   redo(steps?: number): this
   iterate(options?: Options<O>): AsyncIterable<T>
@@ -72,11 +77,12 @@ export interface StoreSettings<T, Q, O> extends EngineSettings {
   versionKey?: string
 }
 
-export type Lazy<T, O> = T | ((options: Options<O>) => T)
+export declare type One<T, O> = Lazy<T | Promise<T>, Options<O>>
 
-export type One<T, O> = Lazy<T | Promise<T>, O>
-
-export type Many<T, O> = Lazy<Iterable<T> | AsyncIterable<T>, O>
+export declare type Many<T, O> = Lazy<
+  Iterable<T> | AsyncIterable<T>,
+  Options<O>
+>
 
 export interface Store<T, Q, O> {
   name: string

@@ -1,6 +1,6 @@
 import { Result } from './utils'
 
-export type Intent = 'CREATE' | 'FIND' | 'READ' | 'FILTER' | 'FROM'
+export declare type Intent = 'CREATE' | 'FIND' | 'READ' | 'FILTER' | 'FROM'
 
 export interface Hooks<T, Q, O> {
   onFind?(query: Q, options: Partial<O>): void
