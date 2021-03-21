@@ -299,7 +299,7 @@ test('create many', async t => {
 test('update many', async t => {
   t.plan(35)
   const results = await read(getItems(), bind(t, { update: true }))
-    .update((data, n) => ({ id: data.id / n }), 2)
+    .update(data => ({ id: data.id / 2 }))
     .commit()
     .unwrap({ db: 'test' })
   t.is(results.length, 16)

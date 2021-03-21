@@ -109,11 +109,8 @@ function pipeMethod(state, ...mutators) {
   }
 }
 
-function updateMethod(state, mapper, ...args) {
-  return pipeMethod(
-    state,
-    update(args.length > 0 ? data => mapper(data, ...args) : mapper)
-  )
+function updateMethod(state, mapper) {
+  return pipeMethod(state, update(mapper))
 }
 
 function assignMethod(state, ...objects) {

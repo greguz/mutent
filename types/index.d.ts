@@ -32,10 +32,7 @@ export interface Constructors {
 }
 
 export interface Instance<T, O> {
-  update<A extends any[]>(
-    mapper: (data: T, ...args: A) => Result<T>,
-    ...args: A
-  ): this
+  update(mapper: (data: T, index: number) => Result<T>): this
   assign(...objects: Array<Partial<T>>): this
   delete(): this
   commit(): this
