@@ -71,8 +71,8 @@ export function update(mapper) {
   }
 }
 
-export function assign(object) {
-  return update(data => Object.assign({}, data, object))
+export function assign(...objects) {
+  return update(data => Object.assign({}, data, ...objects))
 }
 
 export function tap(tapper) {

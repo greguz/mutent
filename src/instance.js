@@ -116,8 +116,8 @@ function updateMethod(state, mapper, ...args) {
   )
 }
 
-function assignMethod(state, object) {
-  return pipeMethod(state, assign(object))
+function assignMethod(state, ...objects) {
+  return pipeMethod(state, assign(...objects))
 }
 
 function deleteMethod(state) {

@@ -36,7 +36,7 @@ export interface Instance<T, O> {
     mapper: (data: T, ...args: A) => Result<T>,
     ...args: A
   ): this
-  assign(object: Partial<T>): this
+  assign(...objects: Array<Partial<T>>): this
   delete(): this
   commit(): this
   if(

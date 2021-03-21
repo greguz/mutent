@@ -16,7 +16,9 @@ export declare type Mutators<T, O> = Array<Mutator<T, O>>
 
 export declare type Condition<T> = Lazy<boolean, T>
 
-export declare function assign<T>(object: Partial<T>): Mutator<T, any>
+export declare function assign<T>(
+  ...objects: Array<Partial<T>>
+): Mutator<T, any>
 
 export declare function commit(): Mutator<any, any>
 
