@@ -3,6 +3,7 @@
 import Ajv, { Options as AjvOptions } from 'ajv'
 
 import { Adapter } from './adapter'
+import { Context } from './context'
 import { Hooks } from './hooks'
 import { Condition, Mutator, Mutators } from './mutators'
 import { Options } from './options'
@@ -10,6 +11,7 @@ import { JSONSchema7Definition } from './schema'
 import { Lazy, Result } from './utils'
 
 export * from './adapter'
+export * from './context'
 export * from './mutators'
 export * from './options'
 export * from './schema'
@@ -67,12 +69,11 @@ export interface StoreSettings<T, Q, O> extends EngineSettings {
   engine?: Engine
   historySize?: number
   hooks?: Hooks<T, Q, O>
-  manualCommit?: boolean
   migrationStrategies?: Strategies
+  mode?: 'AUTO' | 'SAFE' | 'MANUAL'
   mutable?: boolean
   name: string
   schema?: JSONSchema7Definition
-  unsafe?: boolean
   version?: number
   versionKey?: string
 }
@@ -86,7 +87,7 @@ export declare type Many<T, O> = Lazy<
 
 export interface Store<T, Q, O> {
   name: string
-  version: number
+  version: null | number
   create(one: One<T, O>): Entity<T, O>
   create(many: Many<T, O>): Entities<T, O>
   find(query: Q): NullableEntity<T, O>

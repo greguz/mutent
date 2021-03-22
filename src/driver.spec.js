@@ -1,12 +1,24 @@
 import test from 'ava'
 
-import { createDriver, doFilter, doFind, doCommit } from './driver'
+import { doFilter, doFind, writeStatus } from './driver'
 import {
   commitStatus,
   createStatus,
   deleteStatus,
   updateStatus
 } from './status'
+
+function yes() {
+  return true
+}
+
+function createDriver(adapter, hooks = {}, validate = yes) {
+  return {
+    adapter,
+    hooks,
+    validate
+  }
+}
 
 function sCreate(id) {
   return createStatus({ id })
@@ -48,8 +60,8 @@ function adapterFilter(adapter, query, options = {}) {
   return doFilter(createDriver(adapter), query, options)
 }
 
-function writeStatus(status, adapter = {}, options = {}) {
-  return doCommit(createDriver(adapter), status, options)
+function write(status, adapter = {}, options = {}) {
+  return writeStatus(createDriver(adapter), status, options)
 }
 
 test('driver:defaults', async t => {
@@ -62,13 +74,13 @@ test('driver:defaults', async t => {
     code: 'EMUT_PARTIAL_ADAPTER'
   })
 
-  await t.throwsAsync(() => writeStatus(sCreate(0), adapter), {
+  await t.throwsAsync(() => write(sCreate(0), adapter), {
     code: 'EMUT_PARTIAL_ADAPTER'
   })
-  await t.throwsAsync(() => writeStatus(sUpdate(0, 'UPDATE'), adapter), {
+  await t.throwsAsync(() => write(sUpdate(0, 'UPDATE'), adapter), {
     code: 'EMUT_PARTIAL_ADAPTER'
   })
-  await t.throwsAsync(() => writeStatus(sDelete(0), adapter), {
+  await t.throwsAsync(() => write(sDelete(0), adapter), {
     code: 'EMUT_PARTIAL_ADAPTER'
   })
 })
@@ -97,7 +109,7 @@ test('driver:sCreate', async t => {
     }
   }
 
-  const status = await writeStatus(sCreate(0), adapter, { hello: 'world' })
+  const status = await write(sCreate(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -127,9 +139,9 @@ test('driver:sVoid', async t => {
     }
   }
 
-  const status = await writeStatus(sVoid(0), adapter, { hello: 'world' })
+  const status = await write(sVoid(0), adapter, { hello: 'world' })
 
-  t.deepEqual(status, await writeStatus(sVoid(0), {}))
+  t.deepEqual(status, await write(sVoid(0), {}))
 
   t.deepEqual(status, {
     created: false,
@@ -172,7 +184,7 @@ test('driver:sUpdate', async t => {
     }
   }
 
-  const status = await writeStatus(sUpdate(0, 'UPDATE'), adapter, {
+  const status = await write(sUpdate(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -211,7 +223,7 @@ test('driver:sDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sDelete(0), adapter, { hello: 'world' })
+  const status = await write(sDelete(0), adapter, { hello: 'world' })
 
   t.deepEqual(status, {
     created: false,
@@ -245,7 +257,7 @@ test('driver:sCreateUpdate', async t => {
     }
   }
 
-  const status = await writeStatus(sCreateUpdate(0, 'UPDATE'), adapter, {
+  const status = await write(sCreateUpdate(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -279,7 +291,7 @@ test('driver:sCreateDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sCreateDelete(0), adapter, {
+  const status = await write(sCreateDelete(0), adapter, {
     hello: 'world'
   })
 
@@ -314,7 +326,7 @@ test('driver:sUpdateDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sUpdateDelete(0, 'UPDATE'), adapter, {
+  const status = await write(sUpdateDelete(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 
@@ -345,7 +357,7 @@ test('driver:sCreateUpdateDelete', async t => {
     }
   }
 
-  const status = await writeStatus(sCreateUpdateDelete(0, 'UPDATE'), adapter, {
+  const status = await write(sCreateUpdateDelete(0, 'UPDATE'), adapter, {
     hello: 'world'
   })
 

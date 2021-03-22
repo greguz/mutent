@@ -1,3 +1,4 @@
+import { writeStatus } from './driver'
 import { deleteStatus, updateStatus } from './status'
 
 export function filter(predicate) {
@@ -22,7 +23,7 @@ export function ddelete() {
 export function commit() {
   return async function* mutatorCommit(iterable, options) {
     for await (const status of iterable) {
-      yield this.write(status, options)
+      yield writeStatus(this, status, options)
     }
   }
 }

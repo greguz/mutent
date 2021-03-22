@@ -1,4 +1,3 @@
-import { createDriver } from './driver'
 import {
   intentCreate,
   intentFilter,
@@ -16,59 +15,57 @@ function compileSchema(settings) {
     engine = engine || createEngine(settings)
     return engine.compile(schema)
   }
+  return null
 }
 
-function createInstanceHook(hooks = {}) {
-  const fn = hooks.onData
-  if (typeof fn === 'function') {
-    return fn.bind(hooks)
-  }
-}
+const validModes = ['AUTO', 'SAFE', 'MANUAL']
 
 export function createStore(storeSettings) {
   const {
     adapter,
     historySize,
-    hooks,
-    manualCommit,
+    hooks = {},
     migrationStrategies,
+    mode = 'AUTO',
     mutable,
     name,
-    unsafe,
-    version,
+    version = null,
     versionKey
   } = storeSettings
 
-  if (typeof name !== 'string' || name === '') {
-    throw new Error('Invalid store name')
+  if (!name) {
+    throw new Error('Store name is required')
   }
   if (!adapter) {
-    throw new Error('Specify adapter')
+    throw new Error('Adapter is required')
   }
-  if (version === undefined && migrationStrategies !== undefined) {
-    throw new Error('Specify target version')
+  if (!validModes.includes(mode)) {
+    throw new Error('Invalid mode')
   }
-
-  const validate = compileSchema(storeSettings)
+  if (version !== null && (!Number.isInteger(version) || version < 0)) {
+    throw new Error('Invalid version')
+  }
 
   const instanceSettings = {
-    driver: createDriver(adapter, hooks, validate),
+    context: {
+      adapter,
+      hooks,
+      mode,
+      store: name,
+      validate: compileSchema(storeSettings),
+      version
+    },
     historySize,
-    hook: createInstanceHook(hooks),
-    manualCommit,
     migration:
-      version !== undefined
+      version !== null
         ? createMigration(version, migrationStrategies, versionKey)
-        : undefined,
-    mutable,
-    store: name,
-    unsafe,
-    validate
+        : null,
+    mutable
   }
 
   return {
     name,
-    version: version || 0,
+    version,
     create(data) {
       return createInstance(intentCreate(data), instanceSettings)
     },

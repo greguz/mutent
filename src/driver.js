@@ -39,7 +39,7 @@ async function doCreate({ adapter, hooks, validate }, status, options) {
       'The adapter does not implement the ".create" method'
     )
   }
-  if (!validate(status.target)) {
+  if (validate && !validate(status.target)) {
     throw new MutentError(
       'EMUT_INVALID_WRITE',
       'Cannot create an invalid entity',
@@ -69,7 +69,7 @@ async function doUpdate({ adapter, hooks, validate }, status, options) {
       'The adapter does not implement the ".update" method'
     )
   }
-  if (!validate(status.target)) {
+  if (validate && !validate(status.target)) {
     throw new MutentError(
       'EMUT_INVALID_WRITE',
       'Cannot update an entity with an invalid value',
@@ -120,28 +120,16 @@ async function doDelete({ adapter, hooks }, status, options) {
   return commitStatus(status)
 }
 
-export async function doCommit(driver, status, options) {
+export async function writeStatus(context, status, options) {
   const { created, updated, deleted, source } = status
 
   if (source === null && created && !deleted) {
-    return doCreate(driver, status, options)
+    return doCreate(context, status, options)
   } else if (source !== null && updated && !deleted) {
-    return doUpdate(driver, status, options)
+    return doUpdate(context, status, options)
   } else if (source !== null && deleted) {
-    return doDelete(driver, status, options)
+    return doDelete(context, status, options)
   } else {
     return commitStatus(status)
-  }
-}
-
-function yes() {
-  return true
-}
-
-export function createDriver(adapter, hooks = {}, validate = yes) {
-  return {
-    adapter,
-    hooks,
-    validate
   }
 }

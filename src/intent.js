@@ -51,15 +51,15 @@ export function isRequired({ type }) {
   return type !== INTENT_TYPE.FIND
 }
 
-export function unwrapIntent({ data, query, type }, driver, options) {
+export function unwrapIntent({ data, query, type }, context, options) {
   switch (type) {
     case INTENT_TYPE.CREATE:
     case INTENT_TYPE.FROM:
       return typeof data === 'function' ? data(options) : data
     case INTENT_TYPE.FIND:
     case INTENT_TYPE.READ:
-      return doFind(driver, query, options)
+      return doFind(context, query, options)
     case INTENT_TYPE.FILTER:
-      return doFilter(driver, query, options)
+      return doFilter(context, query, options)
   }
 }

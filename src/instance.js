@@ -1,6 +1,6 @@
 import fluente from 'fluente'
 
-import { doCommit } from './driver'
+import { writeStatus } from './driver'
 import { MutentError } from './error'
 import { isCreationIntent, isRequired, unwrapIntent } from './intent'
 import { migrateData } from './migration'
@@ -13,10 +13,6 @@ function isAsyncIterable(value) {
 
 function isIterable(value) {
   return Symbol.iterator in Object(value)
-}
-
-function coalesce(a, b) {
-  return a === null || a === undefined ? b : a
 }
 
 async function* fromPromise(blob) {
@@ -38,17 +34,13 @@ async function* iterateOldData(iterable) {
   }
 }
 
-async function* iterateMany(
-  blob,
-  { close, context, intent, mutators },
-  options
-) {
+async function* iterateMany(blob, { context, intent, mutators }, options) {
   const iterable = mutators.reduce(
     (accumulator, mutator) => mutator.call(context, accumulator, options),
     isCreationIntent(intent) ? iterateNewData(blob) : iterateOldData(blob)
   )
 
-  for await (const status of close.call(context, iterable, options)) {
+  for await (const status of mutatorClose.call(context, iterable, options)) {
     yield status.target
   }
 }
@@ -88,7 +80,7 @@ async function unwrapOne(blob, state, options) {
 }
 
 function unwrapMethod(state, options = {}) {
-  const blob = unwrapIntent(state.intent, state.driver, options)
+  const blob = unwrapIntent(state.intent, state.context, options)
 
   return isIterable(blob) || isAsyncIterable(blob)
     ? unwrapMany(blob, state, options)
@@ -96,7 +88,7 @@ function unwrapMethod(state, options = {}) {
 }
 
 function iterateMethod(state, options = {}) {
-  const blob = unwrapIntent(state.intent, state.driver, options)
+  const blob = unwrapIntent(state.intent, state.context, options)
 
   return isIterable(blob) || isAsyncIterable(blob)
     ? iterateMany(blob, state, options)
@@ -137,26 +129,39 @@ function filterMethod(state, predicate) {
   return pipeMethod(state, filter(predicate))
 }
 
+async function* mutatorClose(iterable, options) {
+  const mode =
+    options.mutent && options.mutent.mode ? options.mutent.mode : this.mode
+
+  for await (let status of iterable) {
+    if (shouldCommit(status)) {
+      if (mode === 'AUTO') {
+        status = await writeStatus(this, status, options)
+      } else if (mode === 'SAFE') {
+        throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
+          store: this.store,
+          data: status.target,
+          options
+        })
+      } else if (mode !== 'MANUAL') {
+        throw new Error('Unknown mode')
+      }
+    }
+    yield status
+  }
+}
+
 export function createInstance(
   intent,
-  {
-    driver,
-    historySize,
-    hook,
-    manualCommit,
-    migration,
-    mutable,
-    store,
-    unsafe,
-    validate
-  }
+  { context, historySize, migration, mutable }
 ) {
+  const { hooks, validate } = context
   const mutators = []
 
-  if (hook) {
+  if (hooks.onData) {
     mutators.push(async function* mutatorHook(iterable, options) {
       for await (const status of iterable) {
-        await hook(intent.type, status.target, options)
+        await hooks.onData(intent.type, status.target, options)
         yield status
       }
     })
@@ -178,7 +183,7 @@ export function createInstance(
       for await (const status of iterable) {
         if (!validate(status.target)) {
           throw new MutentError('EMUT_INVALID_DATA', 'Unusable data found', {
-            store,
+            store: this.store,
             intent,
             data: status.target,
             options,
@@ -190,36 +195,11 @@ export function createInstance(
     })
   }
 
-  const context = {
-    write: (status, options) => doCommit(driver, status, options)
-  }
-
-  async function* mutatorClose(iterable, options) {
-    const mutentOptions = options.mutent || {}
-    for await (let status of iterable) {
-      if (shouldCommit(status)) {
-        if (!coalesce(mutentOptions.manualCommit, manualCommit)) {
-          status = await this.write(status, options)
-        } else if (!coalesce(mutentOptions.unsafe, unsafe)) {
-          throw new MutentError('EMUT_UNSAFE', 'Unsafe mutation', {
-            store,
-            data: status.target,
-            status,
-            options
-          })
-        }
-      }
-      yield status
-    }
-  }
-
   return fluente({
     historySize,
     mutable,
     state: {
-      close: mutatorClose,
       context,
-      driver,
       intent,
       mutators
     },

@@ -1,6 +1,5 @@
 import test from 'ava'
 
-import { createDriver } from './driver'
 import { createInstance } from './instance'
 import { intentCreate, intentFrom } from './intent'
 import { createMigration } from './migration'
@@ -16,7 +15,12 @@ function prepareSettings(settings = {}) {
   return {
     historySize: 8,
     ...settings,
-    driver: createDriver(settings.adapter || defaultAdapter, settings.hooks)
+    context: {
+      adapter: settings.adapter || defaultAdapter,
+      hooks: settings.hooks || {},
+      mode: 'AUTO',
+      validate: null
+    }
   }
 }
 

@@ -276,17 +276,6 @@ test('store:schema', async t => {
 })
 
 test('store:migration', async t => {
-  t.throws(
-    () =>
-      createStore({
-        name: 'store:migration',
-        adapter: createAdapter(),
-        // version: undefined,
-        migrationStrategies: {}
-      }),
-    { message: 'Specify target version' }
-  )
-
   const items = [{ id: 0, name: 'Gandalf' }]
 
   const store = createStore({
@@ -482,14 +471,13 @@ test('hooks:delete', async t => {
     .unwrap({ some: 'options' })
 })
 
-test('store:manualCommit', async t => {
+test('store:mode-safe', async t => {
   const items = []
 
   const store = createStore({
-    name: 'store:manualCommit',
+    name: 'store:mode-safe',
     adapter: createAdapter(items),
-    manualCommit: true,
-    unsafe: false
+    mode: 'SAFE'
   })
 
   await t.throwsAsync(store.create({ id: 0 }).unwrap(), {
@@ -497,31 +485,30 @@ test('store:manualCommit', async t => {
   })
   t.is(items.length, 0)
 
-  await store.create({ id: 1 }).unwrap({ mutent: { unsafe: true } })
+  await store.create({ id: 1 }).unwrap({ mutent: { mode: 'MANUAL' } })
   t.is(items.length, 0)
 
   await store.create({ id: 2 }).commit().unwrap()
   t.deepEqual(items, [{ id: 2 }])
 
-  await store.create({ id: 3 }).unwrap({ mutent: { manualCommit: false } })
+  await store.create({ id: 3 }).unwrap({ mutent: { mode: 'AUTO' } })
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
 
-test('store:unsafe', async t => {
+test('store:mode-manual', async t => {
   const items = []
 
   const store = createStore({
-    name: 'store:unsafe',
+    name: 'store:mode-manual',
     adapter: createAdapter(items),
-    manualCommit: true,
-    unsafe: true
+    mode: 'MANUAL'
   })
 
   await store.create({ id: 0 }).unwrap()
   t.is(items.length, 0)
 
   await t.throwsAsync(
-    store.create({ id: 1 }).unwrap({ mutent: { unsafe: false } }),
+    store.create({ id: 1 }).unwrap({ mutent: { mode: 'SAFE' } }),
     { code: 'EMUT_UNSAFE' }
   )
   t.is(items.length, 0)
@@ -529,7 +516,7 @@ test('store:unsafe', async t => {
   await store.create({ id: 2 }).commit().unwrap()
   t.deepEqual(items, [{ id: 2 }])
 
-  await store.create({ id: 3 }).unwrap({ mutent: { manualCommit: false } })
+  await store.create({ id: 3 }).unwrap({ mutent: { mode: 'AUTO' } })
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
 

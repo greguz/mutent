@@ -1,10 +1,7 @@
+import { Context } from './context'
 import { Status } from './status'
 import { Options } from './options'
 import { Lazy, Result } from './utils'
-
-export interface Context<T, O> {
-  write(status: Status<T>, options: Options<O>): Promise<Status<T>>
-}
 
 export declare type Mutator<T, O> = (
   this: Context<T, O>,
