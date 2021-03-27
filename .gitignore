@@ -4,3 +4,4 @@ mutent.js
 .nyc_output
 coverage
 .coveralls.yml
+package-lock.json
