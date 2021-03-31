@@ -33,6 +33,13 @@ async function* mutatorSchema(iterable) {
   }
 }
 
+function handleSchema(iterable, options) {
+  const mutentOptions = options.mutent || {}
+  return mutentOptions.ignoreSchema
+    ? iterable
+    : mutatorSchema.call(this, iterable, options)
+}
+
 export class Store {
   static create(options) {
     return new Store(options)
@@ -88,7 +95,7 @@ export class Store {
       this._mutators.push(mutatorMigrate)
     }
     if (validate) {
-      this._mutators.push(mutatorSchema)
+      this._mutators.push(handleSchema)
     }
   }
 

@@ -39,8 +39,9 @@ function validateConstants({ intent, store }, status) {
   }
 }
 
-function validateStatus({ intent, store, validate }, status) {
-  if (validate && !validate(status.target)) {
+function validateStatus({ intent, store, validate }, status, options) {
+  const mutentOptions = options.mutent || {}
+  if (!mutentOptions.ignoreSchema && validate && !validate(status.target)) {
     throw new MutentError(
       'EMUT_INVALID_ENTITY',
       'Current entity does not match the configured schema',
@@ -56,7 +57,7 @@ function validateStatus({ intent, store, validate }, status) {
 
 export async function adapterCreate(context, status, options) {
   const { adapter, hooks } = context
-  validateStatus(context, status)
+  validateStatus(context, status, options)
   if (hooks.beforeCreate) {
     await hooks.beforeCreate(status.target, options)
   }
@@ -72,7 +73,7 @@ export async function adapterCreate(context, status, options) {
 
 export async function adapterUpdate(context, status, options) {
   const { adapter, hooks } = context
-  validateStatus(context, status)
+  validateStatus(context, status, options)
   validateConstants(context, status)
   if (hooks.beforeUpdate) {
     await hooks.beforeUpdate(status.source, status.target, options)
@@ -238,7 +239,7 @@ export async function* bulkWrite(context, iterable, options) {
     const mustDelete = shouldDelete(status)
 
     if (mustCreate) {
-      validateStatus(context, status)
+      validateStatus(context, status, options)
       items.push({
         action: {
           type: 'CREATE',
@@ -247,7 +248,7 @@ export async function* bulkWrite(context, iterable, options) {
         status
       })
     } else if (mustUpdate) {
-      validateStatus(context, status)
+      validateStatus(context, status, options)
       validateConstants(context, status)
       items.push({
         action: {

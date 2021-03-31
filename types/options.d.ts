@@ -23,6 +23,10 @@ export interface MutentOptions {
    */
   commitMode?: CommitMode
   /**
+   * Disable all schema-related checks.
+   */
+  ignoreSchema?: boolean
+  /**
    * Override store write mode.
    */
   writeMode?: WriteMode

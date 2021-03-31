@@ -652,3 +652,24 @@ test('store:bulk-partial', async t => {
     code: 'EMUT_PARTIAL_ADAPTER'
   })
 })
+
+test('store:ignoreSchema', async t => {
+  const store = Store.create({
+    name: 'store:ignoreSchema',
+    adapter: createAdapter(),
+    schema: {
+      type: 'object',
+      properties: {
+        value: {
+          type: 'number'
+        }
+      },
+      required: ['value']
+    }
+  })
+  await store.create({ value: 42 }).unwrap()
+  await t.throwsAsync(store.create({}).unwrap(), {
+    code: 'EMUT_INVALID_ENTITY'
+  })
+  await store.create({}).unwrap({ mutent: { ignoreSchema: true } })
+})
