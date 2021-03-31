@@ -162,11 +162,6 @@ function commitBulkItem(item, result) {
 }
 
 async function* flushBulkItems(context, items, options) {
-  if (items.length === 1) {
-    yield adapterWrite(context, items[0].status, options)
-    return
-  }
-
   const { adapter, hooks, intent, store } = context
 
   if (hooks.beforeBulk) {
