@@ -46,7 +46,7 @@ export function createConstantKeyword() {
       }
 
       return function validate(data, ctx) {
-        pushConstant(ctx.rootData, ctx.dataPath.substring(1), data)
+        pushConstant(ctx.rootData, ctx.instancePath.substring(1), data)
         return true
       }
     }

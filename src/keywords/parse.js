@@ -52,7 +52,7 @@ export function createParseKeyword(parsers) {
         } catch (err) {
           validate.errors.push({
             keyword: 'parse',
-            dataPath: ctx.dataPath,
+            instancePath: ctx.instancePath,
             schemaPath: '#/parse',
             params: {
               parser: key,

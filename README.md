@@ -5,9 +5,9 @@
 [![Actions Status](https://github.com/greguz/mutent/workflows/ci/badge.svg)](https://github.com/greguz/mutent/actions)
 [![Coverage Status](https://coveralls.io/repos/github/greguz/mutent/badge.svg?branch=master)](https://coveralls.io/github/greguz/mutent?branch=master)
 
-While working with a database, It's common to write a lot of code to interact with the retrieved data. It's also common to write some specific queries (both to read and write) to interact with the database. When a project reaches a medium size, It's easy to spot more than one way to do the same thing: one that leverages to the programming language features, and another one that uses the database capabilities.
+Mutent is an elegant and agnostic solution to work with any persistence layer.
 
-Mutent provides a generalized method to interact with external data sources, plus make It possible to define all mutations as ordinary functions.
+Any action performed against the persistence layer is declared with plain JavaScript, making it possible to manipulate objects with just one language and leaving the integration stuff to the chosen adapter.
 
 ## Installation
 

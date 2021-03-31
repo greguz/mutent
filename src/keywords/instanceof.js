@@ -25,7 +25,7 @@ export function createInstanceofKeyword(constructors) {
         } else {
           validate.errors.push({
             keyword: 'instanceof',
-            dataPath: ctx.dataPath,
+            instancePath: ctx.instancePath,
             schemaPath: '#/instanceof',
             params: {
               constructor: schema,

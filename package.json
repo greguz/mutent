@@ -1,7 +1,7 @@
 {
   "name": "mutent",
   "version": "5.0.0-5",
-  "description": "An insanely small utility that helps you to keep business logic and other code separated",
+  "description": "Elegant and agnostic solution to work with any persistence layer",
   "main": "mutent.js",
   "types": "types/index.d.ts",
   "files": [
@@ -9,10 +9,15 @@
     "types"
   ],
   "keywords": [
-    "business-logic",
-    "crud",
+    "agnostic",
+    "database",
     "entity",
-    "immutable"
+    "immutable",
+    "iterable",
+    "mutator",
+    "mutation",
+    "store",
+    "stream"
   ],
   "scripts": {
     "lint:prettier": "prettier --write src",
@@ -26,12 +31,12 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "dependencies": {
-    "ajv": "^7.2.3",
+    "ajv": "^8.0.2",
     "lodash.get": "^4.4.2"
   },
   "devDependencies": {
     "ava": "^3.15.0",
-    "eslint": "^7.22.0",
+    "eslint": "^7.23.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-plugin-import": "^2.22.1",
@@ -41,7 +46,7 @@
     "nyc": "^15.1.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.42.4"
+    "rollup": "^2.44.0"
   },
   "repository": {
     "type": "git",
