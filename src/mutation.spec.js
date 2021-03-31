@@ -1,8 +1,6 @@
 import test from 'ava'
 
-import { createInstance } from './instance'
-import { intentCreate, intentFrom } from './intent'
-import { createMigration } from './migration'
+import { Mutation } from './mutation'
 import { assign, pipe, update } from './mutators'
 
 const defaultAdapter = {
@@ -11,25 +9,26 @@ const defaultAdapter = {
   delete() {}
 }
 
-function prepareSettings(settings = {}) {
-  return {
-    historySize: 8,
-    ...settings,
-    context: {
-      adapter: settings.adapter || defaultAdapter,
-      hooks: settings.hooks || {},
-      mode: 'AUTO',
-      validate: null
-    }
-  }
+function create(data, context) {
+  return Mutation.create({
+    adapter: defaultAdapter,
+    argument: data,
+    commitMode: 'AUTO',
+    intent: 'CREATE',
+    hooks: {},
+    ...context
+  })
 }
 
-function create(data, settings) {
-  return createInstance(intentCreate(data), prepareSettings(settings))
-}
-
-function read(data, settings) {
-  return createInstance(intentFrom(data), prepareSettings(settings))
+function read(data, context) {
+  return Mutation.create({
+    adapter: defaultAdapter,
+    argument: data,
+    commitMode: 'AUTO',
+    intent: 'FROM',
+    hooks: {},
+    ...context
+  })
 }
 
 function next(item) {
@@ -205,53 +204,6 @@ test('instance:delete-one', async t => {
   })
 })
 
-test('instance:undo', async t => {
-  const a = await read(2)
-    .update(value => value * -1)
-    .update(value => value * 2)
-    .update(value => value * 10)
-    .undo(2)
-    .unwrap()
-  t.is(a, -2)
-
-  const b = await read(2)
-    .update(value => value * -1)
-    .update(value => value * 2)
-    .update(value => value * 10)
-    .undo(Infinity)
-    .unwrap()
-  t.is(b, 2)
-
-  const c = await read(2)
-    .update(value => value * -1)
-    .update(value => value * 2)
-    .update(value => value * 10)
-    .undo(0)
-    .unwrap()
-  t.is(c, -40)
-})
-
-test('instance:redo', async t => {
-  const result = await read(2)
-    .update(value => value * -1)
-    .update(value => value * 2)
-    .update(value => value * 10)
-    .undo(2)
-    .redo()
-    .unwrap()
-  t.is(result, -4)
-})
-
-test('instance:mutable', async t => {
-  const entity = create({ id: 0 }, { mutable: true })
-  entity.update(next)
-  entity.update(next)
-  entity.update(next)
-  const result = await entity.unwrap()
-  t.deepEqual(result, { id: 3 })
-  t.throws(entity.unwrap)
-})
-
 function bind(t, mode = {}) {
   const adapter = {
     async create(target, options) {
@@ -336,70 +288,11 @@ test('delete many', async t => {
 })
 
 test('insert-error', async t => {
-  await t.throwsAsync(async () => {
-    await create([1])
+  await t.throwsAsync(
+    create([1])
       .update(async () => {
         throw new Error('TEST')
       })
       .unwrap()
-  })
-})
-
-test('undo entitites', async t => {
-  t.plan(3)
-  const results = await read(getItems())
-    .update(data => ({ id: data.id * -1 }))
-    .update(data => ({ id: data.id * 2 }))
-    .delete()
-    .undo(2)
-    .unwrap({ db: 'test' })
-  t.is(results.length, 16)
-  t.is(results[0].id, -0)
-  t.is(results[15].id, -30)
-})
-
-test('redo entitites', async t => {
-  t.plan(3)
-  const results = await read(getItems())
-    .update(data => ({ id: data.id * -1 }))
-    .update(data => ({ id: data.id * 2 }))
-    .update(data => ({ id: data.id * 10 }))
-    .undo(2)
-    .redo(2)
-    .unwrap()
-  t.is(results.length, 16)
-  t.is(results[0].id, -0)
-  t.is(results[15].id, -600)
-})
-
-test('instance:migration', async t => {
-  const migration = createMigration(2, {
-    1: function (data) {
-      return {
-        ...data,
-        version: 1,
-        id: data.id + 1
-      }
-    },
-    2: function (data) {
-      return {
-        ...data,
-        version: 2,
-        value: 'MIGRATED'
-      }
-    }
-  })
-
-  const item = {
-    version: 0,
-    id: 0
-  }
-
-  const data = await read(item, { migration }).unwrap()
-
-  t.deepEqual(data, {
-    version: 2,
-    id: 1,
-    value: 'MIGRATED'
-  })
+  )
 })

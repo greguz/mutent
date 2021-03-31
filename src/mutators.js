@@ -1,4 +1,4 @@
-import { writeStatus } from './driver'
+import { bulkWrite, sequentialWrite } from './adapter'
 import { deleteStatus, updateStatus } from './status'
 
 export function filter(predicate) {
@@ -21,9 +21,17 @@ export function ddelete() {
 }
 
 export function commit() {
-  return async function* mutatorCommit(iterable, options) {
-    for await (const status of iterable) {
-      yield writeStatus(this, status, options)
+  return function mutatorCommit(iterable, options) {
+    const { adapter, multiple } = this
+
+    const mutentOptions = options.mutent || {}
+    const writeMode = mutentOptions.writeMode || this.writeMode || 'AUTO'
+    const autoBulk = writeMode === 'AUTO' && multiple && !!adapter.bulk
+
+    if (writeMode === 'BULK' || autoBulk) {
+      return bulkWrite(this, iterable, options)
+    } else {
+      return sequentialWrite(this, iterable, options)
     }
   }
 }
@@ -40,8 +48,8 @@ async function unwrapIterable(iterable) {
   return result
 }
 
-function passthrough(value) {
-  return value
+function passthrough(iterable) {
+  return iterable
 }
 
 export function iif(
@@ -52,12 +60,13 @@ export function iif(
   if (typeof condition !== 'function') {
     return condition ? whenTrue : whenFalse
   }
-  return async function* mutatorConditional(iterable) {
+  return async function* mutatorConditional(iterable, options) {
+    let index = 0
     for await (const status of iterable) {
-      if (condition(status.target)) {
-        yield unwrapIterable(whenTrue(wrapValue(status)))
+      if (condition(status.target, index++)) {
+        yield unwrapIterable(whenTrue.call(this, wrapValue(status), options))
       } else {
-        yield unwrapIterable(whenFalse(wrapValue(status)))
+        yield unwrapIterable(whenFalse.call(this, wrapValue(status), options))
       }
     }
   }
@@ -76,11 +85,11 @@ export function assign(...objects) {
   return update(data => Object.assign({}, data, ...objects))
 }
 
-export function tap(tapper) {
+export function tap(callback) {
   return async function* mutatorTap(iterable) {
     let index = 0
     for await (const status of iterable) {
-      await tapper(status.target, index++)
+      await callback(status.target, index++)
       yield status
     }
   }

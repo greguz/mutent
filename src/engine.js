@@ -34,7 +34,11 @@ function setAjvKeyword(ajv, definition) {
   ajv.addKeyword(definition)
 }
 
-class Engine {
+export class Engine {
+  static create(options) {
+    return new Engine(options)
+  }
+
   constructor({ ajv, ajvOptions, constructors, parsers } = {}) {
     this._constructors = {
       Array,
@@ -49,15 +53,16 @@ class Engine {
       ...constructors
     }
     this._parsers = { ...parsers }
-    this._ajv = ajv || defaultAjv(ajvOptions)
 
-    setAjvKeyword(this._ajv, createConstantKeyword())
-    setAjvKeyword(this._ajv, createInstanceofKeyword(this._constructors))
-    setAjvKeyword(this._ajv, createParseKeyword(this._parsers))
+    this.ajv = ajv || defaultAjv(ajvOptions)
+
+    setAjvKeyword(this.ajv, createConstantKeyword())
+    setAjvKeyword(this.ajv, createInstanceofKeyword(this._constructors))
+    setAjvKeyword(this.ajv, createParseKeyword(this._parsers))
   }
 
   compile(schema) {
-    return this._ajv.compile(schema)
+    return this.ajv.compile(schema.valueOf())
   }
 
   defineConstructor(key, fn) {
@@ -69,8 +74,4 @@ class Engine {
     this._parsers[key] = ensureFunction(fn)
     return this
   }
-}
-
-export function createEngine(settings) {
-  return new Engine(settings)
 }

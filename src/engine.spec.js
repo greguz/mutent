@@ -1,12 +1,12 @@
 import test from 'ava'
 import Ajv from 'ajv'
 
-import { createEngine } from './engine'
+import { Engine } from './engine'
 import { MutentError } from './error'
 
 function handle(validate, data) {
   if (!validate(data)) {
-    throw new MutentError('EMUT_INVALID_DATA', 'Invalid data', {
+    throw new MutentError('EMUT_INVALID_ENTITY', 'Invalid data', {
       errors: validate.errors
     })
   }
@@ -17,7 +17,7 @@ test('engine:defineConstructor', t => {
   class Tweedledum {}
   class Tweedledee {}
 
-  const engine = createEngine({
+  const engine = Engine.create({
     constructors: { Tweedledum }
   }).defineConstructor('Tweedledee', Tweedledee)
 
@@ -42,10 +42,10 @@ test('engine:defineConstructor', t => {
     b: new Tweedledee()
   })
   t.throws(() => handle(validate, { a: {} }), {
-    code: 'EMUT_INVALID_DATA'
+    code: 'EMUT_INVALID_ENTITY'
   })
   t.throws(() => handle(validate, { b: {} }), {
-    code: 'EMUT_INVALID_DATA'
+    code: 'EMUT_INVALID_ENTITY'
   })
 
   t.throws(() => engine.compile({ instanceof: 'nope' }), {
@@ -54,7 +54,7 @@ test('engine:defineConstructor', t => {
 })
 
 test('engine:defineParser', t => {
-  const engine = createEngine({
+  const engine = Engine.create({
     parsers: {
       ceil: Math.ceil,
       parseInt: parseInt
@@ -91,26 +91,26 @@ test('engine:defineParser', t => {
 })
 
 test('engine:keywordsCheck', t => {
-  createEngine()
+  Engine.create()
 
   const a = new Ajv()
-  createEngine({ ajv: a })
+  Engine.create({ ajv: a })
 
   const b = new Ajv()
   b.addKeyword({ keyword: 'instanceof' })
-  t.throws(() => createEngine({ ajv: b }), { code: 'EMUT_RESERVED_KEYWORD' })
+  t.throws(() => Engine.create({ ajv: b }), { code: 'EMUT_RESERVED_KEYWORD' })
 
   const c = new Ajv()
   c.addKeyword({ keyword: 'parse' })
-  t.throws(() => createEngine({ ajv: c }), { code: 'EMUT_RESERVED_KEYWORD' })
+  t.throws(() => Engine.create({ ajv: c }), { code: 'EMUT_RESERVED_KEYWORD' })
 
   const d = new Ajv()
   d.addKeyword({ keyword: 'constant' })
-  t.throws(() => createEngine({ ajv: d }), { code: 'EMUT_RESERVED_KEYWORD' })
+  t.throws(() => Engine.create({ ajv: d }), { code: 'EMUT_RESERVED_KEYWORD' })
 })
 
 test('engine:parsingError', t => {
-  const engine = createEngine({
+  const engine = Engine.create({
     parsers: {
       error() {
         throw new Error('STOP')

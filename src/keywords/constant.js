@@ -3,10 +3,12 @@ import get from 'lodash.get'
 const symbol = Symbol('mutent_constants')
 
 export function writeConstants(object, constants) {
-  Object.defineProperty(object, symbol, {
-    configurable: true,
-    value: constants
-  })
+  if (typeof object === 'object' && object !== null) {
+    Object.defineProperty(object, symbol, {
+      configurable: true,
+      value: constants
+    })
+  }
   return object
 }
 

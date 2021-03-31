@@ -1,7 +1,7 @@
 import test from 'ava'
 import { Readable } from 'stream'
 
-import { createStore } from './store'
+import { Store } from './store'
 
 function createAdapter(items = []) {
   return {
@@ -42,18 +42,18 @@ async function consume(iterable, handler) {
   return results
 }
 
-test('store:settings', t => {
-  t.throws(() => createStore())
-  t.throws(() => createStore({}))
-  t.throws(() => createStore({ name: '', adapter: {} }))
-  t.throws(() => createStore({ name: 'store:settings' }))
-  t.throws(() => createStore({ adapter: {} }))
-  createStore({ name: 'store:settings', adapter: {} })
+test('store:defaults', t => {
+  t.throws(() => Store.create())
+  t.throws(() => Store.create({}))
+  t.throws(() => Store.create({ name: '', adapter: {} }))
+  t.throws(() => Store.create({ name: 'store:defaults' }))
+  t.throws(() => Store.create({ adapter: {} }))
+  Store.create({ name: 'store:defaults', adapter: {} })
 })
 
 test('store:create', async t => {
   const items = []
-  const store = createStore({
+  const store = Store.create({
     name: 'store:create',
     adapter: createAdapter(items)
   })
@@ -139,7 +139,7 @@ test('store:find', async t => {
     { id: 1, name: 'March Hare' },
     { id: 2, name: 'Dormouse' }
   ]
-  const store = createStore({
+  const store = Store.create({
     name: 'store:find',
     adapter: createAdapter(items)
   })
@@ -157,21 +157,21 @@ test('store:find', async t => {
 
 test('store:read', async t => {
   const items = [{ id: 0, name: 'Tom Orvoloson Riddle', nose: false }]
-  const store = createStore({
+  const store = Store.create({
     name: 'store:read',
     adapter: createAdapter(items)
   })
 
   t.is(await store.read(item => item.nose !== true).unwrap(), items[0])
   await t.throwsAsync(store.read(item => item.nose === true).unwrap(), {
-    code: 'EMUT_NOT_FOUND'
+    code: 'EMUT_EXPECTED_ENTITY'
   })
 
   t.deepEqual(await consume(store.read(item => item.id === 0).iterate()), [
     items[0]
   ])
   await t.throwsAsync(consume(store.read(() => false).iterate()), {
-    code: 'EMUT_NOT_FOUND'
+    code: 'EMUT_EXPECTED_ENTITY'
   })
 })
 
@@ -185,7 +185,7 @@ test('store:filter', async t => {
     { id: 5, name: 'Ralph T. Guard', gender: 'male', human: true },
     { id: 6, name: 'Thaddeus Plotz ', gender: 'male', human: true }
   ]
-  const store = createStore({
+  const store = Store.create({
     name: 'store:filter',
     adapter: createAdapter(items)
   })
@@ -230,7 +230,7 @@ test('store:schema', async t => {
     additionalProperties: false
   }
 
-  const store = createStore({
+  const store = Store.create({
     name: 'store:schema',
     constructors: {
       Teapot
@@ -253,7 +253,7 @@ test('store:schema', async t => {
   t.true(data.teapot instanceof Teapot)
 
   await t.throwsAsync(store.from({}).unwrap(), {
-    code: 'EMUT_INVALID_DATA'
+    code: 'EMUT_INVALID_ENTITY'
   })
   await t.throwsAsync(
     store
@@ -264,21 +264,21 @@ test('store:schema', async t => {
       .assign({ teapot: {} })
       .commit()
       .unwrap(),
-    { code: 'EMUT_INVALID_WRITE' }
+    { code: 'EMUT_INVALID_ENTITY' }
   )
   await t.throwsAsync(
     store
       .read(() => true)
       .assign({ teapot: {} })
       .unwrap(),
-    { code: 'EMUT_INVALID_WRITE' }
+    { code: 'EMUT_INVALID_ENTITY' }
   )
 })
 
 test('store:migration', async t => {
   const items = [{ id: 0, name: 'Gandalf' }]
 
-  const store = createStore({
+  const store = Store.create({
     name: 'store:migration',
     adapter: createAdapter(items),
     version: 1,
@@ -334,7 +334,7 @@ test('store:migration', async t => {
 test('hooks:find', async t => {
   t.plan(2)
 
-  const store = createStore({
+  const store = Store.create({
     name: 'hooks:find',
     adapter: createAdapter(),
     hooks: {
@@ -351,7 +351,7 @@ test('hooks:find', async t => {
 test('hooks:filter', async t => {
   t.plan(2)
 
-  const store = createStore({
+  const store = Store.create({
     name: 'hooks:filter',
     adapter: createAdapter(),
     hooks: {
@@ -370,7 +370,7 @@ test('hooks:data', async t => {
 
   let expectedIntent
 
-  const store = createStore({
+  const store = Store.create({
     name: 'hooks:data',
     adapter: createAdapter(),
     hooks: {
@@ -403,7 +403,7 @@ test('hooks:data', async t => {
 test('hooks:create', async t => {
   t.plan(4)
 
-  const store = createStore({
+  const store = Store.create({
     name: 'hooks:filter',
     adapter: createAdapter(),
     hooks: {
@@ -424,7 +424,7 @@ test('hooks:create', async t => {
 test('hooks:update', async t => {
   t.plan(6)
 
-  const store = createStore({
+  const store = Store.create({
     name: 'hooks:update',
     adapter: createAdapter([{ a: 'document' }]),
     hooks: {
@@ -450,7 +450,7 @@ test('hooks:update', async t => {
 test('hooks:delete', async t => {
   t.plan(4)
 
-  const store = createStore({
+  const store = Store.create({
     name: 'hooks:delete',
     adapter: createAdapter([{ a: 'document' }]),
     hooks: {
@@ -471,79 +471,57 @@ test('hooks:delete', async t => {
     .unwrap({ some: 'options' })
 })
 
-test('store:mode-safe', async t => {
+test('store:safe-commit', async t => {
   const items = []
 
-  const store = createStore({
-    name: 'store:mode-safe',
+  const store = Store.create({
+    name: 'store:safe-commit',
     adapter: createAdapter(items),
-    mode: 'SAFE'
+    commitMode: 'SAFE'
   })
 
   await t.throwsAsync(store.create({ id: 0 }).unwrap(), {
-    code: 'EMUT_UNSAFE'
+    code: 'EMUT_UNSAFE_UNWRAP'
   })
   t.is(items.length, 0)
 
-  await store.create({ id: 1 }).unwrap({ mutent: { mode: 'MANUAL' } })
+  await store.create({ id: 1 }).unwrap({ mutent: { commitMode: 'MANUAL' } })
   t.is(items.length, 0)
 
   await store.create({ id: 2 }).commit().unwrap()
   t.deepEqual(items, [{ id: 2 }])
 
-  await store.create({ id: 3 }).unwrap({ mutent: { mode: 'AUTO' } })
+  await store.create({ id: 3 }).unwrap({ mutent: { commitMode: 'AUTO' } })
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
 
-test('store:mode-manual', async t => {
+test('store:manual-commit', async t => {
   const items = []
 
-  const store = createStore({
-    name: 'store:mode-manual',
+  const store = Store.create({
+    name: 'store:manual-commit',
     adapter: createAdapter(items),
-    mode: 'MANUAL'
+    commitMode: 'MANUAL'
   })
 
   await store.create({ id: 0 }).unwrap()
   t.is(items.length, 0)
 
   await t.throwsAsync(
-    store.create({ id: 1 }).unwrap({ mutent: { mode: 'SAFE' } }),
-    { code: 'EMUT_UNSAFE' }
+    store.create({ id: 1 }).unwrap({ mutent: { commitMode: 'SAFE' } }),
+    { code: 'EMUT_UNSAFE_UNWRAP' }
   )
   t.is(items.length, 0)
 
   await store.create({ id: 2 }).commit().unwrap()
   t.deepEqual(items, [{ id: 2 }])
 
-  await store.create({ id: 3 }).unwrap({ mutent: { mode: 'AUTO' } })
+  await store.create({ id: 3 }).unwrap({ mutent: { commitMode: 'AUTO' } })
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
 
-test('store:mutable', async t => {
-  const immStore = createStore({
-    name: 'store:mutable',
-    adapter: createAdapter()
-    // mutable: false (default)
-  })
-
-  const a = immStore.read()
-  const b = a.update(data => data)
-  t.false(a === b)
-
-  const mutStore = createStore({
-    name: 'store:mutable',
-    adapter: createAdapter(),
-    mutable: true
-  })
-
-  const c = mutStore.read()
-  const d = c.update(data => data)
-  t.true(c === d)
-})
-
 test('store:constant', async t => {
-  const store = createStore({
+  const store = Store.create({
     name: 'store:constant',
     adapter: createAdapter(),
     schema: {
@@ -578,7 +556,7 @@ test('store:constant', async t => {
 })
 
 test('store:stream', async t => {
-  const store = createStore({
+  const store = Store.create({
     name: 'store:stream',
     adapter: {
       filter() {
@@ -598,7 +576,7 @@ test('store:tap', async t => {
 
   const items = [{ my: 'document' }]
 
-  const store = createStore({
+  const store = Store.create({
     name: 'store:tap',
     adapter: createAdapter(items)
   })
@@ -619,7 +597,7 @@ test('store:filter-mutator', async t => {
 
   const items = [{ name: 'Shrek' }, { name: 'Fiona' }, { name: 'Donkey' }]
 
-  const store = createStore({
+  const store = Store.create({
     name: 'store:filter',
     adapter: createAdapter(items)
   })
@@ -632,4 +610,45 @@ test('store:filter-mutator', async t => {
     .unwrap()
 
   t.deepEqual(results, [{ name: 'Shrek' }])
+})
+
+test('store:bulk', async t => {
+  t.plan(14)
+
+  const store = Store.create({
+    name: 'store:bulk',
+    adapter: {
+      bulk(actions, options) {
+        t.is(actions.length, 2)
+        for (const action of actions) {
+          t.is(action.type, 'CREATE')
+          t.true(typeof action.data === 'string')
+        }
+      }
+    },
+    hooks: {
+      beforeBulk(actions, options) {
+        t.is(actions.length, 2)
+      },
+      afterBulk(actions, options) {
+        t.is(actions.length, 2)
+      }
+    },
+    writeMode: 'BULK',
+    writeSize: 2
+  })
+
+  await store.create(['a', 'b', 'c', 'd']).unwrap()
+})
+
+test('store:bulk-partial', async t => {
+  const store = Store.create({
+    name: 'store:bulk',
+    adapter: {},
+    writeMode: 'BULK'
+  })
+
+  await t.throwsAsync(store.create(['a', 'b', 'c', 'd']).unwrap(), {
+    code: 'EMUT_PARTIAL_ADAPTER'
+  })
 })

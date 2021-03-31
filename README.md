@@ -22,74 +22,111 @@ This project uses **ES2018** syntax (Node.js >= 10). If you need to run Mutent o
 ## Example
 
 ```javascript
-import { createStore } from 'mutent'
-import { createArrayAdapter } from 'mutent-array'
+import { Store } from 'mutent'
 
-const database = []
-
-const store = createStore({
-  name: 'MyStore',
-  adapter: createArrayAdapter(database)
-})
-
-let counter = 0
-
-async function foo() {
-  // create one
-  const dexter = await store
-    .create({
-      id: counter++,
-      name: 'Dexter'
-    })
-    .unwrap()
-  console.log(dexter) // { id: 0, name: "Dexter" }
-
-  // create many
-  const family = await store
-    .create([
-      { id: counter++, name: 'Dee Dee' },
-      { id: counter++, name: 'Mom' },
-      { id: counter++, name: 'Dad' }
-    ])
-    .unwrap()
-  console.log(family) // [{ id: 1, name: "Dee Dee" }, { id: 2, name: "Mom" }, { id: 3, name: "Dad" }]
-
-  // find one
-  const nope = await store.find(item => item.name === 'Monkey').unwrap()
-  console.log(nope) // null
-
-  try {
-    // read one (required)
-    const mandark = await store.read(item => item.name === 'Mandark').unwrap()
-  } catch (err) {
-    // catch "mandark does not exist"
-    if (err.code === 'EMUT_NOT_FOUND') {
-      const mandark = await store
-        .create({ id: counter++, name: 'Mandark' })
-        .unwrap()
-      console.log(mandark) // { id: 5, name: "Mandark" }
-    } else {
-      throw err
-    }
+// Define simple array adapter (persist entities inside the array)
+class ArrayAdapter {
+  constructor(array = []) {
+    this.array = array
   }
 
-  // delete one
-  const deadMandark = await store
-    .read(item => item.name === 'Mandark')
-    .delete()
-    .unwrap()
-  console.log(deadMandark) // { id: 5, name: "Mandark" }
+  find(predicate) {
+    return this.array.find(predicate)
+  }
 
-  // find many
-  const protagonists = await store.filter(item => item.id <= 1).unwrap()
-  console.log(protagonists) // [{ id: 0, name: "Dexter" }, { id: 1, name: "Dee Dee" }]
+  filter(predicate) {
+    return this.array.filter(predicate)
+  }
 
-  // update many
-  const updatedProtagonists = await store
-    .filter(item => item.id <= 1)
-    .update(item => ({ ...item, protagonist: true }))
+  create(data) {
+    this.array.push(data)
+  }
+
+  update(oldData, newData) {
+    this.array.splice(
+      this.array.findIndex(entity => entity === oldData),
+      1,
+      newData
+    )
+  }
+
+  delete(data) {
+    this.array.splice(
+      this.array.findIndex(entity => entity === data),
+      1
+    )
+  }
+}
+
+async function foo() {
+  // Our "persistence" layer
+  const database = []
+
+  // Create mutent store
+  const store = new Store({
+    name: 'MyStore',
+    adapter: new ArrayAdapter(database)
+  })
+
+  // Create a new entity
+  const dexter = await store
+    .create({
+      name: 'Dexter',
+      protagonist: true
+    })
     .unwrap()
-  console.log(updatedProtagonists) // [{ id: 0, name: "Dexter", protagonist: true }, { id: 1, name: "Dee Dee", protagonist: true }]
+  console.log(dexter) // Dexter
+  console.log(database) // Dexter
+
+  // Create multiple entities
+  const family = await store
+    .create([
+      {
+        name: 'Dee Dee',
+        protagonist: true
+      },
+      { name: 'Mom' },
+      { name: 'Dad' }
+    ])
+    .unwrap()
+  console.log(family) // Dee Dee, Mom, Dad
+  console.log(database) // Dexter, Dee Dee, Mom, Dad
+
+  // Find one entity
+  const firstProtagonist = await store
+    .find(entity => entity.protagonist) // Declare adapter query
+    .unwrap()
+  console.log(firstProtagonist) // Dexter
+
+  // Filter entities
+  const allProtagonists = await store
+    .filter(entity => entity.protagonist) // Declare adapter query
+    .unwrap()
+  console.log(allProtagonists) // Dexter, Dee Dee
+
+  // Update
+  const newDexter = await store
+    .find(entity => entity.name === 'Dexter') // Declare adapter query
+    .update(entity => ({ ...entity, surname: 'McPherson' })) // Declare entity mutation
+    .unwrap()
+  console.log(newDexter) // Dexter McPherson
+  console.log(database) // Dexter McPherson, Dee Dee, Mom, Dad
+
+  // Assign (update)
+  const newDeeDee = await store
+    .find(entity => entity.name === 'Dee Dee') // Declare adapter query
+    .assign({ surname: 'McPherson' }) // Update with Object.assign()
+    .unwrap()
+  console.log(newDeeDee) // Dee Dee McPherson
+  console.log(database) // Dexter McPherson, Dee Dee McPherson, Mom, Dad
+
+  // Delete entities
+  const deletedParents = await store
+    .filter(entity => !entity.protagonist) // Declare adapter query
+    .delete() // Tell mutent we want to delete matching entities
+    .unwrap()
+  console.log(deletedParents) // Mom, Dad
+  console.log(database) // Dexter, Dee Dee
 }
 
 foo().catch(err => console.error(err))

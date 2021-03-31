@@ -1,3 +1,3 @@
-export { createEngine } from './engine'
+export { Engine } from './engine'
 export * from './mutators'
-export { createStore } from './store'
+export { Store } from './store'

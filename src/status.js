@@ -27,9 +27,9 @@ export function readStatus(data) {
 export function updateStatus({ created, deleted, source }, target) {
   if (target === null || target === undefined) {
     throw new MutentError(
-      'EMUT_NIL_UPDATE',
-      'Cannot accept a nil value as entity',
-      { source, target }
+      'EMUT_NULLISH_UPDATE',
+      'Cannot accpet nullish values as entity update',
+      { data: source }
     )
   }
   return {
@@ -51,6 +51,18 @@ export function deleteStatus({ created, updated, source, target }) {
   }
 }
 
+export function shouldCreate({ created, deleted, source }) {
+  return source === null && created && !deleted
+}
+
+export function shouldUpdate({ deleted, source, updated }) {
+  return source !== null && updated && !deleted
+}
+
+export function shouldDelete({ deleted, source }) {
+  return source !== null && deleted
+}
+
 export function shouldCommit(status) {
-  return status.created || status.updated || status.deleted
+  return shouldCreate(status) || shouldUpdate(status) || shouldDelete(status)
 }
