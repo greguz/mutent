@@ -1,5 +1,5 @@
 export class MutentError extends Error {
-  constructor(code, message, info) {
+  constructor(code, message, info = {}) {
     super(message)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor)

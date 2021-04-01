@@ -1,6 +1,7 @@
 export * from './adapter'
 export * from './context'
 export * from './engine'
+export * from './error'
 export * from './mutation'
 export * from './mutators'
 export * from './options'
