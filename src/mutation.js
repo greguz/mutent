@@ -150,6 +150,13 @@ export class Mutation {
     return this.pipe(assign(...objects))
   }
 
+  async consume(options) {
+    // eslint-disable-next-line
+    for await (const data of this.iterate(options)) {
+      // The river is flowing...
+    }
+  }
+
   commit() {
     return this.pipe(commit())
   }
