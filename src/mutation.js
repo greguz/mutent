@@ -151,10 +151,12 @@ export class Mutation {
   }
 
   async consume(options) {
+    let count = 0
     // eslint-disable-next-line
     for await (const data of this.iterate(options)) {
-      // The river is flowing...
+      count++
     }
+    return count
   }
 
   commit() {

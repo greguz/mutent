@@ -673,3 +673,17 @@ test('store:ignoreSchema', async t => {
   })
   await store.create({}).unwrap({ mutent: { ignoreSchema: true } })
 })
+
+test('store:consume', async t => {
+  const items = []
+
+  const store = Store.create({
+    name: 'store:consume',
+    adapter: createAdapter(items)
+  })
+
+  const count = await store.create({ value: 42 }).consume()
+  t.is(count, 1)
+
+  t.deepEqual(items, [{ value: 42 }])
+})

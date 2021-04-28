@@ -13,9 +13,9 @@ export interface Mutation<T, O, U = unknown> {
    */
   commit(): Mutation<T, O, U>
   /**
-   * Applies configured mutators to the targeted entities and returns a Promise.
+   * Applies configured mutators to the targeted entities and returns a Promise that will resolve to the number of handled entities.
    */
-  consume(options?: UnwrapOptions<O>): Promise<void>
+  consume(options?: UnwrapOptions<O>): Promise<number>
   /**
    * Deletes all entities.
    */
