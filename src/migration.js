@@ -1,10 +1,10 @@
 import { MutentError } from './error'
 
-function isValidVersion(value) {
+function isValidVersion (value) {
   return Number.isInteger(value) && value >= 0
 }
 
-function getEntityVersion({ intent, store, versionKey }, data) {
+function getEntityVersion ({ intent, store, versionKey }, data) {
   if (typeof data !== 'object' || data === null) {
     throw new MutentError(
       'EMUT_UNVERSIONABLE_ENTITY',
@@ -32,7 +32,7 @@ function getEntityVersion({ intent, store, versionKey }, data) {
   return version
 }
 
-export async function migrate(context, data) {
+export async function migrate (context, data) {
   let version = getEntityVersion(context, data)
 
   if (version > context.version) {
@@ -92,7 +92,7 @@ export async function migrate(context, data) {
   return data
 }
 
-export async function* mutatorMigrate(iterable) {
+export async function * mutatorMigrate (iterable) {
   for await (const status of iterable) {
     // Do not change other status flags, so this status will be "unmodified" (will not trigger auto-commit check)
     yield {

@@ -1,6 +1,6 @@
 import { MutentError } from '../error'
 
-function describeParser(value) {
+function describeParser (value) {
   if (typeof value === 'string') {
     return {
       key: value,
@@ -20,7 +20,7 @@ function describeParser(value) {
   }
 }
 
-export function createParseKeyword(parsers) {
+export function createParseKeyword (parsers) {
   return {
     keyword: 'parse',
     errors: 'full',
@@ -32,7 +32,7 @@ export function createParseKeyword(parsers) {
       minProperties: 1,
       maxProperties: 1
     },
-    compile(schema) {
+    compile (schema) {
       const { key, args } = describeParser(schema)
 
       const parse = parsers[key]
@@ -44,7 +44,7 @@ export function createParseKeyword(parsers) {
         )
       }
 
-      return function validate(data, ctx) {
+      return function validate (data, ctx) {
         validate.errors = validate.errors || []
 
         try {

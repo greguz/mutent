@@ -3,7 +3,7 @@ import { MutentError } from './error'
 import { assign, commit, ddelete, filter, iif, tap, update } from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
 
-function readContext(context, options) {
+function readContext (context, options) {
   const { argument, intent } = context
   switch (intent) {
     case 'CREATE':
@@ -17,34 +17,34 @@ function readContext(context, options) {
   }
 }
 
-function isAsyncIterable(value) {
+function isAsyncIterable (value) {
   return Symbol.asyncIterator in Object(value)
 }
 
-function isIterable(value) {
+function isIterable (value) {
   return Symbol.iterator in Object(value)
 }
 
-async function* fromPromise(blob) {
+async function * fromPromise (blob) {
   const data = await blob
   if (data !== null && data !== undefined) {
     yield data
   }
 }
 
-async function* iterateNewData(iterable) {
+async function * iterateNewData (iterable) {
   for await (const data of iterable) {
     yield createStatus(data)
   }
 }
 
-async function* iterateOldData(iterable) {
+async function * iterateOldData (iterable) {
   for await (const data of iterable) {
     yield readStatus(data)
   }
 }
 
-async function* iterateMany(context, blob, mutators, options) {
+async function * iterateMany (context, blob, mutators, options) {
   const iterable = mutators.reduce(
     (accumulator, mutator) => mutator.call(context, accumulator, options),
     context.intent === 'CREATE' ? iterateNewData(blob) : iterateOldData(blob)
@@ -55,7 +55,7 @@ async function* iterateMany(context, blob, mutators, options) {
   }
 }
 
-async function* iterateOne(context, blob, mutators, options) {
+async function * iterateOne (context, blob, mutators, options) {
   const { argument, intent, store } = context
   let count = 0
   for await (const data of iterateMany(
@@ -78,7 +78,7 @@ async function* iterateOne(context, blob, mutators, options) {
   }
 }
 
-async function unwrapMany(context, blob, mutators, options) {
+async function unwrapMany (context, blob, mutators, options) {
   const results = []
   for await (const data of iterateMany(context, blob, mutators, options)) {
     results.push(data)
@@ -86,7 +86,7 @@ async function unwrapMany(context, blob, mutators, options) {
   return results
 }
 
-async function unwrapOne(context, blob, mutators, options) {
+async function unwrapOne (context, blob, mutators, options) {
   let result = null
   for await (const item of iterateOne(context, blob, mutators, options)) {
     result = item
@@ -94,7 +94,7 @@ async function unwrapOne(context, blob, mutators, options) {
   return result
 }
 
-async function* mutatorSafe(iterable, options) {
+async function * mutatorSafe (iterable, options) {
   for await (const status of iterable) {
     if (shouldCommit(status)) {
       throw new MutentError('EMUT_UNSAFE_UNWRAP', 'Unsafe mutation', {
@@ -107,7 +107,7 @@ async function* mutatorSafe(iterable, options) {
   }
 }
 
-function mutatorClose(iterable, options) {
+function mutatorClose (iterable, options) {
   const mutentOptions = options.mutent || {}
   const commitMode = mutentOptions.commitMode || this.commitMode || 'AUTO'
 
@@ -120,7 +120,7 @@ function mutatorClose(iterable, options) {
   }
 }
 
-function unwrap(context, mutators, options) {
+function unwrap (context, mutators, options) {
   const blob = readContext(context, options)
   context.multiple = isIterable(blob) || isAsyncIterable(blob)
   return isIterable(blob) || isAsyncIterable(blob)
@@ -128,7 +128,7 @@ function unwrap(context, mutators, options) {
     : unwrapOne(context, blob, mutators, options)
 }
 
-function iterate(context, mutators, options) {
+function iterate (context, mutators, options) {
   const blob = readContext(context, options)
   context.multiple = isIterable(blob) || isAsyncIterable(blob)
   return context.multiple
@@ -137,20 +137,20 @@ function iterate(context, mutators, options) {
 }
 
 export class Mutation {
-  static create(context, mutators) {
+  static create (context, mutators) {
     return new Mutation(context, mutators)
   }
 
-  constructor(context, mutators = []) {
+  constructor (context, mutators = []) {
     this._context = context
     this._mutators = mutators
   }
 
-  assign(...objects) {
+  assign (...objects) {
     return this.pipe(assign(...objects))
   }
 
-  async consume(options) {
+  async consume (options) {
     let count = 0
     // eslint-disable-next-line
     for await (const data of this.iterate(options)) {
@@ -159,39 +159,39 @@ export class Mutation {
     return count
   }
 
-  commit() {
+  commit () {
     return this.pipe(commit())
   }
 
-  delete() {
+  delete () {
     return this.pipe(ddelete())
   }
 
-  filter(predicate) {
+  filter (predicate) {
     return this.pipe(filter(predicate))
   }
 
-  if(condition, whenTrue, whenFalse) {
+  if (condition, whenTrue, whenFalse) {
     return this.pipe(iif(condition, whenTrue, whenFalse))
   }
 
-  iterate(options = {}) {
+  iterate (options = {}) {
     return iterate(this._context, [...this._mutators, mutatorClose], options)
   }
 
-  pipe(...mutators) {
+  pipe (...mutators) {
     return new Mutation(this._context, this._mutators.concat(mutators))
   }
 
-  tap(callback) {
+  tap (callback) {
     return this.pipe(tap(callback))
   }
 
-  unwrap(options = {}) {
+  unwrap (options = {}) {
     return unwrap(this._context, [...this._mutators, mutatorClose], options)
   }
 
-  update(mapper) {
+  update (mapper) {
     return this.pipe(update(mapper))
   }
 }

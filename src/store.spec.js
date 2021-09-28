@@ -3,25 +3,25 @@ import { Readable } from 'stream'
 
 import { Store } from './store'
 
-function createAdapter(items = []) {
+function createAdapter (items = []) {
   return {
-    find(predicate) {
+    find (predicate) {
       return items.find(predicate)
     },
-    filter(predicate) {
+    filter (predicate) {
       return items.filter(predicate)
     },
-    create(data) {
+    create (data) {
       items.push(data)
     },
-    update(oldData, newData) {
+    update (oldData, newData) {
       items.splice(
         items.findIndex(item => item === oldData),
         1,
         newData
       )
     },
-    delete(data) {
+    delete (data) {
       items.splice(
         items.findIndex(item => item === data),
         1
@@ -30,7 +30,7 @@ function createAdapter(items = []) {
   }
 }
 
-async function consume(iterable, handler) {
+async function consume (iterable, handler) {
   const results = []
   for await (const value of iterable) {
     if (handler) {
@@ -338,7 +338,7 @@ test('hooks:find', async t => {
     name: 'hooks:find',
     adapter: createAdapter(),
     hooks: {
-      onFind(query, options) {
+      onFind (query, options) {
         t.true(typeof query === 'function')
         t.deepEqual(options, { some: 'options' })
       }
@@ -355,7 +355,7 @@ test('hooks:filter', async t => {
     name: 'hooks:filter',
     adapter: createAdapter(),
     hooks: {
-      onFilter(query, options) {
+      onFilter (query, options) {
         t.true(typeof query === 'function')
         t.deepEqual(options, { some: 'options' })
       }
@@ -374,7 +374,7 @@ test('hooks:data', async t => {
     name: 'hooks:data',
     adapter: createAdapter(),
     hooks: {
-      onData(intent, data, options) {
+      onData (intent, data, options) {
         t.is(intent, expectedIntent)
         t.deepEqual(data, { a: 'document' })
         t.deepEqual(options, { some: 'options' })
@@ -407,11 +407,11 @@ test('hooks:create', async t => {
     name: 'hooks:filter',
     adapter: createAdapter(),
     hooks: {
-      beforeCreate(data, options) {
+      beforeCreate (data, options) {
         t.deepEqual(data, { a: 'document' })
         t.deepEqual(options, { some: 'options' })
       },
-      afterCreate(data, options) {
+      afterCreate (data, options) {
         t.deepEqual(data, { a: 'document' })
         t.deepEqual(options, { some: 'options' })
       }
@@ -428,12 +428,12 @@ test('hooks:update', async t => {
     name: 'hooks:update',
     adapter: createAdapter([{ a: 'document' }]),
     hooks: {
-      beforeUpdate(oldData, newData, options) {
+      beforeUpdate (oldData, newData, options) {
         t.deepEqual(oldData, { a: 'document' })
         t.deepEqual(newData, { a: 'document', updated: true })
         t.deepEqual(options, { some: 'options' })
       },
-      afterUpdate(oldData, newData, options) {
+      afterUpdate (oldData, newData, options) {
         t.deepEqual(oldData, { a: 'document' })
         t.deepEqual(newData, { a: 'document', updated: true })
         t.deepEqual(options, { some: 'options' })
@@ -454,11 +454,11 @@ test('hooks:delete', async t => {
     name: 'hooks:delete',
     adapter: createAdapter([{ a: 'document' }]),
     hooks: {
-      beforeDelete(data, options) {
+      beforeDelete (data, options) {
         t.deepEqual(data, { a: 'document' })
         t.deepEqual(options, { some: 'options' })
       },
-      afterDelete(data, options) {
+      afterDelete (data, options) {
         t.deepEqual(data, { a: 'document' })
         t.deepEqual(options, { some: 'options' })
       }
@@ -559,7 +559,7 @@ test('store:stream', async t => {
   const store = Store.create({
     name: 'store:stream',
     adapter: {
-      filter() {
+      filter () {
         return Readable.from([{ name: 'Kuzco' }, { name: 'Pacha' }])
       }
     }
@@ -618,7 +618,7 @@ test('store:bulk', async t => {
   const store = Store.create({
     name: 'store:bulk',
     adapter: {
-      bulk(actions, options) {
+      bulk (actions, options) {
         t.is(actions.length, 2)
         for (const action of actions) {
           t.is(action.type, 'CREATE')
@@ -627,10 +627,10 @@ test('store:bulk', async t => {
       }
     },
     hooks: {
-      beforeBulk(actions, options) {
+      beforeBulk (actions, options) {
         t.is(actions.length, 2)
       },
-      afterBulk(actions, options) {
+      afterBulk (actions, options) {
         t.is(actions.length, 2)
       }
     },

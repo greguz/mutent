@@ -1,6 +1,6 @@
 import { MutentError } from './error'
 
-export function commitStatus({ deleted, target }) {
+export function commitStatus ({ deleted, target }) {
   return {
     created: false,
     updated: false,
@@ -10,7 +10,7 @@ export function commitStatus({ deleted, target }) {
   }
 }
 
-export function createStatus(data) {
+export function createStatus (data) {
   return {
     created: true,
     updated: false,
@@ -20,11 +20,11 @@ export function createStatus(data) {
   }
 }
 
-export function readStatus(data) {
+export function readStatus (data) {
   return commitStatus(createStatus(data))
 }
 
-export function updateStatus({ created, deleted, source }, target) {
+export function updateStatus ({ created, deleted, source }, target) {
   if (target === null || target === undefined) {
     throw new MutentError(
       'EMUT_NULLISH_UPDATE',
@@ -41,7 +41,7 @@ export function updateStatus({ created, deleted, source }, target) {
   }
 }
 
-export function deleteStatus({ created, updated, source, target }) {
+export function deleteStatus ({ created, updated, source, target }) {
   return {
     created,
     updated,
@@ -51,18 +51,18 @@ export function deleteStatus({ created, updated, source, target }) {
   }
 }
 
-export function shouldCreate({ created, deleted, source }) {
+export function shouldCreate ({ created, deleted, source }) {
   return source === null && created && !deleted
 }
 
-export function shouldUpdate({ deleted, source, updated }) {
+export function shouldUpdate ({ deleted, source, updated }) {
   return source !== null && updated && !deleted
 }
 
-export function shouldDelete({ deleted, source }) {
+export function shouldDelete ({ deleted, source }) {
   return source !== null && deleted
 }
 
-export function shouldCommit(status) {
+export function shouldCommit (status) {
   return shouldCreate(status) || shouldUpdate(status) || shouldDelete(status)
 }

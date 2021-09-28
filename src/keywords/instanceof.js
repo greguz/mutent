@@ -1,13 +1,13 @@
 import { MutentError } from '../error'
 
-export function createInstanceofKeyword(constructors) {
+export function createInstanceofKeyword (constructors) {
   return {
     keyword: 'instanceof',
     errors: true,
     metaSchema: {
       type: 'string'
     },
-    compile(schema) {
+    compile (schema) {
       const Constructor = constructors[schema]
       if (!Constructor) {
         throw new MutentError(
@@ -17,7 +17,7 @@ export function createInstanceofKeyword(constructors) {
         )
       }
 
-      return function validate(data, ctx) {
+      return function validate (data, ctx) {
         validate.errors = validate.errors || []
 
         if (data instanceof Constructor) {

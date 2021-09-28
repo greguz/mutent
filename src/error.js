@@ -1,5 +1,5 @@
 export class MutentError extends Error {
-  constructor(code, message, info = {}) {
+  constructor (code, message, info = {}) {
     super(message)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor)
@@ -9,15 +9,15 @@ export class MutentError extends Error {
     this.info = info
   }
 
-  get [Symbol.toStringTag]() {
+  get [Symbol.toStringTag] () {
     return 'Error'
   }
 
-  toString() {
+  toString () {
     return `${this.name} [${this.code}]: ${this.message}`
   }
 
-  toJSON() {
+  toJSON () {
     return {
       error: this.code,
       message: this.message,

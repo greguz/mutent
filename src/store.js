@@ -3,19 +3,19 @@ import { MutentError } from './error'
 import { mutatorMigrate } from './migration'
 import { Mutation } from './mutation'
 
-function ensureEngine(options) {
+function ensureEngine (options) {
   const { engine } = options
   return engine || Engine.create(options)
 }
 
-async function* mutatorHook(iterable, options) {
+async function * mutatorHook (iterable, options) {
   for await (const status of iterable) {
     await this.hooks.onData(this.intent, status.target, options)
     yield status
   }
 }
 
-async function* mutatorSchema(iterable) {
+async function * mutatorSchema (iterable) {
   for await (const status of iterable) {
     if (!this.validate(status.target)) {
       throw new MutentError(
@@ -33,7 +33,7 @@ async function* mutatorSchema(iterable) {
   }
 }
 
-function handleSchema(iterable, options) {
+function handleSchema (iterable, options) {
   const mutentOptions = options.mutent || {}
   return mutentOptions.ignoreSchema
     ? iterable
@@ -41,11 +41,11 @@ function handleSchema(iterable, options) {
 }
 
 export class Store {
-  static create(options) {
+  static create (options) {
     return new Store(options)
   }
 
-  constructor(options) {
+  constructor (options) {
     const {
       adapter,
       commitMode = 'AUTO',
@@ -99,7 +99,7 @@ export class Store {
     }
   }
 
-  create(data) {
+  create (data) {
     return new Mutation(
       {
         ...this._context,
@@ -110,7 +110,7 @@ export class Store {
     )
   }
 
-  find(query) {
+  find (query) {
     return new Mutation(
       {
         ...this._context,
@@ -121,7 +121,7 @@ export class Store {
     )
   }
 
-  read(query) {
+  read (query) {
     return new Mutation(
       {
         ...this._context,
@@ -132,7 +132,7 @@ export class Store {
     )
   }
 
-  filter(query) {
+  filter (query) {
     return new Mutation(
       {
         ...this._context,
@@ -143,7 +143,7 @@ export class Store {
     )
   }
 
-  from(data) {
+  from (data) {
     return new Mutation(
       {
         ...this._context,

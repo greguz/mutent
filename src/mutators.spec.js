@@ -3,7 +3,7 @@ import test from 'ava'
 import { assign, update } from './mutators'
 import { createStatus, readStatus } from './status'
 
-async function unwrap({ context = {}, iterable, mutator, options = {} }) {
+async function unwrap ({ context = {}, iterable, mutator, options = {} }) {
   const results = []
   for await (const status of mutator.call(context, iterable, options)) {
     results.push(status)
@@ -11,11 +11,11 @@ async function unwrap({ context = {}, iterable, mutator, options = {} }) {
   return results
 }
 
-export function create(...values) {
+export function create (...values) {
   return values.map(createStatus)
 }
 
-function read(...values) {
+function read (...values) {
   return values.map(readStatus)
 }
 

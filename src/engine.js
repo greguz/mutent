@@ -6,14 +6,14 @@ import { createConstantKeyword } from './keywords/constant'
 import { createInstanceofKeyword } from './keywords/instanceof'
 import { createParseKeyword } from './keywords/parse'
 
-function ensureFunction(value) {
+function ensureFunction (value) {
   if (typeof value !== 'function') {
     throw new Error('Not a function')
   }
   return value
 }
 
-function defaultAjv(options) {
+function defaultAjv (options) {
   return new Ajv({
     coerceTypes: true,
     removeAdditional: true,
@@ -22,7 +22,7 @@ function defaultAjv(options) {
   })
 }
 
-function setAjvKeyword(ajv, definition) {
+function setAjvKeyword (ajv, definition) {
   const { keyword } = definition
   if (ajv.getKeyword(keyword) !== false) {
     throw new MutentError(
@@ -35,11 +35,11 @@ function setAjvKeyword(ajv, definition) {
 }
 
 export class Engine {
-  static create(options) {
+  static create (options) {
     return new Engine(options)
   }
 
-  constructor({ ajv, ajvOptions, constructors, parsers } = {}) {
+  constructor ({ ajv, ajvOptions, constructors, parsers } = {}) {
     this._constructors = {
       Array,
       Buffer,
@@ -61,16 +61,16 @@ export class Engine {
     setAjvKeyword(this.ajv, createParseKeyword(this._parsers))
   }
 
-  compile(schema) {
+  compile (schema) {
     return this.ajv.compile(schema.valueOf())
   }
 
-  defineConstructor(key, fn) {
+  defineConstructor (key, fn) {
     this._constructors[key] = ensureFunction(fn)
     return this
   }
 
-  defineParser(key, fn) {
+  defineParser (key, fn) {
     this._parsers[key] = ensureFunction(fn)
     return this
   }

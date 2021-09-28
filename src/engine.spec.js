@@ -4,7 +4,7 @@ import Ajv from 'ajv'
 import { Engine } from './engine'
 import { MutentError } from './error'
 
-function handle(validate, data) {
+function handle (validate, data) {
   if (!validate(data)) {
     throw new MutentError('EMUT_INVALID_ENTITY', 'Invalid data', {
       errors: validate.errors
@@ -112,7 +112,7 @@ test('engine:keywordsCheck', t => {
 test('engine:parsingError', t => {
   const engine = Engine.create({
     parsers: {
-      error() {
+      error () {
         throw new Error('STOP')
       }
     }

@@ -4,12 +4,12 @@ import { Mutation } from './mutation'
 import { assign, pipe, update } from './mutators'
 
 const defaultAdapter = {
-  create() {},
-  update() {},
-  delete() {}
+  create () {},
+  update () {},
+  delete () {}
 }
 
-function create(data, context) {
+function create (data, context) {
   return Mutation.create({
     adapter: defaultAdapter,
     argument: data,
@@ -20,7 +20,7 @@ function create(data, context) {
   })
 }
 
-function read(data, context) {
+function read (data, context) {
   return Mutation.create({
     adapter: defaultAdapter,
     argument: data,
@@ -31,14 +31,14 @@ function read(data, context) {
   })
 }
 
-function next(item) {
+function next (item) {
   return {
     ...item,
     id: item.id + 1
   }
 }
 
-async function consume(iterable, handler) {
+async function consume (iterable, handler) {
   const results = []
   for await (const value of iterable) {
     if (handler) {
@@ -115,17 +115,17 @@ test('instance:create-one', async t => {
   t.plan(3)
 
   const adapter = {
-    async create(target, options) {
+    async create (target, options) {
       t.deepEqual(target, {
         id: 1,
         value: 'CREATE'
       })
       t.is(options.hello, 'world')
     },
-    async update() {
+    async update () {
       t.fail()
     },
-    async delete() {
+    async delete () {
       t.fail()
     }
   }
@@ -146,10 +146,10 @@ test('instance:update-one', async t => {
   t.plan(4)
 
   const adapter = {
-    async create() {
+    async create () {
       t.fail()
     },
-    async update(source, target, options) {
+    async update (source, target, options) {
       t.deepEqual(source, {
         id: 0
       })
@@ -159,7 +159,7 @@ test('instance:update-one', async t => {
       })
       t.is(options.hello, 'world')
     },
-    async delete() {
+    async delete () {
       t.fail()
     }
   }
@@ -180,13 +180,13 @@ test('instance:delete-one', async t => {
   t.plan(3)
 
   const adapter = {
-    async create() {
+    async create () {
       t.fail()
     },
-    async update() {
+    async update () {
       t.fail()
     },
-    async delete(source, options) {
+    async delete (source, options) {
       t.deepEqual(source, {
         id: 0
       })
@@ -204,9 +204,9 @@ test('instance:delete-one', async t => {
   })
 })
 
-function bind(t, mode = {}) {
+function bind (t, mode = {}) {
   const adapter = {
-    async create(target, options) {
+    async create (target, options) {
       if (mode.create === true) {
         t.pass()
       } else {
@@ -214,7 +214,7 @@ function bind(t, mode = {}) {
       }
       t.is(options.db, 'test')
     },
-    async update(source, target, options) {
+    async update (source, target, options) {
       if (mode.update === true) {
         t.pass()
       } else {
@@ -222,7 +222,7 @@ function bind(t, mode = {}) {
       }
       t.is(options.db, 'test')
     },
-    async delete(source, options) {
+    async delete (source, options) {
       if (mode.delete === true) {
         t.pass()
       } else {
@@ -234,7 +234,7 @@ function bind(t, mode = {}) {
   return { adapter }
 }
 
-function getItems(count = 16) {
+function getItems (count = 16) {
   const items = []
   for (let i = 0; i < count; i++) {
     items.push({ id: i * 2 })

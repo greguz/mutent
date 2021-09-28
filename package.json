@@ -2,8 +2,8 @@
   "name": "mutent",
   "version": "5.0.0-7",
   "description": "Elegant and agnostic solution to work with any persistence layer",
-  "main": "mutent.js",
-  "types": "types/index.d.ts",
+  "main": "./mutent.js",
+  "types": "./types/index.d.ts",
   "files": [
     "mutent.js",
     "types"
@@ -20,33 +20,23 @@
     "stream"
   ],
   "scripts": {
-    "lint:prettier": "prettier --write src",
-    "lint:eslint": "eslint --fix src",
-    "lint": "npm run lint:prettier && npm run lint:eslint",
-    "test:unit": "nyc --reporter=lcov --reporter=text-summary ava",
-    "test": "npm run lint && npm run test:unit",
-    "build": "rollup -c && prettier --write mutent.js",
-    "prepublishOnly": "npm run test && npm run build"
+    "lint": "standard --fix src",
+    "test": "nyc --reporter=lcov --reporter=text-summary ava",
+    "build": "rollup -c",
+    "prepublishOnly": "npm run build && npm run test"
   },
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "dependencies": {
-    "ajv": "^8.6.2",
+    "ajv": "^8.6.3",
     "lodash.get": "^4.4.2"
   },
   "devDependencies": {
     "ava": "^3.15.0",
-    "eslint": "^7.31.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.23.4",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.1.0",
     "esm": "^3.2.25",
     "nyc": "^15.1.0",
-    "prettier": "^2.3.2",
-    "rimraf": "^3.0.2",
-    "rollup": "^2.55.0"
+    "rollup": "^2.57.0",
+    "standard": "^16.0.3"
   },
   "repository": {
     "type": "git",

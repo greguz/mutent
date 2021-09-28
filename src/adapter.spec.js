@@ -15,22 +15,22 @@ import {
 } from './status'
 
 const defaultAdapter = {
-  find() {
+  find () {
     throw new Error('adapter#find')
   },
-  filter() {
+  filter () {
     throw new Error('adapter#filter')
   },
-  create() {
+  create () {
     throw new Error('adapter#create')
   },
-  update() {
+  update () {
     throw new Error('adapter#update')
   },
-  delete() {
+  delete () {
     throw new Error('adapter#delete')
   },
-  bulk() {
+  bulk () {
     throw new Error('adapter#bulk')
   }
 }
@@ -41,18 +41,18 @@ test('adapter:create', async t => {
   const context = {
     adapter: {
       ...defaultAdapter,
-      create(data, options) {
+      create (data, options) {
         t.is(data, 'CREATE')
         t.deepEqual(options, { my: 'option' })
         return data.toLowerCase()
       }
     },
     hooks: {
-      beforeCreate(data, options) {
+      beforeCreate (data, options) {
         t.is(data, 'CREATE')
         t.deepEqual(options, { my: 'option' })
       },
-      afterCreate(data, options) {
+      afterCreate (data, options) {
         t.is(data, 'create')
         t.deepEqual(options, { my: 'option' })
       }
@@ -78,7 +78,7 @@ test('adapter:update', async t => {
   const context = {
     adapter: {
       ...defaultAdapter,
-      update(source, target, options) {
+      update (source, target, options) {
         t.is(source, '')
         t.is(target, 'UPDATE')
         t.deepEqual(options, { my: 'option' })
@@ -86,12 +86,12 @@ test('adapter:update', async t => {
       }
     },
     hooks: {
-      beforeUpdate(oldData, newData, options) {
+      beforeUpdate (oldData, newData, options) {
         t.is(oldData, '')
         t.is(newData, 'UPDATE')
         t.deepEqual(options, { my: 'option' })
       },
-      afterUpdate(oldData, newData, options) {
+      afterUpdate (oldData, newData, options) {
         t.is(oldData, '')
         t.is(newData, 'update')
         t.deepEqual(options, { my: 'option' })
@@ -120,18 +120,18 @@ test('adapter:delete', async t => {
   const context = {
     adapter: {
       ...defaultAdapter,
-      delete(data, options) {
+      delete (data, options) {
         t.is(data, 'DELETE')
         t.deepEqual(options, { my: 'option' })
         return data.toLowerCase()
       }
     },
     hooks: {
-      beforeDelete(data, options) {
+      beforeDelete (data, options) {
         t.is(data, 'DELETE')
         t.deepEqual(options, { my: 'option' })
       },
-      afterDelete(data, options) {
+      afterDelete (data, options) {
         t.is(data, 'DELETE')
         t.deepEqual(options, { my: 'option' })
       }
@@ -159,7 +159,7 @@ test('adapter:bulk', async t => {
   const context = {
     adapter: {
       ...defaultAdapter,
-      bulk(actions, options) {
+      bulk (actions, options) {
         t.deepEqual(actions, [
           {
             type: 'CREATE',
@@ -180,7 +180,7 @@ test('adapter:bulk', async t => {
       }
     },
     hooks: {
-      beforeBulk(actions, options) {
+      beforeBulk (actions, options) {
         t.deepEqual(actions, [
           {
             type: 'CREATE',
@@ -198,7 +198,7 @@ test('adapter:bulk', async t => {
         ])
         t.deepEqual(options, { my: 'option' })
       },
-      afterBulk(actions, options) {
+      afterBulk (actions, options) {
         t.deepEqual(actions, [
           {
             type: 'CREATE',
@@ -267,7 +267,7 @@ test('adapter:broken-bulk', async t => {
   const context = {
     adapter: {
       ...defaultAdapter,
-      bulk(actions, options) {
+      bulk (actions, options) {
         t.true(actions.length === 2 || actions.length === 1)
         t.deepEqual(options, { my: 'option' })
       }

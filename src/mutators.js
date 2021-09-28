@@ -1,8 +1,8 @@
 import { bulkWrite, sequentialWrite } from './adapter'
 import { deleteStatus, updateStatus } from './status'
 
-export function filter(predicate) {
-  return async function* mutatorFilter(iterable) {
+export function filter (predicate) {
+  return async function * mutatorFilter (iterable) {
     let index = 0
     for await (const status of iterable) {
       if (predicate(status.target, index++)) {
@@ -12,16 +12,16 @@ export function filter(predicate) {
   }
 }
 
-export function ddelete() {
-  return async function* mutatorDelete(iterable) {
+export function ddelete () {
+  return async function * mutatorDelete (iterable) {
     for await (const status of iterable) {
       yield deleteStatus(status)
     }
   }
 }
 
-export function commit() {
-  return function mutatorCommit(iterable, options) {
+export function commit () {
+  return function mutatorCommit (iterable, options) {
     const { adapter, multiple } = this
 
     const mutentOptions = options.mutent || {}
@@ -36,11 +36,11 @@ export function commit() {
   }
 }
 
-async function* wrapValue(item) {
+async function * wrapValue (item) {
   yield item
 }
 
-async function unwrapIterable(iterable) {
+async function unwrapIterable (iterable) {
   let result
   for await (const item of iterable) {
     result = item
@@ -48,11 +48,11 @@ async function unwrapIterable(iterable) {
   return result
 }
 
-function passthrough(iterable) {
+function passthrough (iterable) {
   return iterable
 }
 
-export function iif(
+export function iif (
   condition,
   whenTrue = passthrough,
   whenFalse = passthrough
@@ -60,7 +60,7 @@ export function iif(
   if (typeof condition !== 'function') {
     return condition ? whenTrue : whenFalse
   }
-  return async function* mutatorConditional(iterable, options) {
+  return async function * mutatorConditional (iterable, options) {
     let index = 0
     for await (const status of iterable) {
       if (condition(status.target, index++)) {
@@ -72,8 +72,8 @@ export function iif(
   }
 }
 
-export function update(mapper) {
-  return async function* mutatorUpdate(iterable) {
+export function update (mapper) {
+  return async function * mutatorUpdate (iterable) {
     let index = 0
     for await (const status of iterable) {
       yield updateStatus(status, await mapper(status.target), index++)
@@ -81,12 +81,12 @@ export function update(mapper) {
   }
 }
 
-export function assign(...objects) {
+export function assign (...objects) {
   return update(data => Object.assign({}, data, ...objects))
 }
 
-export function tap(callback) {
-  return async function* mutatorTap(iterable) {
+export function tap (callback) {
+  return async function * mutatorTap (iterable) {
     let index = 0
     for await (const status of iterable) {
       await callback(status.target, index++)
@@ -95,8 +95,8 @@ export function tap(callback) {
   }
 }
 
-export function pipe(...mutators) {
-  return function mutatorPipe(iterable, options) {
+export function pipe (...mutators) {
+  return function mutatorPipe (iterable, options) {
     return mutators.reduce(
       (accumulator, mutator) => mutator.call(this, accumulator, options),
       iterable

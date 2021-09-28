@@ -12,21 +12,21 @@ import {
   updateStatus
 } from './status'
 
-export function adapterFind({ adapter, argument, hooks }, options) {
+export function adapterFind ({ adapter, argument, hooks }, options) {
   if (hooks.onFind) {
     hooks.onFind(argument, options)
   }
   return adapter.find(argument, options)
 }
 
-export function adapterFilter({ adapter, argument, hooks }, options) {
+export function adapterFilter ({ adapter, argument, hooks }, options) {
   if (hooks.onFilter) {
     hooks.onFilter(argument, options)
   }
   return adapter.filter(argument, options)
 }
 
-function validateConstants({ intent, store }, status) {
+function validateConstants ({ intent, store }, status) {
   for (const constant of readConstants(status.source)) {
     if (!isConstantValid(constant, status.target)) {
       throw new MutentError('EMUT_CONSTANT', 'Constant value changed', {
@@ -39,7 +39,7 @@ function validateConstants({ intent, store }, status) {
   }
 }
 
-function validateStatus({ intent, store, validate }, status, options) {
+function validateStatus ({ intent, store, validate }, status, options) {
   const mutentOptions = options.mutent || {}
   if (!mutentOptions.ignoreSchema && validate && !validate(status.target)) {
     throw new MutentError(
@@ -55,7 +55,7 @@ function validateStatus({ intent, store, validate }, status, options) {
   }
 }
 
-export async function adapterCreate(context, status, options) {
+export async function adapterCreate (context, status, options) {
   const { adapter, hooks } = context
   validateStatus(context, status, options)
   if (hooks.beforeCreate) {
@@ -71,7 +71,7 @@ export async function adapterCreate(context, status, options) {
   return commitStatus(status)
 }
 
-export async function adapterUpdate(context, status, options) {
+export async function adapterUpdate (context, status, options) {
   const { adapter, hooks } = context
   validateStatus(context, status, options)
   validateConstants(context, status)
@@ -91,7 +91,7 @@ export async function adapterUpdate(context, status, options) {
   return commitStatus(status)
 }
 
-export async function adapterDelete({ adapter, hooks }, status, options) {
+export async function adapterDelete ({ adapter, hooks }, status, options) {
   if (hooks.beforeDelete) {
     await hooks.beforeDelete(status.source, options)
   }
@@ -102,7 +102,7 @@ export async function adapterDelete({ adapter, hooks }, status, options) {
   return commitStatus(status)
 }
 
-export async function adapterWrite(context, status, options) {
+export async function adapterWrite (context, status, options) {
   if (shouldCreate(status)) {
     return adapterCreate(context, status, options)
   } else if (shouldUpdate(status)) {
@@ -114,13 +114,13 @@ export async function adapterWrite(context, status, options) {
   }
 }
 
-export async function* sequentialWrite(context, iterable, options) {
+export async function * sequentialWrite (context, iterable, options) {
   for await (const status of iterable) {
     yield adapterWrite(context, status, options)
   }
 }
 
-function commitBulkStatus(action, status, result) {
+function commitBulkStatus (action, status, result) {
   if (action.type === 'CREATE') {
     status = updateStatus(status, result)
   } else if (action.type === 'UPDATE') {
@@ -132,7 +132,7 @@ function commitBulkStatus(action, status, result) {
   return commitStatus(status)
 }
 
-function commitBulkItem(item, result) {
+function commitBulkItem (item, result) {
   const action = item.action
   const oldStatus = item.status
   const newStatus = commitBulkStatus(action, oldStatus, result)
@@ -162,7 +162,7 @@ function commitBulkItem(item, result) {
   }
 }
 
-async function* flushBulkItems(context, items, options) {
+async function * flushBulkItems (context, items, options) {
   const { adapter, hooks, intent, store } = context
 
   if (hooks.beforeBulk) {
@@ -216,7 +216,7 @@ async function* flushBulkItems(context, items, options) {
   }
 }
 
-export async function* bulkWrite(context, iterable, options) {
+export async function * bulkWrite (context, iterable, options) {
   if (!context.adapter.bulk) {
     throw new MutentError(
       'EMUT_PARTIAL_ADAPTER',
