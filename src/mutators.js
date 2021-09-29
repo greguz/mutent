@@ -76,13 +76,13 @@ export function update (mapper) {
   return async function * mutatorUpdate (iterable) {
     let index = 0
     for await (const status of iterable) {
-      yield updateStatus(status, await mapper(status.target), index++)
+      yield updateStatus(status, await mapper(status.target, index++))
     }
   }
 }
 
 export function assign (...objects) {
-  return update(data => Object.assign({}, data, ...objects))
+  return update((data) => Object.assign({}, data, ...objects))
 }
 
 export function tap (callback) {

@@ -45,7 +45,10 @@ test('mutator:assign', async t => {
 test('mutator:update', async t => {
   const out = await unwrap({
     iterable: read(41.9),
-    mutator: update(Math.round)
+    mutator: update((value, index) => {
+      t.is(index, 0)
+      return Math.round(value)
+    })
   })
   t.deepEqual(out, [
     {
