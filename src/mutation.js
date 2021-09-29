@@ -1,5 +1,6 @@
 import { adapterFilter, adapterFind } from './adapter'
 import { MutentError } from './error'
+import { isAsyncIterable, isIterable } from './iterable'
 import { assign, commit, ddelete, filter, iif, tap, update } from './mutators'
 import { createStatus, readStatus, shouldCommit } from './status'
 
@@ -15,14 +16,6 @@ function readContext (context, options) {
     case 'FILTER':
       return adapterFilter(context, options)
   }
-}
-
-function isAsyncIterable (value) {
-  return Symbol.asyncIterator in Object(value)
-}
-
-function isIterable (value) {
-  return Symbol.iterator in Object(value)
 }
 
 async function * fromPromise (blob) {

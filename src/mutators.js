@@ -1,4 +1,5 @@
 import { bulkWrite, sequentialWrite } from './adapter'
+import { unwrapIterable } from './iterable'
 import { deleteStatus, updateStatus } from './status'
 
 export function filter (predicate) {
@@ -36,18 +37,6 @@ export function commit () {
   }
 }
 
-async function * wrapValue (item) {
-  yield item
-}
-
-async function unwrapIterable (iterable) {
-  let result
-  for await (const item of iterable) {
-    result = item
-  }
-  return result
-}
-
 function passthrough (iterable) {
   return iterable
 }
@@ -57,18 +46,51 @@ export function iif (
   whenTrue = passthrough,
   whenFalse = passthrough
 ) {
-  if (typeof condition !== 'function') {
+  if (typeof condition === 'boolean') {
     return condition ? whenTrue : whenFalse
   }
-  return async function * mutatorConditional (iterable, options) {
-    let index = 0
-    for await (const status of iterable) {
-      if (condition(status.target, index++)) {
-        yield unwrapIterable(whenTrue.call(this, wrapValue(status), options))
-      } else {
-        yield unwrapIterable(whenFalse.call(this, wrapValue(status), options))
-      }
+  if (typeof condition !== 'function') {
+    throw new TypeError('Condition must be either a boolean or a function')
+  }
+  return async function * mutatorConditional (iterSource, options) {
+    const iterProxy = {
+      [Symbol.iterator]() {
+        return this
+      },
+      next () {
+        const value = this.value
+        this.value = undefined
+        return {
+          done: value === undefined,
+          value
+        }
+      },
+      value: undefined
     }
+
+    const iterTrue = unwrapIterable(whenTrue.call(this, iterProxy, options))
+    const iterFalse = unwrapIterable(whenFalse.call(this, iterProxy, options))
+
+    let index = 0
+    for await (const status of iterSource) {
+      // Choose the correct (target) iterable
+      const iterTarget = condition(status.target, index++)
+        ? iterTrue
+        : iterFalse
+
+      // Prepare the proxy and retrieve the next value
+      iterProxy.value = status
+      const result = await iterTarget.next()
+
+      // Yield out the result
+      yield result.value
+    }
+
+    // Close map iterables
+    await Promise.all([
+      iterTrue.next(),
+      iterFalse.next()
+    ])
   }
 }
 
