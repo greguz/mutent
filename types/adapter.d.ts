@@ -41,7 +41,7 @@ export interface Adapter<T, Q, O> {
   bulk?(
     actions: Array<BulkAction<T>>,
     options: UnwrapOptions<O>
-  ): Result<T[] | Nullish>
+  ): Result<Record<number, T> | Record<string, T> | Nullish>
 }
 
 /**
