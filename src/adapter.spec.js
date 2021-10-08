@@ -323,14 +323,14 @@ test('adapter:broken-bulk', async t => {
 })
 
 test('adapter:concurrent', async t => {
-  t.plan(9)
+  t.plan(12)
 
   let concurrency = 0
 
   const context = {
     adapter: {
-      create () {
-        t.is(concurrency, 2)
+      create (data) {
+        t.is(concurrency, data === 'E' ? 1 : 2)
       }
     },
     hooks: {
@@ -348,12 +348,17 @@ test('adapter:concurrent', async t => {
     createStatus('A'),
     createStatus('B'),
     createStatus('C'),
-    createStatus('D')
+    createStatus('D'),
+    createStatus('E')
   ]
 
   const options = {}
 
   const iterator = concurrentWrite(context, iterable, options)
+
+  t.throwsAsync(
+    () => concurrentWrite(context, iterable, { mutent: { writeSize: 0 } }).next()
+  )
 
   t.deepEqual(await iterator.next(), {
     done: false,
@@ -370,6 +375,10 @@ test('adapter:concurrent', async t => {
   t.deepEqual(await iterator.next(), {
     done: false,
     value: readStatus('D')
+  })
+  t.deepEqual(await iterator.next(), {
+    done: false,
+    value: readStatus('E')
   })
   t.deepEqual(await iterator.next(), {
     done: true,

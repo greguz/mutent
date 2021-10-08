@@ -123,18 +123,27 @@ export async function * sequentialWrite (context, iterable, options) {
 export async function * concurrentWrite (context, iterable, options) {
   const writeSize = getWriteSize(context, options)
 
-  let buffer = []
+  let items = []
   for await (const status of iterable) {
-    buffer.push(status)
+    items.push(status)
 
-    if (buffer.length >= writeSize) {
+    if (items.length >= writeSize) {
       const results = await Promise.all(
-        buffer.map(item => adapterWrite(context, item, options))
+        items.map(item => adapterWrite(context, item, options))
       )
-      buffer = []
+      items = []
       for (const result of results) {
         yield result
       }
+    }
+  }
+  if (items.length > 0) {
+    const results = await Promise.all(
+      items.map(item => adapterWrite(context, item, options))
+    )
+    items = []
+    for (const result of results) {
+      yield result
     }
   }
 }
