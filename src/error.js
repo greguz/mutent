@@ -1,12 +1,14 @@
 export class MutentError extends Error {
-  constructor (code, message, info = {}) {
+  constructor (code, message, info) {
     super(message)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor)
     }
     this.name = 'MutentError'
     this.code = code
-    this.info = info
+    if (info) {
+      this.info = info
+    }
   }
 
   get [Symbol.toStringTag] () {
