@@ -28,7 +28,7 @@ export function updateStatus ({ created, deleted, source }, target) {
   if (target === null || target === undefined) {
     throw new MutentError(
       'EMUT_NULLISH_UPDATE',
-      'Cannot accpet nullish values as entity update',
+      'Cannot accept nullish values as entity update',
       { data: source }
     )
   }
