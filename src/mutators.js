@@ -1,4 +1,4 @@
-import { bulkWrite, sequentialWrite } from './adapter'
+import { bulkWrite, concurrentWrite, sequentialWrite } from './adapter'
 import { unwrapIterable } from './iterable'
 import { deleteStatus, updateStatus } from './status'
 
@@ -26,11 +26,16 @@ export function commit () {
     const { adapter, multiple } = this
 
     const mutentOptions = options.mutent || {}
-    const writeMode = mutentOptions.writeMode || this.writeMode || 'AUTO'
-    const autoBulk = writeMode === 'AUTO' && multiple && !!adapter.bulk
 
-    if (writeMode === 'BULK' || autoBulk) {
+    let writeMode = mutentOptions.writeMode || this.writeMode || 'AUTO'
+    if (writeMode === 'AUTO') {
+      writeMode = multiple && adapter.bulk ? 'BULK' : 'SEQUENTIAL'
+    }
+
+    if (writeMode === 'BULK') {
       return bulkWrite(this, iterable, options)
+    } else if (writeMode === 'CONCURRENT') {
+      return concurrentWrite(this, iterable, options)
     } else {
       return sequentialWrite(this, iterable, options)
     }
@@ -54,7 +59,7 @@ export function iif (
   }
   return async function * mutatorConditional (iterSource, options) {
     const iterProxy = {
-      [Symbol.iterator]() {
+      [Symbol.iterator] () {
         return this
       },
       next () {

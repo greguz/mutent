@@ -6,7 +6,7 @@ export declare type Lazy<T, A> = T | ((arg: A) => T)
 /**
  * A nullish value (plus "void" because TS is a special baby)
  */
-export type Nullish = null | undefined | void
+export declare type Nullish = null | undefined | void
 
 /**
  * An optionally Promise-wrapped value

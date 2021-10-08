@@ -4,7 +4,8 @@ import {
   adapterCreate,
   adapterDelete,
   adapterUpdate,
-  bulkWrite
+  bulkWrite,
+  concurrentWrite
 } from './adapter'
 import {
   commitStatus,
@@ -316,6 +317,61 @@ test('adapter:broken-bulk', async t => {
 
   const end = await iterator.next()
   t.deepEqual(end, {
+    done: true,
+    value: undefined
+  })
+})
+
+test('adapter:concurrent', async t => {
+  t.plan(9)
+
+  let concurrency = 0
+
+  const context = {
+    adapter: {
+      create () {
+        t.is(concurrency, 2)
+      }
+    },
+    hooks: {
+      beforeCreate () {
+        concurrency++
+      },
+      afterCreate () {
+        concurrency--
+      }
+    },
+    writeSize: 2
+  }
+
+  const iterable = [
+    createStatus('A'),
+    createStatus('B'),
+    createStatus('C'),
+    createStatus('D')
+  ]
+
+  const options = {}
+
+  const iterator = concurrentWrite(context, iterable, options)
+
+  t.deepEqual(await iterator.next(), {
+    done: false,
+    value: readStatus('A')
+  })
+  t.deepEqual(await iterator.next(), {
+    done: false,
+    value: readStatus('B')
+  })
+  t.deepEqual(await iterator.next(), {
+    done: false,
+    value: readStatus('C')
+  })
+  t.deepEqual(await iterator.next(), {
+    done: false,
+    value: readStatus('D')
+  })
+  t.deepEqual(await iterator.next(), {
     done: true,
     value: undefined
   })

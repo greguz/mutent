@@ -62,6 +62,7 @@ test('mutator:update', async t => {
 })
 
 test('mutator:iif', async t => {
+  t.throws(() => iif(null))
   const out = await unwrap({
     iterable: read(42, 13),
     mutator: iif(

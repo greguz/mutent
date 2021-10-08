@@ -11,8 +11,9 @@ export declare type CommitMode = 'AUTO' | 'MANUAL' | 'SAFE'
  * - AUTO: Choose the appropriate write mode from the current context.
  * - SEQUENTIAL: Simple sequential adapter write (uses one of adapter #create, #update, #delete method).
  * - BULK: Bulk adapter writes (uses adapter #bulk method).
+ * - CONCURRENT: Send concurrent writes (uses one of adapter #create, #update, #delete method).
  */
-export declare type WriteMode = 'AUTO' | 'BULK' | 'SEQUENTIAL'
+export declare type WriteMode = 'AUTO' | 'BULK' | 'CONCURRENT' | 'SEQUENTIAL'
 
 /**
  * Namespaced mutent options.
