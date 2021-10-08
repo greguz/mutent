@@ -57,9 +57,7 @@ async function * iterateOne (context, blob, mutators, options) {
     mutators,
     options
   )) {
-    if (count++ > 0) {
-      throw new Error('Unexpected iteration')
-    }
+    count++
     yield data
   }
   if (count <= 0 && intent !== 'FIND') {
