@@ -1,6 +1,6 @@
 {
   "name": "mutent",
-  "version": "5.0.0-8",
+  "version": "5.0.0-9",
   "description": "Elegant and agnostic solution to work with any persistence layer",
   "main": "./mutent.js",
   "types": "./mutent.d.ts",
