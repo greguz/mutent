@@ -26,28 +26,46 @@ export class Store {
     }
 
     this._adapter = adapter
-    this._commitMode = parseCommitMode(commitMode)
-    this._hooks = normalizeHooks(hooks)
-    this._mutators = normalizeMutators(mutators)
+    this._commitMode = 'AUTO'
+    this._hooks = normalizeHooks({})
+    this._mutators = []
     this._name = name || readAdapterName(adapter) || 'anonymous'
-    this._writeMode = parseWriteMode(writeMode)
-    this._writeSize = parseWriteSize(writeSize)
+    this._writeMode = 'AUTO'
+    this._writeSize = 16
+
+    this.extend({ commitMode, hooks, mutators, writeMode, writeSize })
   }
 
   create (data) {
     return this.mutation('CREATE', data)
   }
 
-  extend ({ commitMode, hooks, mutators, writeMode, writeSize }) {
-    return new Store({
-      adapter: this._adapter,
-      commitMode: commitMode === undefined ? this._commitMode : commitMode,
-      hooks: mergeHooks(this._hooks, normalizeHooks(hooks)),
-      mutators: this._mutators.concat(normalizeMutators(mutators)),
-      name: this._name,
-      writeMode: writeMode === undefined ? this._writeMode : writeMode,
-      writeSize: writeSize === undefined ? this._writeSize : writeSize
-    })
+  extend (options) {
+    const {
+      commitMode,
+      hooks,
+      mutators,
+      writeMode,
+      writeSize
+    } = Object(options)
+
+    if (commitMode !== undefined) {
+      this._commitMode = parseCommitMode(commitMode)
+    }
+    if (hooks !== undefined) {
+      this._hooks = mergeHooks(this._hooks, normalizeHooks(hooks))
+    }
+    if (mutators !== undefined) {
+      this._mutators = this._mutators.concat(normalizeMutators(mutators))
+    }
+    if (writeMode !== undefined) {
+      this._writeMode = parseWriteMode(writeMode)
+    }
+    if (writeSize !== undefined) {
+      this._writeSize = parseWriteSize(writeSize)
+    }
+
+    return this
   }
 
   filter (query) {

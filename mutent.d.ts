@@ -473,7 +473,7 @@ export declare class Store<T, Q, O> {
   /**
    * Update store's configuration. Hooks and mutators will be joined.
    */
-  public extend(options: MutentOptions<T, Q, O>): Store<T, Q, O>;
+  public extend(options: MutentOptions<T, Q, O>): this;
 }
 
 /**
