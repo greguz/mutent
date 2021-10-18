@@ -3,6 +3,5 @@ export default {
   output: {
     file: 'mutent.js',
     format: 'cjs'
-  },
-  external: ['ajv', 'lodash.get']
+  }
 }

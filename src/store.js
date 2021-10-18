@@ -1,156 +1,82 @@
-import { Engine } from './engine'
-import { MutentError } from './error'
-import { mutatorMigrate } from './migration'
+import { readAdapterName } from './adapter'
 import { Mutation } from './mutation'
-
-function ensureEngine (options) {
-  const { engine } = options
-  return engine || Engine.create(options)
-}
-
-async function * mutatorHook (iterable, options) {
-  for await (const status of iterable) {
-    await this.hooks.onData(this.intent, status.target, options)
-    yield status
-  }
-}
-
-async function * mutatorSchema (iterable) {
-  for await (const status of iterable) {
-    if (!this.validate(status.target)) {
-      throw new MutentError(
-        'EMUT_INVALID_ENTITY',
-        'Current entity does not match the configured schema',
-        {
-          data: status.target,
-          errors: this.validate.errors,
-          intent: this.intent,
-          store: this.store
-        }
-      )
-    }
-    yield status
-  }
-}
-
-function handleSchema (iterable, options) {
-  const mutentOptions = options.mutent || {}
-  return mutentOptions.ignoreSchema
-    ? iterable
-    : mutatorSchema.call(this, iterable, options)
-}
+import {
+  mergeHooks,
+  normalizeHooks,
+  normalizeMutators,
+  parseCommitMode,
+  parseWriteMode,
+  parseWriteSize
+} from './options'
 
 export class Store {
-  static create (options) {
-    return new Store(options)
-  }
-
   constructor (options) {
     const {
       adapter,
-      commitMode = 'AUTO',
-      hooks = {},
-      migrationStrategies = {},
+      commitMode,
+      hooks,
+      mutators,
       name,
-      schema = null,
-      version = null,
-      versionKey = 'v',
-      writeMode = 'AUTO',
-      writeSize = 16
-    } = options
+      writeMode,
+      writeSize
+    } = Object(options)
 
-    if (!name) {
-      throw new Error('Store name is required')
-    }
     if (!adapter) {
       throw new Error('Adapter is required')
     }
 
-    const engine = ensureEngine(options)
-    const validate = schema ? engine.compile(schema) : null
-
-    this.name = name
-    this.version = version
-
-    this._context = {
-      adapter,
-      commitMode,
-      hooks,
-      migrationStrategies,
-      multiple: null,
-      schema,
-      store: name,
-      validate,
-      version,
-      versionKey,
-      writeMode,
-      writeSize
-    }
-
-    this._mutators = []
-    if (hooks.onData) {
-      this._mutators.push(mutatorHook)
-    }
-    if (version !== null) {
-      this._mutators.push(mutatorMigrate)
-    }
-    if (validate) {
-      this._mutators.push(handleSchema)
-    }
+    this._adapter = adapter
+    this._commitMode = parseCommitMode(commitMode)
+    this._hooks = normalizeHooks(hooks)
+    this._mutators = normalizeMutators(mutators)
+    this._name = name || readAdapterName(adapter) || 'anonymous'
+    this._writeMode = parseWriteMode(writeMode)
+    this._writeSize = parseWriteSize(writeSize)
   }
 
   create (data) {
-    return new Mutation(
-      {
-        ...this._context,
-        argument: data,
-        intent: 'CREATE'
-      },
-      this._mutators
-    )
+    return this.mutation('CREATE', data)
   }
 
-  find (query) {
-    return new Mutation(
-      {
-        ...this._context,
-        argument: query,
-        intent: 'FIND'
-      },
-      this._mutators
-    )
-  }
-
-  read (query) {
-    return new Mutation(
-      {
-        ...this._context,
-        argument: query,
-        intent: 'READ'
-      },
-      this._mutators
-    )
+  extend ({ commitMode, hooks, mutators, writeMode, writeSize }) {
+    return new Store({
+      adapter: this._adapter,
+      commitMode: commitMode === undefined ? this._commitMode : commitMode,
+      hooks: mergeHooks(this._hooks, normalizeHooks(hooks)),
+      mutators: this._mutators.concat(normalizeMutators(mutators)),
+      name: this._name,
+      writeMode: writeMode === undefined ? this._writeMode : writeMode,
+      writeSize: writeSize === undefined ? this._writeSize : writeSize
+    })
   }
 
   filter (query) {
-    return new Mutation(
-      {
-        ...this._context,
-        argument: query,
-        intent: 'FILTER'
-      },
-      this._mutators
-    )
+    return this.mutation('FILTER', query)
+  }
+
+  find (query) {
+    return this.mutation('FIND', query)
   }
 
   from (data) {
-    return new Mutation(
-      {
-        ...this._context,
-        argument: data,
-        intent: 'FROM'
-      },
-      this._mutators
-    )
+    return this.mutation('FROM', data)
+  }
+
+  mutation (intent, argument) {
+    return new Mutation({
+      adapter: this._adapter,
+      argument,
+      commitMode: this._commitMode,
+      hooks: this._hooks,
+      intent,
+      mutators: this._mutators,
+      store: this._name,
+      writeMode: this._writeMode,
+      writeSize: this._writeSize
+    })
+  }
+
+  read (query) {
+    return this.mutation('READ', query)
   }
 }

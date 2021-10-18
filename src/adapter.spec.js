@@ -1,19 +1,13 @@
 import test from 'ava'
 
 import {
-  adapterCreate,
-  adapterDelete,
-  adapterUpdate,
   bulkWrite,
-  concurrentWrite
+  concurrentWrite,
+  iterateContext,
+  readAdapterName,
+  writeEntity
 } from './adapter'
-import {
-  commitStatus,
-  createStatus,
-  deleteStatus,
-  readStatus,
-  updateStatus
-} from './status'
+import { Entity } from './entity'
 
 const defaultAdapter = {
   find () {
@@ -36,8 +30,39 @@ const defaultAdapter = {
   }
 }
 
+test('adapter:errors', async t => {
+  const adapter = {}
+
+  t.throws(
+    () => iterateContext({
+      adapter,
+      intent: 'FIND'
+    }),
+    { code: 'EMUR_PARTIAL_ADAPTER' }
+  )
+  t.throws(
+    () => iterateContext({
+      adapter,
+      intent: 'FILTER'
+    }),
+    { code: 'EMUR_PARTIAL_ADAPTER' }
+  )
+  await t.throwsAsync(
+    writeEntity(Entity.create('CREATE'), { adapter }),
+    { code: 'EMUR_PARTIAL_ADAPTER' }
+  )
+  await t.throwsAsync(
+    writeEntity(Entity.read('READ').update('UPDATE'), { adapter }),
+    { code: 'EMUR_PARTIAL_ADAPTER' }
+  )
+  await t.throwsAsync(
+    writeEntity(Entity.read('READ').delete(), { adapter }),
+    { code: 'EMUR_PARTIAL_ADAPTER' }
+  )
+})
+
 test('adapter:create', async t => {
-  t.plan(7)
+  t.plan(9)
 
   const context = {
     adapter: {
@@ -49,74 +74,80 @@ test('adapter:create', async t => {
       }
     },
     hooks: {
-      beforeCreate (data, options) {
-        t.is(data, 'CREATE')
-        t.deepEqual(options, { my: 'option' })
-      },
-      afterCreate (data, options) {
-        t.is(data, 'create')
-        t.deepEqual(options, { my: 'option' })
-      }
+      beforeCreate: [
+        (entity, context) => {
+          t.is(entity.valueOf(), 'CREATE')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      afterCreate: [
+        (entity, context) => {
+          t.is(entity.valueOf(), 'create')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ]
+    },
+    options: {
+      my: 'option'
     }
   }
 
-  const status = await adapterCreate(context, createStatus('CREATE'), {
-    my: 'option'
-  })
+  const result = await writeEntity(
+    Entity.create('CREATE'),
+    context
+  )
 
-  t.deepEqual(status, {
-    created: false,
-    updated: false,
-    deleted: false,
-    source: 'create',
-    target: 'create'
-  })
+  t.true(result instanceof Entity)
+  t.is(result.source, 'create')
+  t.is(result.target, 'create')
 })
 
 test('adapter:update', async t => {
-  t.plan(10)
+  t.plan(12)
 
   const context = {
     adapter: {
       ...defaultAdapter,
-      update (source, target, options) {
-        t.is(source, '')
-        t.is(target, 'UPDATE')
-        t.deepEqual(options, { my: 'option' })
-        return target.toLowerCase()
-      }
-    },
-    hooks: {
-      beforeUpdate (oldData, newData, options) {
+      update (oldData, newData, options) {
         t.is(oldData, '')
         t.is(newData, 'UPDATE')
         t.deepEqual(options, { my: 'option' })
-      },
-      afterUpdate (oldData, newData, options) {
-        t.is(oldData, '')
-        t.is(newData, 'update')
-        t.deepEqual(options, { my: 'option' })
+        return newData.toLowerCase()
       }
+    },
+    hooks: {
+      beforeUpdate: [
+        (entity, context) => {
+          t.is(entity.source, '')
+          t.is(entity.target, 'UPDATE')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      afterUpdate: [
+        (entity, context) => {
+          t.is(entity.source, '')
+          t.is(entity.target, 'update')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ]
+    },
+    options: {
+      my: 'option'
     }
   }
 
-  const status = await adapterUpdate(
-    context,
-    updateStatus(readStatus(''), 'UPDATE'),
-    { my: 'option' }
+  const result = await writeEntity(
+    Entity.read('').update('UPDATE'),
+    context
   )
 
-  t.deepEqual(status, {
-    created: false,
-    updated: false,
-    deleted: false,
-    source: 'update',
-    target: 'update'
-  })
+  t.true(result instanceof Entity)
+  t.is(result.source, 'update')
+  t.is(result.target, 'update')
 })
 
 test('adapter:delete', async t => {
-  t.plan(7)
+  t.plan(9)
 
   const context = {
     adapter: {
@@ -128,34 +159,36 @@ test('adapter:delete', async t => {
       }
     },
     hooks: {
-      beforeDelete (data, options) {
-        t.is(data, 'DELETE')
-        t.deepEqual(options, { my: 'option' })
-      },
-      afterDelete (data, options) {
-        t.is(data, 'DELETE')
-        t.deepEqual(options, { my: 'option' })
-      }
+      beforeDelete: [
+        (entity, context) => {
+          t.is(entity.source, 'DELETE')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      afterDelete: [
+        (entity, context) => {
+          t.is(entity.source, 'DELETE')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ]
+    },
+    options: {
+      my: 'option'
     }
   }
 
-  const status = await adapterDelete(
-    context,
-    deleteStatus(updateStatus(readStatus('DELETE'), 'UPDATE')),
-    { my: 'option' }
+  const result = await writeEntity(
+    Entity.read('DELETE').update('UPDATE').delete(),
+    context
   )
 
-  t.deepEqual(status, {
-    created: false,
-    updated: false,
-    deleted: false,
-    source: null,
-    target: 'UPDATE'
-  })
+  t.true(result instanceof Entity)
+  t.is(result.source, null)
+  t.is(result.target, 'UPDATE')
 })
 
 test('adapter:bulk', async t => {
-  t.plan(10)
+  t.plan(20)
 
   const context = {
     adapter: {
@@ -181,82 +214,76 @@ test('adapter:bulk', async t => {
       }
     },
     hooks: {
-      beforeBulk (actions, options) {
-        t.deepEqual(actions, [
-          {
-            type: 'CREATE',
-            data: 'Aldo'
-          },
-          {
-            type: 'UPDATE',
-            oldData: '',
-            newData: 'Giovanni'
-          },
-          {
-            type: 'DELETE',
-            data: 'Giacomo'
-          }
-        ])
-        t.deepEqual(options, { my: 'option' })
-      },
-      afterBulk (actions, options) {
-        t.deepEqual(actions, [
-          {
-            type: 'CREATE',
-            data: 'Al'
-          },
-          {
-            type: 'UPDATE',
-            oldData: '',
-            newData: 'John'
-          },
-          {
-            type: 'DELETE',
-            data: 'Giacomo'
-          }
-        ])
-        t.deepEqual(options, { my: 'option' })
-      }
+      beforeCreate: [
+        (entity, context) => {
+          t.is(entity.target, 'Aldo')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      beforeUpdate: [
+        (entity, context) => {
+          t.is(entity.source, '')
+          t.is(entity.target, 'Giovanni')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      beforeDelete: [
+        (entity, context) => {
+          t.is(entity.source, 'Giacomo')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      afterCreate: [
+        (entity, context) => {
+          t.is(entity.target, 'Al')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      afterUpdate: [
+        (entity, context) => {
+          t.is(entity.target, 'John')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ],
+      afterDelete: [
+        (entity, context) => {
+          t.is(entity.target, 'Giacomo')
+          t.deepEqual(context.options, { my: 'option' })
+        }
+      ]
+    },
+    options: {
+      my: 'option'
     },
     writeSize: 3
   }
 
   const iterable = [
-    createStatus('Aldo'),
-    updateStatus(readStatus(''), 'Giovanni'),
-    deleteStatus(readStatus('Giacomo'))
+    Entity.create('Aldo'),
+    Entity.read('').update('Giovanni'),
+    Entity.read('Giacomo').delete()
   ]
 
-  const options = { my: 'option' }
-
-  const iterator = bulkWrite(context, iterable, options)[Symbol.asyncIterator]()
+  const iterator = bulkWrite(iterable, context)[Symbol.asyncIterator]()
 
   const a = await iterator.next()
   t.deepEqual(a, {
     done: false,
-    value: readStatus('Al')
+    value: Entity.read('Al')
   })
 
   const b = await iterator.next()
   t.deepEqual(b, {
     done: false,
-    value: readStatus('John')
+    value: Entity.read('John')
   })
 
   const c = await iterator.next()
-  t.deepEqual(c, {
-    done: false,
-    value: {
-      created: false,
-      updated: false,
-      deleted: false,
-      source: null,
-      target: 'Giacomo'
-    }
-  })
+  t.is(c.done, false)
+  t.is(c.value.valueOf(), 'Giacomo')
 
-  const end = await iterator.next()
-  t.deepEqual(end, {
+  const d = await iterator.next()
+  t.deepEqual(d, {
     done: true,
     value: undefined
   })
@@ -273,46 +300,57 @@ test('adapter:broken-bulk', async t => {
         t.deepEqual(options, { my: 'option' })
       }
     },
-    hooks: {},
+    hooks: {
+      onFind: [],
+      onFilter: [],
+      onEntity: [],
+      beforeCreate: [],
+      beforeUpdate: [],
+      beforeDelete: [],
+      afterCreate: [],
+      afterUpdate: [],
+      afterDelete: []
+    },
+    options: {
+      my: 'option'
+    },
     writeSize: 2
   }
 
   const iterable = [
-    createStatus('CREATE'),
-    updateStatus(readStatus(''), 'UPDATE'),
+    Entity.create('CREATE'),
+    Entity.read('').update('UPDATE'),
     // full flush
-    readStatus('READ'),
+    Entity.read('READ'),
     // skip
-    deleteStatus(readStatus('DELETE'))
+    Entity.read('DELETE').delete()
     // partial flush
   ]
 
-  const options = { my: 'option' }
-
-  const iterator = bulkWrite(context, iterable, options)[Symbol.asyncIterator]()
+  const iterator = bulkWrite(iterable, context)[Symbol.asyncIterator]()
 
   const a = await iterator.next()
   t.deepEqual(a, {
     done: false,
-    value: commitStatus(iterable[0])
+    value: iterable[0].commit()
   })
 
   const b = await iterator.next()
   t.deepEqual(b, {
     done: false,
-    value: commitStatus(iterable[1])
+    value: iterable[1].commit()
   })
 
   const c = await iterator.next()
   t.deepEqual(c, {
     done: false,
-    value: commitStatus(iterable[2])
+    value: iterable[2].commit()
   })
 
   const d = await iterator.next()
   t.deepEqual(d, {
     done: false,
-    value: commitStatus(iterable[3])
+    value: iterable[3].commit()
   })
 
   const end = await iterator.next()
@@ -323,7 +361,7 @@ test('adapter:broken-bulk', async t => {
 })
 
 test('adapter:concurrent', async t => {
-  t.plan(12)
+  t.plan(11)
 
   let concurrency = 0
 
@@ -334,54 +372,61 @@ test('adapter:concurrent', async t => {
       }
     },
     hooks: {
-      beforeCreate () {
-        concurrency++
-      },
-      afterCreate () {
-        concurrency--
-      }
+      beforeCreate: [
+        () => {
+          concurrency++
+        }
+      ],
+      afterCreate: [
+        () => {
+          concurrency--
+        }
+      ]
     },
+    options: {},
     writeSize: 2
   }
 
   const iterable = [
-    createStatus('A'),
-    createStatus('B'),
-    createStatus('C'),
-    createStatus('D'),
-    createStatus('E')
+    Entity.create('A'),
+    Entity.create('B'),
+    Entity.create('C'),
+    Entity.create('D'),
+    Entity.create('E')
   ]
 
-  const options = {}
-
-  const iterator = concurrentWrite(context, iterable, options)
-
-  t.throwsAsync(
-    () => concurrentWrite(context, iterable, { mutent: { writeSize: 0 } }).next()
-  )
+  const iterator = concurrentWrite(iterable, context)
 
   t.deepEqual(await iterator.next(), {
     done: false,
-    value: readStatus('A')
+    value: Entity.read('A')
   })
   t.deepEqual(await iterator.next(), {
     done: false,
-    value: readStatus('B')
+    value: Entity.read('B')
   })
   t.deepEqual(await iterator.next(), {
     done: false,
-    value: readStatus('C')
+    value: Entity.read('C')
   })
   t.deepEqual(await iterator.next(), {
     done: false,
-    value: readStatus('D')
+    value: Entity.read('D')
   })
   t.deepEqual(await iterator.next(), {
     done: false,
-    value: readStatus('E')
+    value: Entity.read('E')
   })
   t.deepEqual(await iterator.next(), {
     done: true,
     value: undefined
   })
+})
+
+test('adapter:name', async t => {
+  t.is(readAdapterName({}), 'anonymous')
+  t.is(
+    readAdapterName({ [Symbol.for('mutent-adapter-name')]: 'test' }),
+    'test'
+  )
 })

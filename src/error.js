@@ -5,8 +5,8 @@ export class MutentError extends Error {
       Error.captureStackTrace(this, this.constructor)
     }
     this.name = 'MutentError'
-    this.code = code
-    if (info) {
+    this.code = code || 'EMUT_GENERIC_ERROR'
+    if (info !== undefined) {
       this.info = info
     }
   }

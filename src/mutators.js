@@ -1,13 +1,12 @@
 import { bulkWrite, concurrentWrite, sequentialWrite } from './adapter'
 import { unwrapIterable } from './iterable'
-import { deleteStatus, updateStatus } from './status'
 
 export function filter (predicate) {
   return async function * mutatorFilter (iterable) {
     let index = 0
-    for await (const status of iterable) {
-      if (predicate(status.target, index++)) {
-        yield status
+    for await (const entity of iterable) {
+      if (predicate(entity.valueOf(), index++)) {
+        yield entity
       }
     }
   }
@@ -15,29 +14,27 @@ export function filter (predicate) {
 
 export function ddelete () {
   return async function * mutatorDelete (iterable) {
-    for await (const status of iterable) {
-      yield deleteStatus(status)
+    for await (const entity of iterable) {
+      yield entity.delete()
     }
   }
 }
 
 export function commit () {
-  return function mutatorCommit (iterable, options) {
-    const { adapter, multiple } = this
+  return function mutatorCommit (iterable, context) {
+    const { adapter, multiple, writeSize } = context
 
-    const mutentOptions = options.mutent || {}
-
-    let writeMode = mutentOptions.writeMode || this.writeMode || 'AUTO'
-    if (writeMode === 'AUTO') {
+    let writeMode = context.writeMode
+    if (writeMode === 'AUTO' && writeSize >= 2) {
       writeMode = multiple && adapter.bulk ? 'BULK' : 'SEQUENTIAL'
     }
 
     if (writeMode === 'BULK') {
-      return bulkWrite(this, iterable, options)
+      return bulkWrite(iterable, context)
     } else if (writeMode === 'CONCURRENT') {
-      return concurrentWrite(this, iterable, options)
+      return concurrentWrite(iterable, context)
     } else {
-      return sequentialWrite(this, iterable, options)
+      return sequentialWrite(iterable, context)
     }
   }
 }
@@ -57,7 +54,7 @@ export function iif (
   if (typeof condition !== 'function') {
     throw new TypeError('Condition must be either a boolean or a function')
   }
-  return async function * mutatorConditional (iterSource, options) {
+  return async function * mutatorConditional (iterSource, context) {
     const iterProxy = {
       [Symbol.iterator] () {
         return this
@@ -73,18 +70,18 @@ export function iif (
       value: undefined
     }
 
-    const iterTrue = unwrapIterable(whenTrue.call(this, iterProxy, options))
-    const iterFalse = unwrapIterable(whenFalse.call(this, iterProxy, options))
+    const iterTrue = unwrapIterable(whenTrue(iterProxy, context))
+    const iterFalse = unwrapIterable(whenFalse(iterProxy, context))
 
     let index = 0
-    for await (const status of iterSource) {
+    for await (const entity of iterSource) {
       // Choose the correct (target) iterable
-      const iterTarget = condition(status.target, index++)
+      const iterTarget = condition(entity.valueOf(), index++)
         ? iterTrue
         : iterFalse
 
       // Prepare the proxy and retrieve the next value
-      iterProxy.value = status
+      iterProxy.value = entity
       const result = await iterTarget.next()
 
       // Yield out the result
@@ -102,8 +99,8 @@ export function iif (
 export function update (mapper) {
   return async function * mutatorUpdate (iterable) {
     let index = 0
-    for await (const status of iterable) {
-      yield updateStatus(status, await mapper(status.target, index++))
+    for await (const entity of iterable) {
+      yield entity.update(await mapper(entity.valueOf(), index++))
     }
   }
 }
@@ -115,17 +112,17 @@ export function assign (...objects) {
 export function tap (callback) {
   return async function * mutatorTap (iterable) {
     let index = 0
-    for await (const status of iterable) {
-      await callback(status.target, index++)
-      yield status
+    for await (const entity of iterable) {
+      await callback(entity.valueOf(), index++)
+      yield entity
     }
   }
 }
 
 export function pipe (...mutators) {
-  return function mutatorPipe (iterable, options) {
+  return function mutatorPipe (iterable, context) {
     return mutators.reduce(
-      (accumulator, mutator) => mutator.call(this, accumulator, options),
+      (accumulator, mutator) => mutator(accumulator, context),
       iterable
     )
   }

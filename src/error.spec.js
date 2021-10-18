@@ -20,4 +20,7 @@ test('error', t => {
   t.is(Object.prototype.toString.call(error), '[object Error]')
 
   t.is(error.toString(), 'MutentError [EMUT_TEST]: Oh no')
+
+  const empty = new MutentError()
+  t.is(empty.code, 'EMUT_GENERIC_ERROR')
 })

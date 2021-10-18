@@ -3,10 +3,10 @@
   "version": "5.0.0-7",
   "description": "Elegant and agnostic solution to work with any persistence layer",
   "main": "./mutent.js",
-  "types": "./types/index.d.ts",
+  "types": "./mutent.d.ts",
   "files": [
     "mutent.js",
-    "types"
+    "mutent.d.ts"
   ],
   "keywords": [
     "agnostic",
@@ -27,16 +27,12 @@
   },
   "author": "Giacomo Gregoletto",
   "license": "MIT",
-  "dependencies": {
-    "ajv": "^8.6.3",
-    "lodash.get": "^4.4.2"
-  },
   "devDependencies": {
     "ava": "^3.15.0",
     "esm": "^3.2.25",
     "nyc": "^15.1.0",
-    "rollup": "^2.57.0",
-    "standard": "^16.0.3"
+    "rollup": "^2.58.0",
+    "standard": "^16.0.4"
   },
   "repository": {
     "type": "git",

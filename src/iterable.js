@@ -12,6 +12,6 @@ export function unwrapIterable (value) {
   } else if (isAsyncIterable(value)) {
     return value[Symbol.asyncIterator]()
   } else {
-    throw new TypeError('Expected iterable object')
+    throw new TypeError('Value is not iterable')
   }
 }

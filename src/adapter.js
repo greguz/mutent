@@ -1,280 +1,295 @@
 import { MutentError } from './error'
-import {
-  isConstantValid,
-  readConstants,
-  writeConstants
-} from './keywords/constant'
-import {
-  commitStatus,
-  shouldCreate,
-  shouldDelete,
-  shouldUpdate,
-  updateStatus
-} from './status'
+import { isAsyncIterable, isIterable } from './iterable'
 
-export function adapterFind ({ adapter, argument, hooks }, options) {
-  if (hooks.onFind) {
-    hooks.onFind(argument, options)
+export function readAdapterName (adapter) {
+  return `${adapter[Symbol.for('mutent-adapter-name')] || 'anonymous'}`
+}
+
+function findEntity (context) {
+  const { adapter, argument, hooks, intent, options, store } = context
+  if (!adapter.find) {
+    throw new MutentError(
+      'EMUR_PARTIAL_ADAPTER',
+      'The adapter does not implement ".find" method',
+      {
+        store,
+        intent,
+        argument
+      }
+    )
+  }
+  for (const hook of hooks.onFind) {
+    hook(argument, context)
   }
   return adapter.find(argument, options)
 }
 
-export function adapterFilter ({ adapter, argument, hooks }, options) {
-  if (hooks.onFilter) {
-    hooks.onFilter(argument, options)
+function filterEntities (context) {
+  const { adapter, argument, hooks, intent, options, store } = context
+  if (!adapter.filter) {
+    throw new MutentError(
+      'EMUR_PARTIAL_ADAPTER',
+      'The adapter does not implement ".filter" method',
+      {
+        store,
+        intent,
+        argument
+      }
+    )
+  }
+  for (const hook of hooks.onFilter) {
+    hook(argument, context)
   }
   return adapter.filter(argument, options)
 }
 
-function validateConstants ({ intent, store }, status) {
-  for (const constant of readConstants(status.source)) {
-    if (!isConstantValid(constant, status.target)) {
-      throw new MutentError('EMUT_CONSTANT', 'Constant value changed', {
-        constant,
-        data: status.target,
-        intent,
-        store
-      })
-    }
+export function iterateContext (context) {
+  const { argument, intent } = context
+
+  if (intent === 'CREATE' || intent === 'FROM') {
+    const blob = typeof argument === 'function' ? argument() : argument
+    context.multiple = isIterable(blob) || isAsyncIterable(blob)
+    return context.multiple ? blob : fromPromise(blob)
+  } else if (intent === 'FIND' || intent === 'READ') {
+    context.multiple = false
+    return fromPromise(findEntity(context))
+  } else {
+    context.multiple = true
+    return filterEntities(context)
   }
 }
 
-function validateStatus ({ intent, store, validate }, status, options) {
-  const mutentOptions = options.mutent || {}
-  if (!mutentOptions.ignoreSchema && validate && !validate(status.target)) {
+async function * fromPromise (blob) {
+  const data = await blob
+  if (data !== null && data !== undefined) {
+    yield data
+  }
+}
+
+async function createEntity (entity, context) {
+  const { adapter, argument, hooks, intent, options, store } = context
+  if (!adapter.create) {
     throw new MutentError(
-      'EMUT_INVALID_ENTITY',
-      'Current entity does not match the configured schema',
+      'EMUR_PARTIAL_ADAPTER',
+      'The adapter does not implement ".create" method',
       {
-        data: status.target,
-        errors: validate.errors,
+        store,
         intent,
-        store
+        argument
       }
     )
   }
+  for (const hook of hooks.beforeCreate) {
+    await hook(entity, context)
+  }
+  const result = await adapter.create(entity.target, options)
+  if (result !== null && result !== undefined) {
+    entity.set(result)
+  }
+  for (const hook of hooks.afterCreate) {
+    await hook(entity, context)
+  }
 }
 
-export async function adapterCreate (context, status, options) {
-  const { adapter, hooks } = context
-  validateStatus(context, status, options)
-  if (hooks.beforeCreate) {
-    await hooks.beforeCreate(status.target, options)
-  }
-  const result = await adapter.create(status.target, options)
-  if (result !== null && result !== undefined) {
-    status = updateStatus(status, result)
-  }
-  if (hooks.afterCreate) {
-    await hooks.afterCreate(status.target, options)
-  }
-  return commitStatus(status)
-}
-
-export async function adapterUpdate (context, status, options) {
-  const { adapter, hooks } = context
-  validateStatus(context, status, options)
-  validateConstants(context, status)
-  if (hooks.beforeUpdate) {
-    await hooks.beforeUpdate(status.source, status.target, options)
-  }
-  const result = await adapter.update(status.source, status.target, options)
-  if (result !== null && result !== undefined) {
-    status = updateStatus(
-      status,
-      writeConstants(result, readConstants(status.target))
+async function updateEntity (entity, context) {
+  const { adapter, argument, hooks, intent, options, store } = context
+  if (!adapter.update) {
+    throw new MutentError(
+      'EMUR_PARTIAL_ADAPTER',
+      'The adapter does not implement ".update" method',
+      {
+        store,
+        intent,
+        argument
+      }
     )
   }
-  if (hooks.afterUpdate) {
-    await hooks.afterUpdate(status.source, status.target, options)
+  for (const hook of hooks.beforeUpdate) {
+    await hook(entity, context)
   }
-  return commitStatus(status)
-}
-
-export async function adapterDelete ({ adapter, hooks }, status, options) {
-  if (hooks.beforeDelete) {
-    await hooks.beforeDelete(status.source, options)
+  const result = await adapter.update(entity.source, entity.target, options)
+  if (result !== null && result !== undefined) {
+    entity.set(result)
   }
-  await adapter.delete(status.source, options)
-  if (hooks.afterDelete) {
-    await hooks.afterDelete(status.source, options)
-  }
-  return commitStatus(status)
-}
-
-export async function adapterWrite (context, status, options) {
-  if (shouldCreate(status)) {
-    return adapterCreate(context, status, options)
-  } else if (shouldUpdate(status)) {
-    return adapterUpdate(context, status, options)
-  } else if (shouldDelete(status)) {
-    return adapterDelete(context, status, options)
-  } else {
-    return commitStatus(status)
+  for (const hook of hooks.afterUpdate) {
+    await hook(entity, context)
   }
 }
 
-export async function * sequentialWrite (context, iterable, options) {
-  for await (const status of iterable) {
-    yield adapterWrite(context, status, options)
+async function deleteEntity (entity, context) {
+  const { adapter, argument, hooks, intent, options, store } = context
+  if (!adapter.delete) {
+    throw new MutentError(
+      'EMUR_PARTIAL_ADAPTER',
+      'The adapter does not implement ".delete" method',
+      {
+        store,
+        intent,
+        argument
+      }
+    )
+  }
+  for (const hook of hooks.beforeDelete) {
+    await hook(entity, context)
+  }
+  await adapter.delete(entity.source, options)
+  for (const hook of hooks.afterDelete) {
+    await hook(entity, context)
   }
 }
 
-export async function * concurrentWrite (context, iterable, options) {
-  const writeSize = getWriteSize(context, options)
+export async function writeEntity (entity, context) {
+  if (entity.shouldCreate) {
+    await createEntity(entity, context)
+  } else if (entity.shouldUpdate) {
+    await updateEntity(entity, context)
+  } else if (entity.shouldDelete) {
+    await deleteEntity(entity, context)
+  }
+  return entity.commit()
+}
 
-  let items = []
-  for await (const status of iterable) {
-    items.push(status)
+export async function * sequentialWrite (iterable, context) {
+  for await (const entity of iterable) {
+    yield writeEntity(entity, context)
+  }
+}
 
-    if (items.length >= writeSize) {
+export async function * concurrentWrite (iterable, context) {
+  const { writeSize } = context
+
+  let buffer = []
+  for await (const entity of iterable) {
+    buffer.push(entity)
+
+    if (buffer.length >= writeSize) {
       const results = await Promise.all(
-        items.map(item => adapterWrite(context, item, options))
+        buffer.map(item => writeEntity(item, context))
       )
-      items = []
       for (const result of results) {
         yield result
       }
+      buffer = []
     }
   }
-  if (items.length > 0) {
+  if (buffer.length > 0) {
     const results = await Promise.all(
-      items.map(item => adapterWrite(context, item, options))
+      buffer.map(item => writeEntity(item, context))
     )
-    items = []
     for (const result of results) {
       yield result
     }
+    buffer = []
   }
 }
 
-export async function * bulkWrite (context, iterable, options) {
-  if (!context.adapter.bulk) {
+export async function * bulkWrite (iterable, context) {
+  const { adapter, argument, intent, store, writeSize } = context
+  if (!adapter.bulk) {
     throw new MutentError(
-      'EMUT_PARTIAL_ADAPTER',
-      'The adapter does not implement the ".bulk" method',
+      'EMUR_PARTIAL_ADAPTER',
+      'The adapter does not implement ".bulk" method',
       {
-        intent: context.intent,
-        store: context.store
+        store,
+        intent,
+        argument
       }
     )
   }
 
-  const writeSize = getWriteSize(context, options)
-
-  let items = []
-  for await (const status of iterable) {
-    const willCreate = shouldCreate(status)
-    const willUpdate = shouldUpdate(status)
-    const willDelete = shouldDelete(status)
-    const willIgnore = !willCreate && !willUpdate && !willDelete
-
-    if (willCreate) {
-      validateStatus(context, status, options)
-      items.push({ type: 'CREATE', status })
-    } else if (willUpdate) {
-      validateStatus(context, status, options)
-      validateConstants(context, status)
-      items.push({ type: 'UPDATE', status })
-    } else if (willDelete) {
-      items.push({ type: 'DELETE', status })
+  let buffer = []
+  for await (const entity of iterable) {
+    let shouldIgnore = false
+    if (entity.shouldCreate) {
+      buffer.push({ type: 'CREATE', entity })
+    } else if (entity.shouldUpdate) {
+      buffer.push({ type: 'UPDATE', entity })
+    } else if (entity.shouldDelete) {
+      buffer.push({ type: 'DELETE', entity })
+    } else {
+      shouldIgnore = true
     }
 
-    if (items.length > 0 && (willIgnore || items.length >= writeSize)) {
-      for await (const status of flushBulkItems(context, items, options)) {
-        yield status
+    if (buffer.length >= writeSize || (shouldIgnore && buffer.length > 0)) {
+      for await (const e of flushBuffer(buffer, context)) {
+        yield e
       }
-      items = []
+      buffer = []
     }
 
-    if (willIgnore) {
-      yield commitStatus(status)
+    if (shouldIgnore) {
+      yield entity.commit()
     }
   }
 
-  if (items.length > 0) {
-    for await (const status of flushBulkItems(context, items, options)) {
-      yield status
+  if (buffer.length > 0) {
+    for await (const e of flushBuffer(buffer, context)) {
+      yield e
     }
+    buffer = []
   }
 }
 
-async function * flushBulkItems (context, items, options) {
-  const { adapter, hooks, intent, store } = context
+async function * flushBuffer (buffer, context) {
+  const { adapter, hooks, options } = context
 
-  if (hooks.beforeBulk) {
-    await hooks.beforeBulk(items.map(createBulkAction), options)
+  for (const { type, entity } of buffer) {
+    let iterable
+    if (type === 'CREATE') {
+      iterable = hooks.beforeCreate
+    } else if (type === 'UPDATE') {
+      iterable = hooks.beforeUpdate
+    } else {
+      iterable = hooks.beforeDelete
+    }
+    for (const hook of iterable) {
+      await hook(entity, context)
+    }
   }
 
-  const result = await adapter.bulk(items.map(createBulkAction), options)
-
+  const result = await adapter.bulk(buffer.map(createBulkAction), options)
   for (const key of Object.keys(Object(result))) {
-    const item = items[key]
-    if (!item) {
-      throw new MutentError(
-        'EMUT_UNEXPECTED_BULK_RESULT',
-        'Found an unexpected bulk result key',
-        {
-          intent,
-          key,
-          length: items.length,
-          store
-        }
-      )
-    } else if (item.type === 'CREATE') {
-      item.status = updateStatus(item.status, result[key])
-    } else if (item.type === 'UPDATE') {
-      item.status = updateStatus(
-        item.status,
-        writeConstants(result[key], readConstants(item.status.target))
-      )
+    const item = buffer[key]
+    if (item && (item.type === 'CREATE' || item.type === 'UPDATE')) {
+      item.entity.set(result[key])
     }
   }
 
-  if (hooks.afterBulk) {
-    await hooks.afterBulk(items.map(createBulkAction), options)
+  for (const { type, entity } of buffer) {
+    let iterable
+    if (type === 'CREATE') {
+      iterable = hooks.afterCreate
+    } else if (type === 'UPDATE') {
+      iterable = hooks.afterUpdate
+    } else {
+      iterable = hooks.afterDelete
+    }
+    for (const hook of iterable) {
+      await hook(entity, context)
+    }
   }
 
-  for (const { status } of items) {
-    yield commitStatus(status)
+  for (const { entity } of buffer) {
+    yield entity.commit()
   }
 }
 
-function createBulkAction ({ type, status }) {
+function createBulkAction ({ type, entity }) {
   if (type === 'CREATE') {
     return {
       type,
-      data: status.target
+      data: entity.target
     }
   } else if (type === 'UPDATE') {
     return {
       type,
-      oldData: status.source,
-      newData: status.target
+      oldData: entity.source,
+      newData: entity.target
     }
   } else {
     return {
       type,
-      data: status.source
+      data: entity.source
     }
   }
-}
-
-function getWriteSize (context, options) {
-  const mutentOptions = options.mutent || {}
-  let writeSize = mutentOptions.writeSize
-  if (writeSize === null || writeSize === undefined) {
-    writeSize = context.writeSize
-  }
-  if (writeSize === null || writeSize === undefined) {
-    writeSize = 16
-  }
-  if (!Number.isInteger(writeSize) || writeSize <= 0) {
-    throw new MutentError(
-      'EMUT_INVALID_WRITE_SIZE',
-      'Write size must be a positive integer',
-      { writeSize }
-    )
-  }
-  return writeSize
 }

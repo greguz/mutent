@@ -1,22 +1,32 @@
 import test from 'ava'
 
+import { Entity } from './entity'
 import { assign, iif, update } from './mutators'
-import { createStatus, readStatus } from './status'
-
-async function unwrap ({ context = {}, iterable, mutator, options = {} }) {
-  const results = []
-  for await (const status of mutator.call(context, iterable, options)) {
-    results.push(status)
-  }
-  return results
-}
-
-export function create (...values) {
-  return values.map(createStatus)
-}
 
 function read (...values) {
-  return values.map(readStatus)
+  return values.map(Entity.read)
+}
+
+const context = {
+  hooks: {
+    onFind: [],
+    onFilter: [],
+    onEntity: [],
+    beforeCreate: [],
+    beforeUpdate: [],
+    beforeDelete: [],
+    afterCreate: [],
+    afterUpdate: [],
+    afterDelete: []
+  }
+}
+
+async function unwrap ({ iterable, mutator, options = {} }) {
+  const results = []
+  for await (const entity of mutator.call(context, iterable, options)) {
+    results.push(entity)
+  }
+  return results
 }
 
 test('mutator:assign', async t => {
@@ -24,22 +34,18 @@ test('mutator:assign', async t => {
     iterable: read({ id: 0 }),
     mutator: assign({ a: true, b: 42 }, { a: undefined, c: true })
   })
-  t.deepEqual(out, [
-    {
-      created: false,
-      updated: true,
-      deleted: false,
-      source: {
-        id: 0
-      },
-      target: {
-        id: 0,
-        a: undefined,
-        b: 42,
-        c: true
-      }
-    }
-  ])
+  t.is(out.length, 1)
+  t.true(out[0] instanceof Entity)
+  t.true(out[0].updated)
+  t.deepEqual(out[0].source, {
+    id: 0
+  })
+  t.deepEqual(out[0].target, {
+    id: 0,
+    a: undefined,
+    b: 42,
+    c: true
+  })
 })
 
 test('mutator:update', async t => {
@@ -50,15 +56,11 @@ test('mutator:update', async t => {
       return Math.round(value)
     })
   })
-  t.deepEqual(out, [
-    {
-      created: false,
-      updated: true,
-      deleted: false,
-      source: 41.9,
-      target: 42
-    }
-  ])
+  t.is(out.length, 1)
+  t.true(out[0] instanceof Entity)
+  t.true(out[0].updated)
+  t.is(out[0].source, 41.9)
+  t.is(out[0].target, 42)
 })
 
 test('mutator:iif', async t => {
@@ -71,20 +73,14 @@ test('mutator:iif', async t => {
       update(value => value * 2)
     )
   })
-  t.deepEqual(out, [
-    {
-      created: false,
-      updated: true,
-      deleted: false,
-      source: 42,
-      target: 21
-    },
-    {
-      created: false,
-      updated: true,
-      deleted: false,
-      source: 13,
-      target: 26
-    }
-  ])
+
+  t.is(out.length, 2)
+
+  t.true(out[0] instanceof Entity)
+  t.is(out[0].source, 42)
+  t.is(out[0].target, 21)
+
+  t.true(out[1] instanceof Entity)
+  t.is(out[1].source, 13)
+  t.is(out[1].target, 26)
 })

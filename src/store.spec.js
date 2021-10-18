@@ -1,6 +1,8 @@
 import test from 'ava'
 import { Readable } from 'stream'
 
+import { Entity } from './entity'
+import { MutentError } from './error'
 import { Store } from './store'
 
 function createAdapter (items = []) {
@@ -43,18 +45,14 @@ async function consume (iterable, handler) {
 }
 
 test('store:defaults', t => {
-  t.throws(() => Store.create())
-  t.throws(() => Store.create({}))
-  t.throws(() => Store.create({ name: '', adapter: {} }))
-  t.throws(() => Store.create({ name: 'store:defaults' }))
-  t.throws(() => Store.create({ adapter: {} }))
-  Store.create({ name: 'store:defaults', adapter: {} })
+  t.throws(() => new Store())
+  t.throws(() => new Store({}))
+  // new Store({ adapter: {} })
 })
 
 test('store:create', async t => {
   const items = []
-  const store = Store.create({
-    name: 'store:create',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
@@ -97,37 +95,25 @@ test('store:create', async t => {
   t.deepEqual(iPromise, [{ id: 6 }])
 
   const uPromiseCallback = await store
-    .create(async options => {
-      t.deepEqual(options, { my: 'options' })
-      return { id: 7 }
-    })
+    .create(async () => ({ id: 7 }))
     .unwrap({ my: 'options' })
   t.deepEqual(uPromiseCallback, { id: 7 })
 
   const iPromiseCallback = await consume(
     store
-      .create(async options => {
-        t.deepEqual(options, { my: 'options' })
-        return { id: 8 }
-      })
+      .create(async () => ({ id: 8 }))
       .iterate({ my: 'options' })
   )
   t.deepEqual(iPromiseCallback, [{ id: 8 }])
 
   const uIterableCallback = await store
-    .create(options => {
-      t.deepEqual(options, { my: 'options' })
-      return [{ id: 9 }]
-    })
+    .create(() => [{ id: 9 }])
     .unwrap({ my: 'options' })
   t.deepEqual(uIterableCallback, [{ id: 9 }])
 
   const iIterableCallback = await consume(
     store
-      .create(options => {
-        t.deepEqual(options, { my: 'options' })
-        return [{ id: 10 }]
-      })
+      .create(() => [{ id: 10 }])
       .iterate({ my: 'options' })
   )
   t.deepEqual(iIterableCallback, [{ id: 10 }])
@@ -139,8 +125,7 @@ test('store:find', async t => {
     { id: 1, name: 'March Hare' },
     { id: 2, name: 'Dormouse' }
   ]
-  const store = Store.create({
-    name: 'store:find',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
@@ -157,21 +142,20 @@ test('store:find', async t => {
 
 test('store:read', async t => {
   const items = [{ id: 0, name: 'Tom Orvoloson Riddle', nose: false }]
-  const store = Store.create({
-    name: 'store:read',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
   t.is(await store.read(item => item.nose !== true).unwrap(), items[0])
   await t.throwsAsync(store.read(item => item.nose === true).unwrap(), {
-    code: 'EMUT_EXPECTED_ENTITY'
+    code: 'EMUT_ENTITY_REQUIRED'
   })
 
   t.deepEqual(await consume(store.read(item => item.id === 0).iterate()), [
     items[0]
   ])
   await t.throwsAsync(consume(store.read(() => false).iterate()), {
-    code: 'EMUT_EXPECTED_ENTITY'
+    code: 'EMUT_ENTITY_REQUIRED'
   })
 })
 
@@ -185,8 +169,7 @@ test('store:filter', async t => {
     { id: 5, name: 'Ralph T. Guard', gender: 'male', human: true },
     { id: 6, name: 'Thaddeus Plotz ', gender: 'male', human: true }
   ]
-  const store = Store.create({
-    name: 'store:filter',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
@@ -203,144 +186,15 @@ test('store:filter', async t => {
   t.is(d.length, items.length)
 })
 
-test('store:schema', async t => {
-  class Teapot {}
-
-  const schema = {
-    type: 'object',
-    properties: {
-      date: {
-        anyOf: [
-          {
-            type: 'string',
-            parse: 'toDate'
-          },
-          {
-            type: 'object',
-            instanceof: 'Date'
-          }
-        ]
-      },
-      teapot: {
-        type: 'object',
-        instanceof: 'Teapot'
-      }
-    },
-    required: ['date', 'teapot'],
-    additionalProperties: false
-  }
-
-  const store = Store.create({
-    name: 'store:schema',
-    constructors: {
-      Teapot
-    },
-    adapter: createAdapter(),
-    parsers: {
-      toDate: value => new Date(value)
-    },
-    schema
-  })
-
-  const data = await store
-    .create({
-      date: '2020-09-02T16:29:34.070Z',
-      teapot: new Teapot()
-    })
-    .unwrap()
-  t.true(data.date instanceof Date)
-  t.is(data.date.toISOString(), '2020-09-02T16:29:34.070Z')
-  t.true(data.teapot instanceof Teapot)
-
-  await t.throwsAsync(store.from({}).unwrap(), {
-    code: 'EMUT_INVALID_ENTITY'
-  })
-  await t.throwsAsync(
-    store
-      .create({
-        date: '2020-09-02T16:29:34.070Z',
-        teapot: new Teapot()
-      })
-      .assign({ teapot: {} })
-      .commit()
-      .unwrap(),
-    { code: 'EMUT_INVALID_ENTITY' }
-  )
-  await t.throwsAsync(
-    store
-      .read(() => true)
-      .assign({ teapot: {} })
-      .unwrap(),
-    { code: 'EMUT_INVALID_ENTITY' }
-  )
-})
-
-test('store:migration', async t => {
-  const items = [{ id: 0, name: 'Gandalf' }]
-
-  const store = Store.create({
-    name: 'store:migration',
-    adapter: createAdapter(items),
-    version: 1,
-    versionKey: 'v',
-    migrationStrategies: {
-      1: data => ({
-        ...data,
-        v: 1,
-        migrated: true
-      })
-    }
-  })
-
-  const a = await store
-    .create({
-      id: 1,
-      name: 'Bilbo'
-    })
-    .unwrap()
-  t.deepEqual(a, {
-    id: 1,
-    v: 1,
-    migrated: true,
-    name: 'Bilbo'
-  })
-
-  const b = await store
-    .read(item => item.name === 'Gandalf')
-    .update(data => ({ ...data, white: true }))
-    .unwrap()
-  t.deepEqual(b, {
-    id: 0,
-    v: 1,
-    migrated: true,
-    name: 'Gandalf',
-    white: true
-  })
-
-  const c = await store
-    .create({
-      id: 2,
-      v: 1,
-      name: 'Sam'
-    })
-    .unwrap()
-  t.deepEqual(c, {
-    id: 2,
-    v: 1,
-    name: 'Sam'
-  })
-})
-
 test('hooks:find', async t => {
   t.plan(2)
 
-  const store = Store.create({
-    name: 'hooks:find',
+  const store = new Store({
     adapter: createAdapter(),
     hooks: {
-      onFind (query, options) {
+      onFind (query, context) {
         t.true(typeof query === 'function')
-        t.deepEqual(options, { some: 'options' })
+        t.deepEqual(context.options, { some: 'options' })
       }
     }
   })
@@ -351,13 +205,12 @@ test('hooks:find', async t => {
 test('hooks:filter', async t => {
   t.plan(2)
 
-  const store = Store.create({
-    name: 'hooks:filter',
+  const store = new Store({
     adapter: createAdapter(),
     hooks: {
-      onFilter (query, options) {
+      onFilter (query, context) {
         t.true(typeof query === 'function')
-        t.deepEqual(options, { some: 'options' })
+        t.deepEqual(context.options, { some: 'options' })
       }
     }
   })
@@ -370,14 +223,13 @@ test('hooks:data', async t => {
 
   let expectedIntent
 
-  const store = Store.create({
-    name: 'hooks:data',
+  const store = new Store({
     adapter: createAdapter(),
     hooks: {
-      onData (intent, data, options) {
-        t.is(intent, expectedIntent)
-        t.deepEqual(data, { a: 'document' })
-        t.deepEqual(options, { some: 'options' })
+      onEntity (entity, context) {
+        t.is(context.intent, expectedIntent)
+        t.deepEqual(entity.valueOf(), { a: 'document' })
+        t.deepEqual(context.options, { some: 'options' })
       }
     }
   })
@@ -403,17 +255,16 @@ test('hooks:data', async t => {
 test('hooks:create', async t => {
   t.plan(4)
 
-  const store = Store.create({
-    name: 'hooks:filter',
+  const store = new Store({
     adapter: createAdapter(),
     hooks: {
-      beforeCreate (data, options) {
-        t.deepEqual(data, { a: 'document' })
-        t.deepEqual(options, { some: 'options' })
+      beforeCreate (entity, context) {
+        t.deepEqual(entity.target, { a: 'document' })
+        t.deepEqual(context.options, { some: 'options' })
       },
-      afterCreate (data, options) {
-        t.deepEqual(data, { a: 'document' })
-        t.deepEqual(options, { some: 'options' })
+      afterCreate (entity, context) {
+        t.deepEqual(entity.target, { a: 'document' })
+        t.deepEqual(context.options, { some: 'options' })
       }
     }
   })
@@ -424,19 +275,18 @@ test('hooks:create', async t => {
 test('hooks:update', async t => {
   t.plan(6)
 
-  const store = Store.create({
-    name: 'hooks:update',
+  const store = new Store({
     adapter: createAdapter([{ a: 'document' }]),
     hooks: {
-      beforeUpdate (oldData, newData, options) {
-        t.deepEqual(oldData, { a: 'document' })
-        t.deepEqual(newData, { a: 'document', updated: true })
-        t.deepEqual(options, { some: 'options' })
+      beforeUpdate (entity, context) {
+        t.deepEqual(entity.source, { a: 'document' })
+        t.deepEqual(entity.target, { a: 'document', updated: true })
+        t.deepEqual(context.options, { some: 'options' })
       },
-      afterUpdate (oldData, newData, options) {
-        t.deepEqual(oldData, { a: 'document' })
-        t.deepEqual(newData, { a: 'document', updated: true })
-        t.deepEqual(options, { some: 'options' })
+      afterUpdate (entity, context) {
+        t.deepEqual(entity.source, { a: 'document' })
+        t.deepEqual(entity.target, { a: 'document', updated: true })
+        t.deepEqual(context.options, { some: 'options' })
       }
     }
   })
@@ -450,17 +300,16 @@ test('hooks:update', async t => {
 test('hooks:delete', async t => {
   t.plan(4)
 
-  const store = Store.create({
-    name: 'hooks:delete',
+  const store = new Store({
     adapter: createAdapter([{ a: 'document' }]),
     hooks: {
-      beforeDelete (data, options) {
-        t.deepEqual(data, { a: 'document' })
-        t.deepEqual(options, { some: 'options' })
+      beforeDelete (entity, context) {
+        t.deepEqual(entity.source, { a: 'document' })
+        t.deepEqual(context.options, { some: 'options' })
       },
-      afterDelete (data, options) {
-        t.deepEqual(data, { a: 'document' })
-        t.deepEqual(options, { some: 'options' })
+      afterDelete (entity, context) {
+        t.deepEqual(entity.source, { a: 'document' })
+        t.deepEqual(context.options, { some: 'options' })
       }
     }
   })
@@ -474,8 +323,7 @@ test('hooks:delete', async t => {
 test('store:safe-commit', async t => {
   const items = []
 
-  const store = Store.create({
-    name: 'store:safe-commit',
+  const store = new Store({
     adapter: createAdapter(items),
     commitMode: 'SAFE'
   })
@@ -498,8 +346,7 @@ test('store:safe-commit', async t => {
 test('store:manual-commit', async t => {
   const items = []
 
-  const store = Store.create({
-    name: 'store:manual-commit',
+  const store = new Store({
     adapter: createAdapter(items),
     commitMode: 'MANUAL'
   })
@@ -520,44 +367,8 @@ test('store:manual-commit', async t => {
   t.deepEqual(items, [{ id: 2 }, { id: 3 }])
 })
 
-test('store:constant', async t => {
-  const store = Store.create({
-    name: 'store:constant',
-    adapter: createAdapter(),
-    schema: {
-      type: 'object',
-      properties: {
-        a: {
-          type: 'string',
-          constant: false
-        },
-        b: {
-          type: 'string',
-          constant: true
-        },
-        c: {
-          type: 'string',
-          constant: true
-        }
-      },
-      required: ['a', 'b']
-    }
-  })
-
-  await store.create({ a: 'value', b: 'constant' }).unwrap()
-
-  const first = () => true
-
-  await store.read(first).assign({ c: 'constant' }).unwrap()
-
-  await t.throwsAsync(store.read(first).assign({ b: 'error' }).unwrap(), {
-    code: 'EMUT_CONSTANT'
-  })
-})
-
 test('store:stream', async t => {
-  const store = Store.create({
-    name: 'store:stream',
+  const store = new Store({
     adapter: {
       filter () {
         return Readable.from([{ name: 'Kuzco' }, { name: 'Pacha' }])
@@ -576,8 +387,7 @@ test('store:tap', async t => {
 
   const items = [{ my: 'document' }]
 
-  const store = Store.create({
-    name: 'store:tap',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
@@ -597,8 +407,7 @@ test('store:filter-mutator', async t => {
 
   const items = [{ name: 'Shrek' }, { name: 'Fiona' }, { name: 'Donkey' }]
 
-  const store = Store.create({
-    name: 'store:filter',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
@@ -613,10 +422,14 @@ test('store:filter-mutator', async t => {
 })
 
 test('store:bulk', async t => {
-  t.plan(14)
+  t.plan(18)
 
-  const store = Store.create({
-    name: 'store:bulk',
+  let bi = 0
+  let ai = 0
+
+  const values = ['a', 'b', 'c', 'd']
+
+  const store = new Store({
     adapter: {
       bulk (actions, options) {
         t.is(actions.length, 2)
@@ -627,58 +440,35 @@ test('store:bulk', async t => {
       }
     },
     hooks: {
-      beforeBulk (actions, options) {
-        t.is(actions.length, 2)
+      beforeCreate (entity) {
+        const index = bi++
+        t.is(entity.target, values[index])
       },
-      afterBulk (actions, options) {
-        t.is(actions.length, 2)
+      afterCreate (entity) {
+        const index = ai++
+        t.is(entity.target, values[index])
       }
     },
     writeMode: 'BULK',
     writeSize: 2
   })
 
-  await store.create(['a', 'b', 'c', 'd']).unwrap()
+  await store.create(values).unwrap()
 })
 
 test('store:bulk-partial', async t => {
-  const store = Store.create({
-    name: 'store:bulk',
+  const store = new Store({
     adapter: {},
     writeMode: 'BULK'
   })
 
-  await t.throwsAsync(store.create(['a', 'b', 'c', 'd']).unwrap(), {
-    code: 'EMUT_PARTIAL_ADAPTER'
-  })
-})
-
-test('store:ignoreSchema', async t => {
-  const store = Store.create({
-    name: 'store:ignoreSchema',
-    adapter: createAdapter(),
-    schema: {
-      type: 'object',
-      properties: {
-        value: {
-          type: 'number'
-        }
-      },
-      required: ['value']
-    }
-  })
-  await store.create({ value: 42 }).unwrap()
-  await t.throwsAsync(store.create({}).unwrap(), {
-    code: 'EMUT_INVALID_ENTITY'
-  })
-  await store.create({}).unwrap({ mutent: { ignoreSchema: true } })
+  await t.throwsAsync(store.create(['a', 'b', 'c', 'd']).unwrap())
 })
 
 test('store:consume', async t => {
   const items = []
 
-  const store = Store.create({
-    name: 'store:consume',
+  const store = new Store({
     adapter: createAdapter(items)
   })
 
@@ -686,4 +476,81 @@ test('store:consume', async t => {
   t.is(count, 1)
 
   t.deepEqual(items, [{ value: 42 }])
+})
+
+test('store:extend', async t => {
+  t.plan(7)
+
+  let index = 0
+
+  const a = new Store({
+    adapter: {}
+  })
+
+  const b = a.extend({
+    hooks: {
+      onEntity: [
+        () => {
+          t.is(index++, 2)
+        }
+      ]
+    },
+    mutators: [
+      iterable => {
+        t.is(index++, 0)
+        return iterable
+      }
+    ]
+  })
+
+  const c = b.extend({
+    commitMode: 'MANUAL',
+    hooks: {
+      onEntity () {
+        t.is(index++, 3)
+      }
+    },
+    mutators: [
+      iterable => {
+        t.is(index++, 1)
+        return iterable
+      }
+    ],
+    writeMode: 'CONCURRENT',
+    writeSize: 8
+  })
+
+  await c.create({ value: 42 }).consume()
+  t.is(index, 4)
+
+  t.throws(() => c.extend({ hooks: { onEntity: null } }), {
+    message: 'Invalid onEntity hook definition'
+  })
+  t.throws(() => c.extend({ mutators: null }), {
+    message: 'Invalid mutators'
+  })
+})
+
+test('store:overflow', async t => {
+  const store = new Store({
+    adapter: createAdapter(['a']),
+    name: 'test',
+    mutators: [
+      async function * (iterable) {
+        for await (const entity of iterable) {
+          yield entity
+        }
+        yield Entity.read('b')
+      }
+    ]
+  })
+
+  const query = () => true
+  const error = await t.throwsAsync(store.read(query).unwrap(), {
+    code: 'EMUT_MUTATION_OVERFLOW',
+    instanceOf: MutentError
+  })
+  t.is(error.info.store, 'test')
+  t.is(error.info.intent, 'READ')
+  t.is(error.info.argument, query)
 })

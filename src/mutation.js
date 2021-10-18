@@ -1,137 +1,17 @@
-import { adapterFilter, adapterFind } from './adapter'
+import { iterateContext } from './adapter'
+import { Entity } from './entity'
 import { MutentError } from './error'
-import { isAsyncIterable, isIterable } from './iterable'
 import { assign, commit, ddelete, filter, iif, tap, update } from './mutators'
-import { createStatus, readStatus, shouldCommit } from './status'
-
-function readContext (context, options) {
-  const { argument, intent } = context
-  switch (intent) {
-    case 'CREATE':
-    case 'FROM':
-      return typeof argument === 'function' ? argument(options) : argument
-    case 'FIND':
-    case 'READ':
-      return adapterFind(context, options)
-    case 'FILTER':
-      return adapterFilter(context, options)
-  }
-}
-
-async function * fromPromise (blob) {
-  const data = await blob
-  if (data !== null && data !== undefined) {
-    yield data
-  }
-}
-
-async function * iterateNewData (iterable) {
-  for await (const data of iterable) {
-    yield createStatus(data)
-  }
-}
-
-async function * iterateOldData (iterable) {
-  for await (const data of iterable) {
-    yield readStatus(data)
-  }
-}
-
-async function * iterateMany (context, blob, mutators, options) {
-  const iterable = mutators.reduce(
-    (accumulator, mutator) => mutator.call(context, accumulator, options),
-    context.intent === 'CREATE' ? iterateNewData(blob) : iterateOldData(blob)
-  )
-
-  for await (const status of iterable) {
-    yield status.target
-  }
-}
-
-async function * iterateOne (context, blob, mutators, options) {
-  const { argument, intent, store } = context
-  let count = 0
-  for await (const data of iterateMany(
-    context,
-    fromPromise(blob),
-    mutators,
-    options
-  )) {
-    count++
-    yield data
-  }
-  if (count <= 0 && intent !== 'FIND') {
-    throw new MutentError('EMUT_EXPECTED_ENTITY', 'Required entity not found', {
-      argument,
-      intent,
-      store
-    })
-  }
-}
-
-async function unwrapMany (context, blob, mutators, options) {
-  const results = []
-  for await (const data of iterateMany(context, blob, mutators, options)) {
-    results.push(data)
-  }
-  return results
-}
-
-async function unwrapOne (context, blob, mutators, options) {
-  let result = null
-  for await (const item of iterateOne(context, blob, mutators, options)) {
-    result = item
-  }
-  return result
-}
-
-async function * mutatorSafe (iterable, options) {
-  for await (const status of iterable) {
-    if (shouldCommit(status)) {
-      throw new MutentError('EMUT_UNSAFE_UNWRAP', 'Unsafe mutation', {
-        store: this.store,
-        data: status.target,
-        options
-      })
-    }
-    yield status
-  }
-}
-
-function mutatorClose (iterable, options) {
-  const mutentOptions = options.mutent || {}
-  const commitMode = mutentOptions.commitMode || this.commitMode || 'AUTO'
-
-  if (commitMode === 'AUTO') {
-    return commit().call(this, iterable, options)
-  } else if (commitMode === 'MANUAL') {
-    return iterable
-  } else {
-    return mutatorSafe.call(this, iterable, options)
-  }
-}
-
-function unwrap (context, mutators, options) {
-  const blob = readContext(context, options)
-  context.multiple = isIterable(blob) || isAsyncIterable(blob)
-  return isIterable(blob) || isAsyncIterable(blob)
-    ? unwrapMany(context, blob, mutators, options)
-    : unwrapOne(context, blob, mutators, options)
-}
-
-function iterate (context, mutators, options) {
-  const blob = readContext(context, options)
-  context.multiple = isIterable(blob) || isAsyncIterable(blob)
-  return context.multiple
-    ? iterateMany(context, blob, mutators, options)
-    : iterateOne(context, blob, mutators, options)
-}
+import {
+  mergeHooks,
+  normalizeHooks,
+  normalizeMutators,
+  parseCommitMode,
+  parseWriteMode,
+  parseWriteSize
+} from './options'
 
 export class Mutation {
-  static create (context, mutators) {
-    return new Mutation(context, mutators)
-  }
-
   constructor (context, mutators = []) {
     this._context = context
     this._mutators = mutators
@@ -166,8 +46,11 @@ export class Mutation {
     return this.pipe(iif(condition, whenTrue, whenFalse))
   }
 
-  iterate (options = {}) {
-    return iterate(this._context, [...this._mutators, mutatorClose], options)
+  iterate (options) {
+    return iterateMethod(
+      prepareContext(this._context, options),
+      this._mutators.concat(mutatorClose)
+    )
   }
 
   pipe (...mutators) {
@@ -178,11 +61,134 @@ export class Mutation {
     return this.pipe(tap(callback))
   }
 
-  unwrap (options = {}) {
-    return unwrap(this._context, [...this._mutators, mutatorClose], options)
+  unwrap (options) {
+    return unwrapMethod(
+      prepareContext(this._context, options),
+      this._mutators.concat(mutatorClose)
+    )
   }
 
   update (mapper) {
     return this.pipe(update(mapper))
+  }
+}
+
+function prepareContext (context, unwrapOptions) {
+  const { adapter, argument, intent, store } = context
+
+  unwrapOptions = Object(unwrapOptions)
+  const mutentOptions = Object(unwrapOptions.mutent)
+
+  return {
+    adapter,
+    argument,
+    commitMode: mutentOptions.commitMode !== undefined
+      ? parseCommitMode(mutentOptions.commitMode)
+      : context.commitMode,
+    hooks: mergeHooks(context.hooks, normalizeHooks(mutentOptions.hooks)),
+    intent,
+    multiple: null,
+    mutators: context.mutators.concat(
+      normalizeMutators(mutentOptions.mutators)
+    ),
+    options: unwrapOptions,
+    store,
+    writeMode: mutentOptions.writeMode !== undefined
+      ? parseWriteMode(mutentOptions.writeMode)
+      : context.writeMode,
+    writeSize: mutentOptions.writeSize !== undefined
+      ? parseWriteSize(mutentOptions.writeSize)
+      : context.writeSize
+  }
+}
+
+async function * iterateMethod (context, mutators) {
+  const { argument, intent, options, store } = context
+
+  const iterable = context.mutators.concat(mutators).reduce(
+    (accumulator, mutator) => mutator(accumulator, context),
+    iterateEntities(iterateContext(context), context)
+  )
+
+  let count = 0
+  for await (const entity of iterable) {
+    if (!context.multiple && count >= 1) {
+      throw new MutentError(
+        'EMUT_MUTATION_OVERFLOW',
+        'Current transaction returned multiple values unexpectedly',
+        {
+          store,
+          intent,
+          argument,
+          options
+        }
+      )
+    }
+    count++
+    yield entity.valueOf()
+  }
+
+  if (!context.multiple && count <= 0 && intent !== 'FIND') {
+    throw new MutentError(
+      'EMUT_ENTITY_REQUIRED',
+      'Current transaction requires one entity to output',
+      {
+        store,
+        intent,
+        argument,
+        options
+      }
+    )
+  }
+}
+
+async function unwrapMethod (context, mutators) {
+  const results = []
+  for await (const data of iterateMethod(context, mutators)) {
+    results.push(data)
+  }
+  return context.multiple ? results : results.length > 0 ? results[0] : null
+}
+
+async function * iterateEntities (iterable, context) {
+  const { hooks, intent } = context
+
+  for await (const data of iterable) {
+    const entity = intent === 'CREATE'
+      ? Entity.create(data)
+      : Entity.read(data)
+
+    for (const hook of hooks.onEntity) {
+      await hook(entity, context)
+    }
+
+    yield entity
+  }
+}
+
+function mutatorClose (iterable, context) {
+  const { commitMode } = context
+
+  if (commitMode === 'AUTO') {
+    return commit()(iterable, context)
+  } else if (commitMode === 'MANUAL') {
+    return iterable
+  } else {
+    return mutatorSafe(iterable, context)
+  }
+}
+
+async function * mutatorSafe (iterable, context) {
+  const { argument, intent } = context
+
+  for await (const entity of iterable) {
+    if (entity.shouldCommit) {
+      throw new MutentError(
+        'EMUT_UNSAFE_UNWRAP',
+        'An entity with uncommitted changes was found',
+        { intent, argument, entity }
+      )
+    }
+    yield entity
   }
 }

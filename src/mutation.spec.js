@@ -2,33 +2,28 @@ import test from 'ava'
 
 import { Mutation } from './mutation'
 import { assign, pipe, update } from './mutators'
+import { normalizeHooks } from './options'
 
-const defaultAdapter = {
-  create () {},
-  update () {},
-  delete () {}
+function buildMutation (intent, argument, context = {}) {
+  return new Mutation({
+    adapter: {},
+    argument,
+    commitMode: 'AUTO',
+    intent,
+    mutators: [],
+    writeMode: 'AUTO',
+    writeSize: 16,
+    ...context,
+    hooks: normalizeHooks(context.hooks)
+  })
 }
 
 function create (data, context) {
-  return Mutation.create({
-    adapter: defaultAdapter,
-    argument: data,
-    commitMode: 'AUTO',
-    intent: 'CREATE',
-    hooks: {},
-    ...context
-  })
+  return buildMutation('CREATE', data, context)
 }
 
 function read (data, context) {
-  return Mutation.create({
-    adapter: defaultAdapter,
-    argument: data,
-    commitMode: 'AUTO',
-    intent: 'FROM',
-    hooks: {},
-    ...context
-  })
+  return buildMutation('FROM', data, context)
 }
 
 function next (item) {
@@ -38,25 +33,31 @@ function next (item) {
   }
 }
 
-async function consume (iterable, handler) {
+async function consume (iterable) {
   const results = []
   for await (const value of iterable) {
-    if (handler) {
-      results.push(await handler(value))
-    } else {
-      results.push(value)
-    }
+    results.push(value)
   }
   return results
 }
 
 test('one:unwrap', async t => {
-  const out = await create({ id: 0, value: 'UNWRAP' }).unwrap()
+  const context = {
+    adapter: {
+      create () {}
+    }
+  }
+  const out = await create({ id: 0, value: 'UNWRAP' }, context).unwrap()
   t.deepEqual(out, { id: 0, value: 'UNWRAP' })
 })
 
 test('one:iterate', async t => {
-  const out = await consume(create({ id: 0, value: 'ITERATE' }).iterate())
+  const context = {
+    adapter: {
+      create () {}
+    }
+  }
+  const out = await consume(create({ id: 0, value: 'ITERATE' }, context).iterate())
   t.deepEqual(out, [{ id: 0, value: 'ITERATE' }])
 })
 
@@ -71,7 +72,13 @@ test('many:iterate', async t => {
 })
 
 test('instance:condition', async t => {
-  const entity = read({ id: 0 })
+  const context = {
+    adapter: {
+      update () {}
+    }
+  }
+
+  const entity = read({ id: 0 }, context)
 
   const mDelete = assign({ value: 'DELETE' })
   const mUpdate = assign({ value: 'UPDATE' })
@@ -99,7 +106,13 @@ test('instance:condition', async t => {
 })
 
 test('instance:pipe', async t => {
-  const out = await read({ id: 0 })
+  const context = {
+    adapter: {
+      update () {}
+    }
+  }
+
+  const out = await read({ id: 0 }, context)
     .pipe(
       pipe(
         assign({ value: 'update' }),
@@ -204,36 +217,6 @@ test('instance:delete-one', async t => {
   })
 })
 
-function bind (t, mode = {}) {
-  const adapter = {
-    async create (target, options) {
-      if (mode.create === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-      t.is(options.db, 'test')
-    },
-    async update (source, target, options) {
-      if (mode.update === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-      t.is(options.db, 'test')
-    },
-    async delete (source, options) {
-      if (mode.delete === true) {
-        t.pass()
-      } else {
-        t.fail()
-      }
-      t.is(options.db, 'test')
-    }
-  }
-  return { adapter }
-}
-
 function getItems (count = 16) {
   const items = []
   for (let i = 0; i < count; i++) {
@@ -244,7 +227,15 @@ function getItems (count = 16) {
 
 test('create many', async t => {
   t.plan(35)
-  const results = await create(getItems(), bind(t, { create: true }))
+  const context = {
+    adapter: {
+      create (data, options) {
+        t.pass()
+        t.is(options.db, 'test')
+      }
+    }
+  }
+  const results = await create(getItems(), context)
     .commit()
     .unwrap({ db: 'test' })
   t.is(results.length, 16)
@@ -254,7 +245,15 @@ test('create many', async t => {
 
 test('update many', async t => {
   t.plan(35)
-  const results = await read(getItems(), bind(t, { update: true }))
+  const context = {
+    adapter: {
+      update (oldData, newData, options) {
+        t.pass()
+        t.is(options.db, 'test')
+      }
+    }
+  }
+  const results = await read(getItems(), context)
     .update(data => ({ id: data.id / 2 }))
     .commit()
     .unwrap({ db: 'test' })
@@ -265,7 +264,15 @@ test('update many', async t => {
 
 test('assign many', async t => {
   t.plan(37)
-  const results = await read(getItems(), bind(t, { update: true }))
+  const context = {
+    adapter: {
+      update (oldData, newData, options) {
+        t.pass()
+        t.is(options.db, 'test')
+      }
+    }
+  }
+  const results = await read(getItems(), context)
     .assign({ value: 42 })
     .commit()
     .unwrap({ db: 'test' })
@@ -278,7 +285,15 @@ test('assign many', async t => {
 
 test('delete many', async t => {
   t.plan(35)
-  const results = await read(getItems(), bind(t, { delete: true }))
+  const context = {
+    adapter: {
+      delete (data, options) {
+        t.pass()
+        t.is(options.db, 'test')
+      }
+    }
+  }
+  const results = await read(getItems(), context)
     .delete()
     .commit()
     .unwrap({ db: 'test' })
