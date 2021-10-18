@@ -441,6 +441,10 @@ export interface StoreOptions<T, Q, O> extends MutentOptions<T, Q, O> {
    * Store's name.
    */
   name?: string;
+  /**
+   * Plugins to apply to this store.
+   */
+  plugins?: Array<MutentOptions<T, Q, O>>
 }
 
 export declare class Store<T, Q, O> {

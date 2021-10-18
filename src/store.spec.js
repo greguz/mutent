@@ -479,25 +479,42 @@ test('store:consume', async t => {
 })
 
 test('store:extend', async t => {
-  t.plan(7)
+  t.plan(9)
 
   let index = 0
 
   const a = new Store({
-    adapter: {}
+    adapter: {},
+    plugins: [
+      {
+        hooks: {
+          onEntity: [
+            () => {
+              t.is(index++, 3)
+            }
+          ]
+        },
+        mutators: [
+          iterable => {
+            t.is(index++, 0)
+            return iterable
+          }
+        ]
+      }
+    ]
   })
 
   const b = a.extend({
     hooks: {
       onEntity: [
         () => {
-          t.is(index++, 2)
+          t.is(index++, 4)
         }
       ]
     },
     mutators: [
       iterable => {
-        t.is(index++, 0)
+        t.is(index++, 1)
         return iterable
       }
     ]
@@ -507,12 +524,12 @@ test('store:extend', async t => {
     commitMode: 'MANUAL',
     hooks: {
       onEntity () {
-        t.is(index++, 3)
+        t.is(index++, 5)
       }
     },
     mutators: [
       iterable => {
-        t.is(index++, 1)
+        t.is(index++, 2)
         return iterable
       }
     ],
@@ -521,7 +538,7 @@ test('store:extend', async t => {
   })
 
   await c.create({ value: 42 }).consume()
-  t.is(index, 4)
+  t.is(index, 6)
 
   t.throws(() => c.extend({ hooks: { onEntity: null } }), {
     message: 'Invalid onEntity hook definition'

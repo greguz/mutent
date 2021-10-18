@@ -2,7 +2,10 @@ import { MutentError } from './error'
 import { isAsyncIterable, isIterable } from './iterable'
 
 export function readAdapterName (adapter) {
-  return `${adapter[Symbol.for('mutent-adapter-name')] || 'anonymous'}`
+  const value = adapter[Symbol.for('mutent-adapter-name')]
+  if (value !== undefined) {
+    return value + ''
+  }
 }
 
 function findEntity (context) {

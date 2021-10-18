@@ -17,6 +17,7 @@ export class Store {
       hooks,
       mutators,
       name,
+      plugins,
       writeMode,
       writeSize
     } = Object(options)
@@ -29,11 +30,17 @@ export class Store {
     this._commitMode = 'AUTO'
     this._hooks = normalizeHooks({})
     this._mutators = []
-    this._name = name || readAdapterName(adapter) || 'anonymous'
+    this._name = `${name || readAdapterName(adapter) || 'anonymous'}`
     this._writeMode = 'AUTO'
     this._writeSize = 16
 
     this.extend({ commitMode, hooks, mutators, writeMode, writeSize })
+
+    if (Array.isArray(plugins)) {
+      for (const plugin of plugins) {
+        this.extend(plugin)
+      }
+    }
   }
 
   create (data) {

@@ -424,7 +424,7 @@ test('adapter:concurrent', async t => {
 })
 
 test('adapter:name', async t => {
-  t.is(readAdapterName({}), 'anonymous')
+  t.is(readAdapterName({}), undefined)
   t.is(
     readAdapterName({ [Symbol.for('mutent-adapter-name')]: 'test' }),
     'test'
