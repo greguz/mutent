@@ -1,48 +1,46 @@
 # Adapter
 
-The adapter is the component responsible for the communication between the code and the persistence layer.
+### **Adapter#find(query, options)**
 
-## find(query, options)
-
-**Mandatory** method. It returns the _entity_ that matches the defined query or a _nullish_ value if the entity doesn't exist. `Promise`s are also supported.
+Returns the entity's data that matches the defined `query` or a _nullish_ value. Can return a `Promise`.
 
 - `query` `<*>`
 - `options` `<Object>`
 
-## filter(query, options)
+### **Adapter#filter(query, options)**
 
-**Mandatory** method. It returns an _iterable_ (can be _async_) that will provide all entities that match the defined query.
+Returns an `Iterable` that will `yield` all entities that match the defined `query`. Can return an `AsyncIterable`.
 
 - `query` `<*>`
 - `options` `<Object>`
 
-## create(data, options)
+### **Adapter#create(data, options)**
 
-**Mandatory** method. It creates a _new_ entity inside the persistence layer. If the write operation adds some data, the method CAN return the just-created entity. `Promise`s are also supported.
+Creates a _new_ entity inside the persistence layer. If the write operation adds some data, the method CAN return the just-created entity. `Promise`s are also supported.
 
 - `data` `<*>` The entity data to insert.
 - `options` `<Object>`
 
-## update(oldData, newData, options)
+### **Adapter#update(oldData, newData, options)**
 
-**Mandatory** method. It updates an _existing_ entity against the persistence layer. If the write operation adds some data, the method CAN return the just-updated entity. `Promise`s are also supported.
+It updates an _existing_ entity against the persistence layer. If the write operation adds some data, the method CAN return the just-updated entity. `Promise`s are also supported.
 
 - `oldData` `<*>` _Original_ entity data retrieved from the persistence layer.
 - `newData` `<*>` _Updated_ entity data after all mutations are applied.
 - `options` `<Object>`
 
-## delete(data, options)
+### **Adapter#delete(data, options)**
 
-**Mandatory** method. It deletes an _existing_ entity from the persistence layer. `Promise`s are also supported.
+It deletes an _existing_ entity from the persistence layer. `Promise`s are also supported.
 
 - `data` `<*>` _Original_ entity data retrieved from the persistence
 - `options` `<Object>`
 
-## bulk(actions, options)
+### **Adapter#bulk(actions, options)**
 
 _Optional_ method.
 
-- `actions` `<Object[]>`
+- `actions` `<BulkAction[]>`
 - `options` `<Object>`
 
 ## Example

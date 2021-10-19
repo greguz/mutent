@@ -10,15 +10,20 @@ Mutent is an elegant and agnostic solution to work with any persistence layer.
 
 Any action performed against the persistence layer is declared with plain JavaScript, making it possible to manipulate objects with just one language and leaving the integration stuff to the chosen adapter.
 
+## Features
+
+- **Zero dependencies**: small footprint.
+- **Pure ES2018 code**: any environment that can run ES2018 code can directly include this module. Downgrading with tools like [Babel](https://babeljs.io/) is still possible.
+- **Extensible**: a powerful hooks system in place.
+- **Agnostic**: can be configured to work with any persistence layer through adapters.
+- **TypeScript**: types declaration are included.
+- **Well tested**: more than 95% code coverage.
+
 ## Installation
 
 ```
 npm install --save mutent
 ```
-
-## ESNext
-
-This project uses **ES2018** syntax (Node.js >= 10). If you need to run Mutent on an older runtime, a transpilation with tools like [Babel](https://babeljs.io/) is required.
 
 ## Example
 
