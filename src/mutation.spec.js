@@ -98,7 +98,7 @@ test('instance:condition', async t => {
   const e = await entity.if(data => data.id !== 0, mDelete, mUpdate).unwrap()
   t.deepEqual(e, { id: 0, value: 'UPDATE' })
 
-  const f = await entity.if(true, undefined, mUpdate).unwrap()
+  const f = await entity.if(false, mUpdate).unwrap()
   t.deepEqual(f, { id: 0 })
 
   const g = await entity.if(false, mDelete).unwrap()

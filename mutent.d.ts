@@ -374,7 +374,7 @@ export interface Mutation<T, Q, O, U = unknown> {
    */
   if(
     condition: Lazy<boolean, T>,
-    whenTrue?: Mutator<T>,
+    whenTrue: Mutator<T>,
     whenFalse?: Mutator<T>
   ): Mutation<T, Q, O, U>;
   /**
@@ -512,7 +512,7 @@ export declare function filter<T>(
  */
 export declare function iif<T>(
   condition: Lazy<boolean, T>,
-  whenTrue?: Mutator<T>,
+  whenTrue: Mutator<T>,
   whenFalse?: Mutator<T>
 ): Mutator<T>;
 

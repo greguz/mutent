@@ -45,7 +45,7 @@ function passthrough (iterable) {
 
 export function iif (
   condition,
-  whenTrue = passthrough,
+  whenTrue,
   whenFalse = passthrough
 ) {
   if (typeof condition === 'boolean') {
