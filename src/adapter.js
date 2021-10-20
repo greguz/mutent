@@ -14,11 +14,7 @@ function findEntity (context) {
     throw new MutentError(
       'EMUR_PARTIAL_ADAPTER',
       'The adapter does not implement ".find" method',
-      {
-        store,
-        intent,
-        argument
-      }
+      { store, intent, argument, options }
     )
   }
   for (const hook of hooks.onFind) {
@@ -33,11 +29,7 @@ function filterEntities (context) {
     throw new MutentError(
       'EMUR_PARTIAL_ADAPTER',
       'The adapter does not implement ".filter" method',
-      {
-        store,
-        intent,
-        argument
-      }
+      { store, intent, argument, options }
     )
   }
   for (const hook of hooks.onFilter) {
@@ -75,11 +67,7 @@ async function createEntity (entity, context) {
     throw new MutentError(
       'EMUR_PARTIAL_ADAPTER',
       'The adapter does not implement ".create" method',
-      {
-        store,
-        intent,
-        argument
-      }
+      { store, intent, argument, options }
     )
   }
   for (const hook of hooks.beforeCreate) {
@@ -100,11 +88,7 @@ async function updateEntity (entity, context) {
     throw new MutentError(
       'EMUR_PARTIAL_ADAPTER',
       'The adapter does not implement ".update" method',
-      {
-        store,
-        intent,
-        argument
-      }
+      { store, intent, argument, options }
     )
   }
   for (const hook of hooks.beforeUpdate) {
@@ -125,11 +109,7 @@ async function deleteEntity (entity, context) {
     throw new MutentError(
       'EMUR_PARTIAL_ADAPTER',
       'The adapter does not implement ".delete" method',
-      {
-        store,
-        intent,
-        argument
-      }
+      { store, intent, argument, options }
     )
   }
   for (const hook of hooks.beforeDelete) {
@@ -187,16 +167,12 @@ export async function * concurrentWrite (iterable, context) {
 }
 
 export async function * bulkWrite (iterable, context) {
-  const { adapter, argument, intent, store, writeSize } = context
+  const { adapter, argument, intent, options, store, writeSize } = context
   if (!adapter.bulk) {
     throw new MutentError(
       'EMUR_PARTIAL_ADAPTER',
       'The adapter does not implement ".bulk" method',
-      {
-        store,
-        intent,
-        argument
-      }
+      { store, intent, argument, options }
     )
   }
 

@@ -116,12 +116,7 @@ async function * iterateMethod (context, mutators) {
       throw new MutentError(
         'EMUT_MUTATION_OVERFLOW',
         'Current transaction returned multiple values unexpectedly',
-        {
-          store,
-          intent,
-          argument,
-          options
-        }
+        { store, intent, argument, options }
       )
     }
     count++
@@ -132,12 +127,7 @@ async function * iterateMethod (context, mutators) {
     throw new MutentError(
       'EMUT_ENTITY_REQUIRED',
       'Current transaction requires one entity to output',
-      {
-        store,
-        intent,
-        argument,
-        options
-      }
+      { store, intent, argument, options }
     )
   }
 }
@@ -179,14 +169,14 @@ function mutatorClose (iterable, context) {
 }
 
 async function * mutatorSafe (iterable, context) {
-  const { argument, intent } = context
+  const { argument, intent, options, store } = context
 
   for await (const entity of iterable) {
     if (entity.shouldCommit) {
       throw new MutentError(
         'EMUT_UNSAFE_UNWRAP',
         'An entity with uncommitted changes was found',
-        { intent, argument, entity }
+        { store, intent, argument, options, entity }
       )
     }
     yield entity
