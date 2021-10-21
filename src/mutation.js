@@ -1,6 +1,7 @@
 import { iterateContext } from './adapter'
 import { Entity } from './entity'
 import { MutentError } from './error'
+import { isAsyncIterable, isIterable } from './iterable'
 import { assign, commit, ddelete, filter, iif, tap, update } from './mutators'
 import {
   mergeHooks,
@@ -73,6 +74,16 @@ export class Mutation {
   }
 }
 
+function isMultiple (intent, argument) {
+  if (intent === 'CREATE' || intent === 'FROM') {
+    return isIterable(argument) || isAsyncIterable(argument)
+  } else if (intent === 'FIND' || intent === 'READ') {
+    return false
+  } else {
+    return true
+  }
+}
+
 function prepareContext (context, unwrapOptions) {
   const { adapter, argument, intent, store } = context
 
@@ -87,7 +98,7 @@ function prepareContext (context, unwrapOptions) {
       : context.commitMode,
     hooks: mergeHooks(context.hooks, normalizeHooks(mutentOptions.hooks)),
     intent,
-    multiple: null,
+    multiple: isMultiple(intent, argument),
     mutators: context.mutators.concat(
       normalizeMutators(mutentOptions.mutators)
     ),
@@ -103,7 +114,7 @@ function prepareContext (context, unwrapOptions) {
 }
 
 async function * iterateMethod (context, mutators) {
-  const { argument, intent, options, store } = context
+  const { argument, intent, multiple, options, store } = context
 
   const iterable = context.mutators.concat(mutators).reduce(
     (accumulator, mutator) => mutator(accumulator, context),
@@ -112,7 +123,7 @@ async function * iterateMethod (context, mutators) {
 
   let count = 0
   for await (const entity of iterable) {
-    if (!context.multiple && count >= 1) {
+    if (!multiple && count >= 1) {
       throw new MutentError(
         'EMUT_MUTATION_OVERFLOW',
         'Current transaction returned multiple values unexpectedly',
@@ -123,7 +134,7 @@ async function * iterateMethod (context, mutators) {
     yield entity.valueOf()
   }
 
-  if (!context.multiple && count <= 0 && intent !== 'FIND') {
+  if (!multiple && count <= 0 && intent !== 'FIND') {
     throw new MutentError(
       'EMUT_ENTITY_REQUIRED',
       'Current transaction requires one entity to output',

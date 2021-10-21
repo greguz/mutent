@@ -105,18 +105,6 @@ test('store:create', async t => {
       .iterate({ my: 'options' })
   )
   t.deepEqual(iPromiseCallback, [{ id: 8 }])
-
-  const uIterableCallback = await store
-    .create(() => [{ id: 9 }])
-    .unwrap({ my: 'options' })
-  t.deepEqual(uIterableCallback, [{ id: 9 }])
-
-  const iIterableCallback = await consume(
-    store
-      .create(() => [{ id: 10 }])
-      .iterate({ my: 'options' })
-  )
-  t.deepEqual(iIterableCallback, [{ id: 10 }])
 })
 
 test('store:find', async t => {

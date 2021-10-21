@@ -427,7 +427,7 @@ export declare type One<T> = Lazy<T | Promise<T>>;
 /**
  * Many entities' values definition. Have to be and iterable. Can be lazy and async.
  */
-export declare type Many<T> = Lazy<Iterable<T> | AsyncIterable<T>>;
+export declare type Many<T> = Iterable<T> | AsyncIterable<T>;
 
 /**
  * Store's constructor options.

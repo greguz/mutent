@@ -1,5 +1,4 @@
 import { MutentError } from './error'
-import { isAsyncIterable, isIterable } from './iterable'
 
 export function readAdapterName (adapter) {
   const value = adapter[Symbol.for('mutent-adapter-name')]
@@ -39,18 +38,16 @@ function filterEntities (context) {
 }
 
 export function iterateContext (context) {
-  const { argument, intent } = context
+  const { argument, intent, multiple } = context
 
-  if (intent === 'CREATE' || intent === 'FROM') {
-    const blob = typeof argument === 'function' ? argument() : argument
-    context.multiple = isIterable(blob) || isAsyncIterable(blob)
-    return context.multiple ? blob : fromPromise(blob)
-  } else if (intent === 'FIND' || intent === 'READ') {
-    context.multiple = false
-    return fromPromise(findEntity(context))
-  } else {
-    context.multiple = true
+  if (intent === 'FILTER') {
     return filterEntities(context)
+  } else if (intent === 'FIND' || intent === 'READ') {
+    return fromPromise(findEntity(context))
+  } else if (multiple) {
+    return argument
+  } else {
+    return fromPromise(typeof argument === 'function' ? argument() : argument)
   }
 }
 

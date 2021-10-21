@@ -28,7 +28,7 @@ export class Store {
 
     this._adapter = adapter
     this._commitMode = 'AUTO'
-    this._hooks = normalizeHooks({})
+    this._hooks = normalizeHooks()
     this._mutators = []
     this._name = `${name || readAdapterName(adapter) || 'anonymous'}`
     this._writeMode = 'AUTO'
