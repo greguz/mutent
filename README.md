@@ -1,10 +1,11 @@
-# mutent
+# Mutent
 
-[![npm version](https://badge.fury.io/js/mutent.svg)](https://badge.fury.io/js/mutent)
-[![Dependencies Status](https://david-dm.org/greguz/mutent.svg)](https://david-dm.org/greguz/mutent.svg)
+![npm](https://img.shields.io/npm/v/mutent)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/mutent)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![Actions Status](https://github.com/greguz/mutent/workflows/ci/badge.svg)](https://github.com/greguz/mutent/actions)
 [![Coverage Status](https://coveralls.io/repos/github/greguz/mutent/badge.svg?branch=master)](https://coveralls.io/github/greguz/mutent?branch=master)
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+![GitHub](https://img.shields.io/github/license/greguz/mutent)
 
 Mutent is an elegant and agnostic solution to work with any persistence layer.
 

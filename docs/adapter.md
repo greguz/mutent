@@ -1,5 +1,7 @@
 # Adapter
 
+## Methods
+
 ### **Adapter#find(query, options)**
 
 Returns the entity's data that matches the defined `query` or a _nullish_ value. Can return a `Promise`.
@@ -47,33 +49,33 @@ _Optional_ method.
 
 ```javascript
 class ArrayAdapter {
-  constructor(array = []) {
-    this.array = array
+  constructor (items) {
+    this.items = items || []
   }
 
-  find(query) {
-    return this.array.find(query)
+  find (query) {
+    return this.items.find(query)
   }
 
-  filter(query) {
-    return this.array.filter(query)
+  filter (query) {
+    return this.items.filter(query)
   }
 
-  create(data) {
-    this.array.push(data)
+  create (data) {
+    this.items.push(data)
   }
 
-  update(oldData, newData) {
-    this.array.splice(
-      this.array.findIndex(entity => entity === oldData),
+  update (oldData, newData) {
+    this.items.splice(
+      this.items.findIndex(item => item === oldData),
       1,
       newData
     )
   }
 
-  delete(data) {
-    this.array.splice(
-      this.array.findIndex(entity => entity === data),
+  delete (data) {
+    this.items.splice(
+      this.items.findIndex(item => item === data),
       1
     )
   }
