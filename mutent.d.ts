@@ -292,7 +292,7 @@ export interface BulkActionDelete<T> {
   data: T;
 }
 
-export interface MutentOptions<T, Q, O> {
+export interface PluginOptions<T, Q, O> {
   /**
    * Default commit mode.
    * @default "AUTO"
@@ -332,7 +332,7 @@ export interface MutentOptions<T, Q, O> {
  * Mutation's unwrap options.
  */
 export declare type UnwrapOptions<T, Q, O> = Partial<O> & {
-  mutent?: MutentOptions<T, Q, O>;
+  mutent?: PluginOptions<T, Q, O>;
 };
 
 /**
@@ -432,7 +432,7 @@ export declare type Many<T> = Iterable<T> | AsyncIterable<T>;
 /**
  * Store's constructor options.
  */
-export interface StoreOptions<T, Q, O> extends MutentOptions<T, Q, O> {
+export interface StoreOptions<T, Q, O> extends PluginOptions<T, Q, O> {
   /**
    * Adapter definition.
    */
@@ -444,7 +444,7 @@ export interface StoreOptions<T, Q, O> extends MutentOptions<T, Q, O> {
   /**
    * Plugins to apply to this store.
    */
-  plugins?: Array<MutentOptions<T, Q, O>>
+  plugins?: Array<PluginOptions<T, Q, O>>;
 }
 
 export declare class Store<T, Q, O> {
@@ -475,9 +475,9 @@ export declare class Store<T, Q, O> {
   public from(one: One<T>): MutationSingle<T, Q, O>;
   public from(many: Many<T>): MutationMultiple<T, Q, O>;
   /**
-   * Update store's configuration. Hooks and mutators will be joined.
+   * Register a plugin.
    */
-  public extend(options: MutentOptions<T, Q, O>): this;
+  public register(plugin: PluginOptions<T, Q, O>): this;
 }
 
 /**

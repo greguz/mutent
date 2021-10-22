@@ -466,12 +466,12 @@ test('store:consume', async t => {
   t.deepEqual(items, [{ value: 42 }])
 })
 
-test('store:extend', async t => {
+test('store:register', async t => {
   t.plan(9)
 
   let index = 0
 
-  const a = new Store({
+  const store = new Store({
     adapter: {},
     plugins: [
       {
@@ -492,7 +492,7 @@ test('store:extend', async t => {
     ]
   })
 
-  const b = a.extend({
+  store.register({
     hooks: {
       onEntity: [
         () => {
@@ -508,7 +508,7 @@ test('store:extend', async t => {
     ]
   })
 
-  const c = b.extend({
+  store.register({
     commitMode: 'MANUAL',
     hooks: {
       onEntity () {
@@ -525,13 +525,13 @@ test('store:extend', async t => {
     writeSize: 8
   })
 
-  await c.create({ value: 42 }).consume()
+  await store.create({ value: 42 }).consume()
   t.is(index, 6)
 
-  t.throws(() => c.extend({ hooks: { onEntity: null } }), {
+  t.throws(() => store.register({ hooks: { onEntity: null } }), {
     message: 'Invalid onEntity hook definition'
   })
-  t.throws(() => c.extend({ mutators: null }), {
+  t.throws(() => store.register({ mutators: null }), {
     message: 'Invalid mutators'
   })
 })

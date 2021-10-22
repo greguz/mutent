@@ -34,11 +34,11 @@ export class Store {
     this._writeMode = 'AUTO'
     this._writeSize = 16
 
-    this.extend({ commitMode, hooks, mutators, writeMode, writeSize })
+    this.register({ commitMode, hooks, mutators, writeMode, writeSize })
 
     if (Array.isArray(plugins)) {
       for (const plugin of plugins) {
-        this.extend(plugin)
+        this.register(plugin)
       }
     }
   }
@@ -47,14 +47,14 @@ export class Store {
     return this.mutation('CREATE', data)
   }
 
-  extend (options) {
+  register (plugin) {
     const {
       commitMode,
       hooks,
       mutators,
       writeMode,
       writeSize
-    } = Object(options)
+    } = Object(plugin)
 
     if (commitMode !== undefined) {
       this._commitMode = parseCommitMode(commitMode)
