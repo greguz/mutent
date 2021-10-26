@@ -52,7 +52,7 @@ export declare class Entity<T> {
    */
   source: T | null;
   /**
-   * Containes the last version of the entity after all mutations are applied.
+   * Contains the last version of the entity after all mutations are applied.
    */
   target: T;
   /**
@@ -182,11 +182,17 @@ export interface Context<T, Q, O> {
   writeSize: number;
 }
 
+/**
+ * Sync hook containing the adapter's query.
+ */
 export declare type QueryHook<T, Q, O> = (
   query: Q,
   context: Context<T, Q, O>
 ) => any;
 
+/**
+ * Hook containing the currently processed entity instance.
+ */
 export declare type EntityHook<T, Q, O> = (
   entity: Entity<T>,
   context: Context<T, Q, O>
@@ -302,14 +308,41 @@ export interface PluginOptions<T, Q, O> {
    * Event hooks.
    */
   hooks?: {
+    /**
+     * Triggered when a single entity is fetched from the persistence layer.
+     */
     onFind?: OneOrMore<QueryHook<T, Q, O>>;
+    /**
+     * Triggered when multiple entities are fetched from the persistence layer.
+     */
     onFilter?: OneOrMore<QueryHook<T, Q, O>>;
+    /**
+     * Triggered when an entity is ready to be processed by the mutation.
+     */
     onEntity?: OneOrMore<EntityHook<T, Q, O>>;
+    /**
+     * Triggered before any entity creation.
+     */
     beforeCreate?: OneOrMore<EntityHook<T, Q, O>>;
+    /**
+     * Triggered before any entity update.
+     */
     beforeUpdate?: OneOrMore<EntityHook<T, Q, O>>;
+    /**
+     * Triggered before any entity deletion.
+     */
     beforeDelete?: OneOrMore<EntityHook<T, Q, O>>;
+    /**
+     * Triggered after any entity creation.
+     */
     afterCreate?: OneOrMore<EntityHook<T, Q, O>>;
+    /**
+     * Triggered after any entity update.
+     */
     afterUpdate?: OneOrMore<EntityHook<T, Q, O>>;
+    /**
+     * Triggered after any entity deletion.
+     */
     afterDelete?: OneOrMore<EntityHook<T, Q, O>>;
   };
   /**

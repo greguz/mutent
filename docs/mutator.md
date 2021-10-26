@@ -2,8 +2,6 @@
 
 Mutators are the heart of this module.
 
-## Definition
-
 A mutator is a simple function that takes an `AsyncIterable` and a [context](context.md) as arguments and will return a new `AsyncIterable`. The `yield`ed values from **both** iterables must be [entity](entity.md) instances to let Mutent works without issues.
 
 The next example will show an implementation of a simple passthrough mutator.
@@ -16,7 +14,7 @@ async function * passthrough (iterable, context) {
 }
 ```
 
-A mutator can be added to a [mutation](mutation.md) using the `pipe` method.
+A mutator can be added to a [mutation](mutation.md) using the `pipe` method. The `pipe` method will return a **new** mutation instance (immutable).
 
 ```javascript
 const newMutation = oldMutation.pipe(passthrough)
@@ -44,33 +42,6 @@ function set (property, value) {
 const newMutation = oldMutation.pipe(
   set('myProperty', 42)
 )
-```
-
-## Context
-
-The mutator's context contains the configuration of the current mutation.
-
-```javascript
-const context = {
-  // Store's adapter.
-  adapter: {},
-  // Store method's arguent that has generated the current mutation.
-  argument: {},
-  // Configured commit mode.
-  commitMode: "AUTO",
-  // Mutation's intent (can be "CREATE", "FIND", "READ", "FILTER" and "FROM").
-  intent: "CREATE",
-  // Indicates if the current mutation could process multiple values.
-  multiple: false,
-  // Adapter's options provided while unwrapping.
-  options: {},
-  // Store's name.
-  store: "MyStore",
-  // Configured write mode.
-  writeMode: "AUTO",
-  // Configured write side.
-  writeSize: 16
-}
 ```
 
 ## Included mutators
