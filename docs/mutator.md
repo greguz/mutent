@@ -53,6 +53,17 @@ Alias for `update(data => Object.assign({}, data, ...objects))`. See [update](#u
 - `...objects` `<Object>`
 - Returns: `<Mutator>`
 
+```javascript
+import { assign } from 'mutent'
+
+// Declare a store..
+
+store.create({ id: 'myId' })
+  .pipe(assign({ value: 42 }))
+  .unwrap()
+  .then(data => console.log(data)) // { id: 'myId', value: 42 }
+```
+
 ### **commit()**
 
 Declares a write intention against the persistence layer.
