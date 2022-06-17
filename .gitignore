@@ -1,7 +1,8 @@
-node_modules
-.vscode
-mutent.js
-.nyc_output
+.*
+!.c8rc
+!.editorconfig
+!.github
 coverage
-.coveralls.yml
+mutent.cjs
+node_modules
 package-lock.json

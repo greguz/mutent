@@ -1,7 +1,7 @@
 export default {
-  input: 'src/index.js',
+  input: './mutent.mjs',
   output: {
-    file: 'mutent.js',
+    file: './mutent.cjs',
     format: 'cjs'
   }
 }

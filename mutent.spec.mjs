@@ -1,9 +1,7 @@
 import test from 'ava'
 import { Readable } from 'stream'
 
-import { Entity } from './entity'
-import { MutentError } from './error'
-import { Store } from './store'
+import { Entity, MutentError, Store } from './mutent.mjs'
 
 function createAdapter (items = []) {
   return {

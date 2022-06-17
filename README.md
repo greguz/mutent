@@ -18,6 +18,8 @@ Any action performed against the persistence layer is declared with plain JavaSc
 - **Extensible**: a powerful hooks system in place.
 - **Agnostic**: can be configured to work with any persistence layer through adapters.
 - **TypeScript**: types declaration are included.
+- **ESM**: support native ESM (`import` and `export` keywords).
+- **CommonJS**: support old Node.js runtimes (`require`).
 - **Well tested**: more than 95% code coverage.
 
 ## Installation

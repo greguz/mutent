@@ -1,11 +1,19 @@
 {
   "name": "mutent",
   "version": "5.0.0-9",
-  "description": "Elegant and agnostic solution to work with any persistence layer",
-  "main": "./mutent.js",
+  "description": "Elegant and agnostic solution to work with any persistence layer.",
+  "type": "module",
+  "exports": {
+    "import": "./mutent.mjs",
+    "require": "./mutent.cjs"
+  },
+  "main": "./mutent.cjs",
   "types": "./mutent.d.ts",
   "files": [
-    "mutent.js",
+    "!**/*.spec.mjs",
+    "lib",
+    "mutent.mjs",
+    "mutent.cjs",
     "mutent.d.ts"
   ],
   "keywords": [
@@ -20,42 +28,21 @@
     "stream"
   ],
   "scripts": {
-    "lint": "standard --fix src",
-    "test": "nyc --reporter=lcov --reporter=text-summary ava",
+    "lint": "standard",
+    "test": "c8 ava",
     "build": "rollup -c",
-    "prepublishOnly": "npm run build && npm run test"
+    "prepublishOnly": "npm run lint && npm run build && npm test"
   },
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^3.15.0",
-    "esm": "^3.2.25",
-    "nyc": "^15.1.0",
-    "rollup": "^2.58.0",
-    "standard": "^16.0.4"
+    "ava": "^4.3.0",
+    "c8": "^7.11.3",
+    "rollup": "^2.75.6",
+    "standard": "^17.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/greguz/mutent.git"
-  },
-  "ava": {
-    "extensions": [
-      "js"
-    ],
-    "files": [
-      "**/*.spec.js"
-    ],
-    "require": [
-      "esm"
-    ]
-  },
-  "nyc": {
-    "all": true,
-    "include": [
-      "src/**/*.js"
-    ],
-    "exclude": [
-      "**/*.spec.js"
-    ]
   }
 }

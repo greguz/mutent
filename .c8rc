@@ -1,0 +1,11 @@
+{
+  "all": true,
+  "reporter": ["html", "lcov", "text"],
+  "include": [
+    "lib/**/*.mjs",
+    "mutent.mjs"
+  ],
+  "exclude": [
+    "**/*.spec.mjs"
+  ]
+}
