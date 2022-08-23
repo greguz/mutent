@@ -169,10 +169,6 @@ export interface Context<T, Q, O> {
    */
   options: Partial<O>;
   /**
-   * Store's name.
-   */
-  store: string;
-  /**
    * Store write mode.
    */
   writeMode: WriteMode;
@@ -470,10 +466,6 @@ export interface StoreOptions<T, Q, O> extends PluginOptions<T, Q, O> {
    * Adapter definition.
    */
   adapter: Adapter<T, Q, O>;
-  /**
-   * Store's name.
-   */
-  name?: string;
   /**
    * Plugins to apply to this store.
    */

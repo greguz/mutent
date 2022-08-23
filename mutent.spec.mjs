@@ -5,6 +5,7 @@ import { Entity, MutentError, Store } from './mutent.mjs'
 
 function createAdapter (items = []) {
   return {
+    [Symbol.for('adapter-name')]: 'Array Adapter',
     find (predicate) {
       return items.find(predicate)
     },
@@ -553,7 +554,7 @@ test('store:overflow', async t => {
     code: 'EMUT_MUTATION_OVERFLOW',
     instanceOf: MutentError
   })
-  t.is(error.info.store, 'test')
+  t.is(error.info.adapter, 'Array Adapter')
   t.is(error.info.intent, 'READ')
   t.is(error.info.argument, query)
 })
