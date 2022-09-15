@@ -426,6 +426,10 @@ export interface Mutation<G extends Generics, U = unknown> {
    */
   delete(): Mutation<G, U>;
   /**
+   * Creates an entity with this data if there are no other matches.
+   */
+  ensure(data: G["entity"]): Mutation<G, U>;
+  /**
    * Ignores the entities that don't satisfy the predicate.
    * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.
    */
@@ -638,3 +642,8 @@ export declare function tap<T>(
 export declare function update<T>(
   mapper: (data: T, index: number) => Result<T>
 ): Mutator<{ entity: T }>;
+
+/**
+ * Creates an entity with this data if there are no other matches.
+ */
+export declare function ensure<T>(data: T): Mutator<{ entity: T }>;

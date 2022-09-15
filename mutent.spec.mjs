@@ -558,3 +558,19 @@ test('store:overflow', async t => {
   t.is(error.info.intent, 'READ')
   t.is(error.info.argument, query)
 })
+
+test('store:ensure', async t => {
+  const items = []
+
+  const store = new Store({
+    adapter: createAdapter(items)
+  })
+
+  const value = await store
+    .read(() => false)
+    .ensure(42)
+    .unwrap()
+
+  t.is(value, 42)
+  t.deepEqual(items, [42])
+})
