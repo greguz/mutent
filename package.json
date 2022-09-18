@@ -8,13 +8,13 @@
     "require": "./mutent.cjs"
   },
   "main": "./mutent.cjs",
-  "types": "./mutent.d.ts",
+  "types": "./mutent.d.mts",
   "files": [
     "!**/*.spec.mjs",
     "lib",
     "mutent.mjs",
     "mutent.cjs",
-    "mutent.d.ts"
+    "mutent.d.mts"
   ],
   "keywords": [
     "agnostic",

@@ -528,7 +528,7 @@ export declare class Store<G extends Generics> {
   /**
    *
    */
-  public adapter: Adapter<G>;
+  public adapter: G['adapter'];
   /**
    *
    */
