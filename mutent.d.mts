@@ -434,7 +434,7 @@ export interface Mutation<G extends Generics, U = unknown> {
    * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.
    */
   filter(
-    predicate: (data: G["entity"], index: number) => boolean
+    predicate: (data: G["entity"], index: number) => Result<boolean>
   ): Mutation<G, U>;
   /**
    * Applies a mutator conditionally.
@@ -528,7 +528,7 @@ export declare class Store<G extends Generics> {
   /**
    *
    */
-  public adapter: G['adapter'];
+  public adapter: G["adapter"];
   /**
    *
    */
@@ -604,7 +604,7 @@ export declare function ddelete(): Mutator<any>;
  * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.
  */
 export declare function filter<T>(
-  predicate: (data: T, index: number) => boolean
+  predicate: (data: T, index: number) => Result<boolean>
 ): Mutator<{ entity: T }>;
 
 /**
