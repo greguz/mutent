@@ -5,16 +5,17 @@
   "type": "module",
   "exports": {
     "import": "./mutent.mjs",
-    "require": "./mutent.cjs"
+    "require": "./mutent.cjs",
+    "types": "./mutent.d.ts"
   },
   "main": "./mutent.cjs",
-  "types": "./mutent.d.mts",
+  "types": "./mutent.d.ts",
   "files": [
     "!**/*.spec.mjs",
     "lib",
     "mutent.mjs",
     "mutent.cjs",
-    "mutent.d.mts"
+    "mutent.d.ts"
   ],
   "keywords": [
     "agnostic",

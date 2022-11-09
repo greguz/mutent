@@ -585,9 +585,9 @@ export declare class Store<G extends Generics> {
  * Runs Object.assign() against all entities.
  * @param objects
  */
-export declare function assign<T>(
-  ...objects: Array<Partial<T>>
-): Mutator<{ entity: T }>;
+export declare function assign<G extends Generics>(
+  ...objects: Array<Partial<G["entity"]>>
+): Mutator<G>;
 
 /**
  * Commits (writes) all necessary entities.
@@ -603,9 +603,9 @@ export declare function ddelete(): Mutator<any>;
  * Ignores the entities that don't satisfy the predicate.
  * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.
  */
-export declare function filter<T>(
-  predicate: (data: T, index: number) => Result<boolean>
-): Mutator<{ entity: T }>;
+export declare function filter<G extends Generics>(
+  predicate: (data: G["entity"], index: number) => Result<boolean>
+): Mutator<G>;
 
 /**
  * Applies a mutator conditionally.
@@ -623,27 +623,29 @@ export declare function iif<G extends Generics>(
  * Reduces multiple mutators into a single one.
  * @param mutators Mutators chain to reduce.
  */
-export declare function pipe<T>(
-  ...mutators: Array<Mutator<{ entity: T }>>
-): Mutator<{ entity: T }>;
+export declare function pipe<G extends Generics>(
+  ...mutators: Array<Mutator<G>>
+): Mutator<G>;
 
 /**
  * Performs a side-effect against all entities.
  * @param callback A function that accepts the current entity and its index. Promises are supported.
  */
-export declare function tap<T>(
-  callback: (data: T, index: number) => any
-): Mutator<{ entity: T }>;
+export declare function tap<G extends Generics>(
+  callback: (data: G["entity"], index: number) => any
+): Mutator<G>;
 
 /**
  * Updates entities.
  * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported.
  */
-export declare function update<T>(
-  mapper: (data: T, index: number) => Result<T>
-): Mutator<{ entity: T }>;
+export declare function update<G extends Generics>(
+  mapper: (data: G["entity"], index: number) => Result<G["entity"]>
+): Mutator<G>;
 
 /**
  * Creates an entity with this data if there are no other matches.
  */
-export declare function ensure<T>(data: T): Mutator<{ entity: T }>;
+export declare function ensure<G extends Generics>(
+  data: G["entity"]
+): Mutator<G>;
