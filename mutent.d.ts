@@ -437,17 +437,6 @@ export interface Mutation<G extends Generics, U = unknown> {
     predicate: (data: G["entity"], index: number) => Result<boolean>
   ): Mutation<G, U>;
   /**
-   * Applies a mutator conditionally.
-   * @param condition Can be a boolean or a function that accepts the current entity.
-   * @param whenTrue Mutator applied when the condition is satisfied.
-   * @param whenFalse Mutator applied when the condition is not satisfied.
-   */
-  if(
-    condition: Lazy<boolean, G["entity"]>,
-    whenTrue: Mutator<G>,
-    whenFalse?: Mutator<G>
-  ): Mutation<G, U>;
-  /**
    * Applies configured mutators to the targeted entities and returns an entities (async) iterable.
    * @param options Adapter specific options.
    */
@@ -605,18 +594,6 @@ export declare function ddelete(): Mutator<any>;
  */
 export declare function filter<G extends Generics>(
   predicate: (data: G["entity"], index: number) => Result<boolean>
-): Mutator<G>;
-
-/**
- * Applies a mutator conditionally.
- * @param condition Can be a boolean or a function that accepts the current entity.
- * @param whenTrue Mutator applied when the condition is satisfied.
- * @param whenFalse Mutator applied when the condition is not satisfied.
- */
-export declare function iif<G extends Generics>(
-  condition: Lazy<boolean, G["entity"]>,
-  whenTrue: Mutator<G>,
-  whenFalse?: Mutator<G>
 ): Mutator<G>;
 
 /**
