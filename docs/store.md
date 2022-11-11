@@ -1,114 +1,101 @@
 # Store
 
+## API
+
+### `new Store(options)`
+
+Creates a new Store instance.
+
+- `options` `<Object>`
+  - `adapter` [`<Adapter>`](./adapter.md) The Adapter object that integrates a particular Datastore. See Adapter [docs](./adapter.md) for more info.
+  - `[commitMode]` `<string>` This options defines how the Entities need to be committed. Can be `"AUTO"`, `"MANUAL"`, or `"SAFE"`. Defaults to `"AUTO"`. See Commit Mode [docs](#commit-mode) for more info.
+  - `[hooks]` [`<Hooks>`](./hooks.md) A set of hooks for some Mutent's internal events. See Hooks [docs](./hooks.md) for more info.
+  - `[mutators]` [`<Mutator[]>`](./mutator.md) See Mutator [docs](./mutator.md) for more info.
+  - `[plugins]` [`<Plugin[]>`](#plugin) See Plugin [docs](#plugin) for more info.
+  - `[writeMode]` `<string>` Can be `"AUTO"`, `"SEQUENTIAL"`, `"BULK"`, or `"CONCURRENT"`. Defaults to `"AUTO"`. See Write Mode [docs](#write-mode) for more info.
+  - `[writeSize]` `<number>` Positive integer. Defaults to `16`.
+
 ```javascript
 import { Store } from 'mutent'
 
-// Default options
 const store = new Store({
-  // This is the only mandatory option.
   adapter: new MyAdapter(),
-  // Desired commit mode, can be "AUTO", "MANUAL", or "SAFE".
   commitMode: 'AUTO',
-  // List of hooks.
   hooks: {},
-  // List of custom mutators to apply at the beginning of any mutation.
   mutators: [],
-  // Store's name.
-  name: 'MyStore',
-  // List of plugins to register.
   plugins: [],
-  // Desired write mode, can be "AUTO", "SEQUENTIAL", "BULK", or "CONCURRENT".
   writeMode: 'AUTO',
-  // Desired write size.
   writeSize: 16
 })
 ```
 
-## Options
+### `Store::create(data)`
 
-### Commit mode
+Creates a [Mutation](./mutation.md) with a `"CREATE"` Intent.
 
-TODO
+- `data` `<Object>` | `<Iterable>` | `<AsyncIterable>`
+- Returns: [`<Mutation>`](./mutation.md)
 
-- `AUTO`: Automatically commit all entities when a mutation is unwrapped.
-- `MANUAL`: Commits must be manually declared.
-- `SAFE`: Throw an error if an entity has uncommitted changes and It's unwrapped.
+### `Store::find(query)`
 
-### Write mode
+Creates a [Mutation](./mutation.md) with a `"FIND"` Intent.
 
-TODO
+- `query` `<*>`
+- Returns: [`<Mutation>`](./mutation.md)
 
-- `SEQUENTIAL`: Do all writes sequentially.
-- `BULK`: Lorem Ipsum
-- `CONCURRENT`: Lorem Ipsum
-- `AUTO`: Automatically choose the best write mode possible.
+### `Store::filter(query)`
 
-### Hooks
+Creates a [Mutation](./mutation.md) with a `"FILTER"` Intent.
 
-See [hooks](hooks.md) docs.
+- `query` `<*>`
+- Returns: [`<Mutation>`](./mutation.md)
 
-### Mutators
+### `Store::read(query)`
 
-TODO
+Creates a [Mutation](./mutation.md) with a `"READ"` Intent.
 
-### Plugins
+- `query` `<*>`
+- Returns: [`<Mutation>`](./mutation.md)
 
-See [plugin](plugin.md) docs.
+### `Store::from(source)`
 
-## Constructor
+Creates a [Mutation](./mutation.md) with a `"FROM"` Intent. Source Entities are treated as the actual data representation inside the Datastore.
 
-### **new Store(options)**
+- `source` `<Object>` | `<Iterable>` | `<AsyncIterable>`
+- Returns: [`<Mutation>`](./mutation.md)
 
-- `options` `<Object>`
-  - `adapter` `<Adapter>`
+### `Store::register(plugin)`
+
+Registers a plugin. This method will change its Store instance.
+
+- `plugin` [`<Plugin>`](#plugin) Plugin options object.
+- Returns: `<Store>`
+
+## Commit Mode
+
+Committing is the action that write any Entity change to its Datastore.
+
+Committing can be configured as:
+- `AUTO`: Automatically commit all Entities when required (at least one change was performed).
+- `MANUAL`: Commits must be manually declared with the [Mutation](./mutation.md#mutationcommit)'s `commit` method.
+- `SAFE`: Commits are still manual, but throw an [error](./errors.md#emut_unsafe_unwrap) when an Entity that was updated is not commited.
+
+## Write Mode
+
+The Write Mode controls how write actions are performed by the Adapter.
+
+- `SEQUENTIAL`: All writes are done sequentially, following the Entities order.
+- `BULK`: Expicitly use only the Adapter's `bulk` method.
+- `CONCURRENT`: Multiple writes can be done concurrently. The `writeSize` option controls how many concurrent writes are possibile.
+- `AUTO`: Automatically choose the best write mode possible at runtime.
+
+## Plugin
+
+A plugin is simply a set (object) of Store's options that can be applied to the current Store.
+
+- `plugin` `<Object>`
   - `[commitMode]` `<String>` Can be `"AUTO"`, `"MANUAL"`, or `"SAFE"`.
   - `[hooks]` `<Hooks>`
   - `[mutators]` `<Mutator[]>`
-  - `[name]` `<String>` Store's name.
-  - `[plugins]` `<Plugin[]>`
   - `[writeMode]` `<String>` Can be `"AUTO"`, `"SEQUENTIAL"`, `"BULK"`, or `"CONCURRENT"`.
   - `[writeSize]` `<Number>` Must be a positive integer.
-
-## Methods
-
-### **Store#create(data)**
-
-TODO
-
-- `data` `<Object>` | `<Iterable>` | `<AsyncIterable>`
-- Returns: [`<Mutation>`](mutation.md)
-
-### **Store#register(plugin)**
-
-Registers a plugin.
-
-- `plugin` `<Plugin>`
-- Returns: `<Store>`
-
-### **Store#filter(query)**
-
-TODO
-
-- `query` `<*>`
-- Returns: `<Mutation>`
-
-### **Store#find(query)**
-
-TODO
-
-- `query` `<*>`
-- Returns: `<Mutation>`
-
-### **Store#from(data)**
-
-TODO
-
-- `data` `<Object>` | `<Iterable>` | `<AsyncIterable>`
-- Returns: `<Mutation>`
-
-### **Store#read(query)**
-
-TODO
-
-- `query` `<*>`
-- Returns: `<Mutation>`

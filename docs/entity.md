@@ -1,108 +1,93 @@
 # Entity
 
-An entity instance is the representation of a meaningful collection of data that can be persisted inside the persistence layer. Because of that, all methods update in-place the entity's content.
+An Entity instance holds the original data representation of an object taken from the Datastore (`null` if It doesn't yet exist). It also holds a set of flags indicating if the Entity needs to be created, updated, or deleted from the Datastore.
 
-## Static methods
+## API
 
-### **Entity.create(data)**
+### `Entity.create(data)`
 
-Declares an entity that is still not persisted (needs to be created).
+Declares an Entity that needs to be created inside the Datastore. This static method is just an alias of `new Entity(data)`.
 
-- `data` `<*>`
+- `data` `<*>` The data that needs to be created inside the Datastore.
 - Returns: `<Entity>`
 
-### **Entity.read(data)**
+### `Entity.read(data)`
 
-Declares an entity that is persisted (read from the persistence layer).
+Declares an entity that was read read from the Datastore. This static method is just an alias of `Entity.create(data).commit()`.
 
-- `data` `<*>`
+- `data` `<*>` The data that was read from the Datastore.
 - Returns: `<Entity>`
 
-## Properties
+### `Entity::source`
 
-### **Entity#source**
+Contains the original data retrieved from the Datastore. A `null` value indicates that this Entity is new (needs to be created).
 
-Contains the original data fetched from the persistence layer. A `null` value indicates that this entity is new (not persisted).
+- Returns: `<*>`
 
-> **WARNING**: This value should be left untouched. Any modification could interfere with the correct functioning of the adapter.
+> **WARNING**: This value should be left untouched. Any alteration could interfere with the correct functioning of the Adapter.
 
-### **Entity#target**
+### `Entity::target`
 
-It contains the current representation of the entity after any modification is applied.
+It contains the wanted representation of the Entity after all mutations are applied. When the Entity is read from the Datastore, this value equals to the `source` value.
 
-> **TIP**: It's the same value returned by the [`valueOf`](#entityvalueof) method.
+- Returns: `<*>`
 
-### **Entity#meta**
+> **WARNING**: This value should be left untouched. To alter this value use [`update`](#entityupdatedata) or [`set`](#entitysetdata) method. Any alteration could interfere with the correct functioning of the Adapter.
 
-Opaque object where plugins can save any entity-related metadata.
+### `Entity::meta`
 
-> **TIP**: This object is especially useful for plugins implementers to store entity-related data. Mutent will never read or override those data.
+Opaque object where plugins can save any Entity-scoped metadata and other info.
 
-## Getters
+- Returns: `<Object>`
 
-### **Entity#shouldCreate**
+### `Entity::shouldCreate`
 
-It'll be `true` when the current entity should be created as new inside the persistence layer.
+Returns `true` when the Entity needs to be created inside the Datastore.
+
+- Returns: `<boolean>`
 
 ```javascript
 import { Entity } from 'mutent'
 
-Entity.create({}).shouldCreate // true
-Entity.read({}).shouldCreate // false
+console.log(Entity.create({}).shouldCreate) // true
+console.log(Entity.read({}).shouldCreate) // false
 ```
 
-### **Entity#shouldUpdate**
+### `Entity::shouldUpdate`
 
-It'll be `true` when the current entity should be updated at the persistence layer.
+Returns `true` when the Entity has received some changes and needs to be written to the Datastore.
+
+- Returns: `<boolean>`
 
 ```javascript
 import { Entity } from 'mutent'
 
 const entity = Entity.read({ value: 0 })
-entity.shouldUpdate // false
-entity.update({ value: 42 })
-entity.shouldUpdate // true
+console.log(entity.shouldUpdate) // false
+console.log(entity.update({ value: 42 }))
+console.log(entity.shouldUpdate) // true
 ```
 
-### **Entity#shouldDelete**
+### `Entity::shouldDelete`
 
-It'll be `true` when the current entity should be deleted from the persistence layer.
+Returns `true` when this Entity was flagged for the deletion from the Datastore.
+
+- Returns: `<boolean>`
 
 ```javascript
 import { Entity } from 'mutent'
 
-Entity.create({}).delete().shouldDelete // false
-Entity.read({}).delete().shouldDelete // true
+console.log(Entity.create({}).delete().shouldDelete) // false
+console.log(Entity.read({}).delete().shouldDelete) // true
 ```
 
-### **Entity#shouldCommit**
+### `Entity::shouldCommit`
 
-It'll be `true` when one of the [shouldCreate](#entityshouldcreate), [shouldUpdate](#entityshouldupdate), or [shouldDelete](#entityshoulddelete) properties is `true`.
+Returns `true` when the Entity needs to be committed (created, updated, or deleted). It's an alias for `entity.shouldCreate || entity.shouldUpdate || entity.shouldDelete`.
 
-## Instance methods
+- Returns: `<boolean>`
 
-### **Entity#commit()**
-
-Set the entity's status as persisted.
-
-- Returns: `<Entity>`
-
-### **Entity#delete()**
-
-Flags the entity as to be deleted.
-
-- Returns: `<Entity>`
-
-### **Entity#set(data)**
-
-Set the current entity's value without changing its status (no flagging).
-
-- `data` `<*>`
-- Returns: `<Entity>`
-
-> **TIP**: This method is useful when you want to update the entity without triggering a commit after.
-
-### **Entity#update(data)**
+### `Entity::update(data)`
 
 Updates the current entity's value and flags the entity as to be updated.
 
@@ -111,10 +96,42 @@ Updates the current entity's value and flags the entity as to be updated.
 
 > **WARNING**: The passed `data` must be a complete representation of the entity. It also must be **a different object** from the current one. Treating the entity's data as immutable achieves the possibility of generating optimized update queries at the adapter level.
 
-### **Entity#valueOf()**
+```javascript
+import { Entity } from 'mutent'
 
-Returns the raw entity's value.
+const source = { value: 0 }
+const entity = Entity.read(source)
+console.log(entity.source === source) // true
+console.log(entity.shouldUpdate) // false
+entity.update(source)
+console.log(entity.shouldUpdate) // false
+entity.update({ value: 42 })
+console.log(entity.shouldUpdate) // true
+```
+
+### `Entity::delete()`
+
+Flags this Entity to be deleted.
+
+- Returns: `<Entity>`
+
+### `Entity::commit()`
+
+Declares the Entity as commited and reset all internal flags. This method should be called after a successful write against the Datastore.
+
+- Returns: `<Entity>`
+
+### `Entity::set(data)`
+
+Updates the current data of the Entity (`target` property) without triggering any status change (`shouldUpdate` is left untouched).
+
+- `data` `<*>`
+- Returns: `<Entity>`
+
+> **TIP**: This method is useful when you want to update the entity without triggering a commit after.
+
+### `Entity::valueOf()`
+
+Returns the current `target` value.
 
 - Returns: `<*>`
-
-> **TIP**: This is the standard method to retrieve the entity's content.

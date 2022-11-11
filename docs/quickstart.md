@@ -1,50 +1,123 @@
-# QuickStart
+# Quickstart
+
+## Common actions
+
+Let's create a simple [Store](./store.md) instance that uses an Array as Datastore.
 
 ```javascript
 import { Store } from 'mutent'
+import { ArrayAdapter } from 'mutent-array'
 
 const store = new Store({
-  adapter: myAdapter
+  adapter: new ArrayAdapter()
 })
 ```
 
-```javascript
-const mutation = store.create(data)
-```
+### Create an Entity
+
+Let's create a simple Entity.
 
 ```javascript
-const result = await mutation.unwrap()
+// Declares a Mutation with a "CREATE" Intent
+// Nothing is written at this point
+const mutation = store.create({ id: 42, name: 'Towel' })
+console.log(store.adapter.items) // []
+
+// Performs the actions and returns a Promise
+const data = await mutation.unwrap()
+console.log(data) // { id: 42, name: 'Towel' }
+console.log(store.adapter.items) // [{ id: 42, name: 'Towel' }]
+console.log(data === store.adapter.items[0]) // true
 ```
+
+You can compact the whole chain to:
 
 ```javascript
-const objectOrNull = await store.find(query).unwrap()
+const data = await store
+  .create({ id: 42, name: 'Towel' })
+  .unwrap()
 ```
 
+### Read an Entity
 
-
-
-a mutation is the set of declared operations to do. To run those operations, the mutation needs to be unwrapped. there are multiple ways to unwrap a mutation. the easiest way is with the `unwrap` method. the unwrap method accepts optionally a set of options for the currently configured adapter.
+To retrieves an Entity, you can do:
 
 ```javascript
-const result = await mutation.unwrap(options)
+const ok = await store
+  .find(item => item.id === 42)
+  .unwrap()
+
+console.log(ok) // { id: 42, name: 'Towel' }
+
+const notOk = await store
+  .find(item => item.id === -1)
+  .unwrap()
+
+console.log(notOk) // null
 ```
 
-The `unwrap` method will return a `Promise` that will resolve in the touched entities' data.
+### Search Entities
 
-> Keep in mind that the `unwrap` method can resolve in `null`, in a single entity, or in an array of entities. The output will be defined by the mutation's creation method. See [store]()'s docs for more info.
-
-It is also possibile to iterate a mutation. The method `iterate` will return an `AsyncIterable` that will output all processed entities.
+To handle more than on Entities:
 
 ```javascript
-const iterable = mutation.iterate(options)
+const items = await store
+  .filter(() => true) // This will "download" everything
+  .unwrap()
 
-for await (const data of iterable) {
-  // do something
-}
+console.log(items) // [{ id: 42, name: 'Towel' }]
 ```
 
-The last method to unwrap a mutation is `consume`. The `consume` method will return a `Promise` that will resolve to the number of touched entites.
+### Update an Entity
+
+To update an Entity, It must be declared as before:
 
 ```javascript
-const count = await mutation.consume(options)
+const updated = await store
+  .find(item => item.id === 42)
+  .update(data => ({ ...data, updatedAt: new Date() }))
+  .unwrap()
+
+console.log(updated) // { id: 42, name: 'Towel', updatedAt: ISODate }
 ```
+
+You can also update more than one Entity using the `filter` method:
+
+```javascript
+const updatedAt = new Date()
+
+const updated = await store
+  .filter(() => true) // All Entities
+  .update(data => ({ ...data, updatedAt }))
+  .unwrap()
+
+console.log(updated) // [{ id: 42, name: 'Towel', updatedAt: ISODate }]
+```
+
+### Delete an Entity
+
+You can delete an Entity as follow:
+
+```javascript
+console.log(store.adapter.items) // [{ id: 42, name: 'Towel', updatedAt: ISODate }]
+
+const deleted = await store
+  .find(data => data.id === 42)
+  .delete()
+  .unwrap()
+
+console.log(deleted) // { id: 42, name: 'Towel', updatedAt: ISODate }
+console.log(store.adapter.items) // []
+```
+
+## Sections
+
+1. [Store](./store.md)
+2. [Adapter](./adapter.md)
+3. [Entity](./entity.md)
+4. [Mutation](./mutation.md)
+5. [Mutator](./mutator.md)
+6. [Context](./context.md)
+7. [Hooks](./hooks.md)
+8. [Errors](./errors.md)
+9. [Ecosystem](./ecosystem.md)

@@ -1,14 +1,14 @@
 # Hooks
 
-Mutent provides a hooks system that can be used to change or extend its normal feature-set.
+Mutent provides a flexible Hooks system that can be used to change or extend its normal feature-set.
 
-An hook can be registered directly to store's level, or as a plugin with `register` method. It's also possibile to register multiple hooks at the same time with an array of functions.
+Hooks can be registered directly at [Store](./store.md)'s level or with a [Plugin](./store.md#plugin).
 
 ```javascript
 import { Store } from 'mutent'
 
 const store = new Store({
-  adapter: {},
+  adapter: new MyAdapter(),
   hooks: {
     // Single hook declaration (single function)
     onEntity (entity, context) {
@@ -29,76 +29,94 @@ store.register({
 })
 ```
 
-## List of hooks
+## Table of contents
 
-- [Query hooks](#query-hooks)
-  - [onFind](#onfind)
-  - [onFilter](#onfilter)
-- [Entity hooks](#entity-hooks)
-  - [onEntity](#onentity)
-  - [beforeCreate](#beforecreate)
-  - [beforeUpdate](#beforeupdate)
-  - [beforeDelete](#beforedelete)
-  - [afterCreate](#aftercreate)
-  - [afterUpdate](#afterupdate)
-  - [afterDelete](#afterdelete)
+- [Query Hooks](#query-hooks)
+  - [onFind](#onfindquery-context)
+  - [onFilter](#onfilterquery-context)
+- [Entity Hooks](#entity-hooks)
+  - [onEntity](#onentityentity-context)
+  - [beforeCreate](#beforecreateentity-context)
+  - [beforeUpdate](#beforeupdateentity-context)
+  - [beforeDelete](#beforedeleteentity-context)
+  - [afterCreate](#aftercreateentity-context)
+  - [afterUpdate](#afterupdateentity-context)
+  - [afterDelete](#afterdeleteentity-context)
 
-## Query hooks
+## Query Hooks
 
-### onFind
+Query hooks are triggered when a Datastore's query is used. Those Hooks are useful when some kind of query manipulation is required (like the apply of a security filter).
 
-Triggered when a single entity is fetched from the persistence layer.
+> **WARNING**: Those Hooks are synchronous.
 
-> **TIP**: This hook can be handy to validate or change query parameters.
+### `onFind(query, context)`
+
+Triggered during `FIND` and `READ` intents. This Hook is synchronous.
+
+- `query` `<*>` Datastore-specific query.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
   hooks: {
     onFind (query, context) {
-      // Set security filter
-      query.tenantId = 'myId'
+      // Force a security filter parameter
+      query.tenantId = 'myScopedTenantForThisStoreInstance'
     }
   }
 })
 ```
 
-### onFilter
+### `onFilter(query, context)`
 
-Triggered when multiple entities are fetched from the persistence layer.
+Triggered during `FILTER` intents. This Hook is synchronous.
 
-> **TIP**: This hook can be handy to validate or change query parameters.
+- `query` `<*>` Datastore-specific query.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
   hooks: {
     onFilter (query, context) {
-      // Set security filter
-      query.tenantId = 'myId'
+      // Force a security filter parameter
+      query.tenantId = 'myScopedTenantForThisStoreInstance'
     }
   }
 })
 ```
 
-## Entity hooks
+## Entity Hooks
 
-### onEntity
+This kind of Hooks handle Entity instances and can be asynchronous.
 
-Triggered when an [entity](entity.md) is ready to be processed by the [mutation](mutation.md). This hook can be `async`.
+### `onEntity(entity, context)`
+
+Triggered when an Entity is ready to be processed by the current Mutation. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
   hooks: {
     async onEntity (entity, context) {
-      // Extend entity
+      // Extend entity because of reasons
       entity.meta.analysis = analyzeContent(entity.valueOf())
     }
   }
 })
 ```
 
-### beforeCreate
+### `beforeCreate(entity, context)`
 
-Triggered before any entity creation. This hook can be `async`.
+Triggered just before the creation of a new Entity. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
@@ -110,9 +128,13 @@ store.register({
 })
 ```
 
-### beforeUpdate
+### `beforeUpdate(entity, context)`
 
-Triggered before any entity update. This hook can be `async`.
+Triggered just before the update of an existing Entity. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
@@ -124,9 +146,13 @@ store.register({
 })
 ```
 
-### beforeDelete
+### `beforeDelete(entity, context)`
 
-Triggered before any entity deletion. This hook can be `async`.
+Triggered just before the deletion of an existing Entity. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
@@ -138,9 +164,13 @@ store.register({
 })
 ```
 
-### afterCreate
+### `afterCreate(entity, context)`
 
-Triggered after any entity creation. This hook can be `async`.
+Triggered right after the creation of a new Entity. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
@@ -152,9 +182,13 @@ store.register({
 })
 ```
 
-### afterUpdate
+### `afterUpdate(entity, context)`
 
-Triggered after any entity update. This hook can be `async`.
+Triggered right after the update of an existing Entity. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({
@@ -166,9 +200,13 @@ store.register({
 })
 ```
 
-### afterDelete
+### `afterDelete(entity, context)`
 
-Triggered after any entity deletion. This hook can be `async`.
+Triggered right after the deletion of an existing Entity. This Hook can be `async`.
+
+- `entity` [`<Entity>`](./entity.md) Current Entity instance.
+- `context` [`<Context>`](./context.md) Mutation Context object.
+- Returns: `<*>`
 
 ```javascript
 store.register({

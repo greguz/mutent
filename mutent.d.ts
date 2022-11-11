@@ -48,7 +48,7 @@ export declare class MutentError extends Error {
  */
 export declare class Entity<T> {
   /**
-   * Declares a new entity that should be created inside the persistence layer.
+   * Declares a new entity that should be created inside the datastore.
    */
   static create<X>(data: X): Entity<X>;
   /**
@@ -56,7 +56,7 @@ export declare class Entity<T> {
    */
   static read<X>(data: X): Entity<X>;
   /**
-   * Contains the entity's data fetched from the persistence layer. A null value indicates that this entity is new.
+   * Contains the entity's data fetched from the datastore. A null value indicates that this entity is new.
    */
   source: T | null;
   /**
@@ -76,19 +76,19 @@ export declare class Entity<T> {
    */
   deleted: boolean;
   /**
-   * Returns true when this entity needs to be created inside the persistence layer.
+   * Returns true when this entity needs to be created inside the datastore.
    */
   get shouldCreate(): boolean;
   /**
-   * Returns true when this entity needs to be updated at the persistence layer.
+   * Returns true when this entity needs to be updated at the datastore.
    */
   get shouldUpdate(): boolean;
   /**
-   * Returns true when this entity needs to be deleted from the persistence layer.
+   * Returns true when this entity needs to be deleted from the datastore.
    */
   get shouldDelete(): boolean;
   /**
-   * Returns true when this entity needs to be sync-ed with the persistence layer.
+   * Returns true when this entity needs to be sync-ed with the datastore.
    */
   get shouldCommit(): boolean;
   /**
@@ -104,7 +104,7 @@ export declare class Entity<T> {
    */
   commit(): this;
   /**
-   * Flags this entity as to be deleted from the persistence layer.
+   * Flags this entity as to be deleted from the datastore.
    */
   delete(): this;
   /**
@@ -213,7 +213,7 @@ export declare type EntityHook<G extends Generics> = (
 ) => any;
 
 /**
- * Abstract persistence layer adapter.
+ * Abstract datastore adapter.
  */
 export interface Adapter<G extends Generics> {
   /**
@@ -338,11 +338,11 @@ export interface PluginOptions<G extends Generics> {
    */
   hooks?: {
     /**
-     * Triggered when a single entity is fetched from the persistence layer.
+     * Triggered when a single entity is fetched from the datastore.
      */
     onFind?: OneOrMore<QueryHook<G>>;
     /**
-     * Triggered when multiple entities are fetched from the persistence layer.
+     * Triggered when multiple entities are fetched from the datastore.
      */
     onFilter?: OneOrMore<QueryHook<G>>;
     /**

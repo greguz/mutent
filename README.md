@@ -7,26 +7,28 @@
 [![Coverage Status](https://coveralls.io/repos/github/greguz/mutent/badge.svg?branch=master)](https://coveralls.io/github/greguz/mutent?branch=master)
 ![GitHub](https://img.shields.io/github/license/greguz/mutent)
 
-Mutent is an elegant and agnostic solution to work with any persistence layer.
-
-Any action performed against the persistence layer is declared with plain JavaScript, making it possible to manipulate objects with just one language and leaving the integration stuff to the chosen adapter.
+Mutent is an agnostic solution to work with any Datastore.
 
 ## Features
 
 - **Zero dependencies**: small footprint.
 - **Pure ES2018 code**: any environment that can run ES2018 code can directly include this module. Downgrading with tools like [Babel](https://babeljs.io/) is still possible.
 - **Extensible**: a powerful hooks system in place.
-- **Agnostic**: can be configured to work with any persistence layer through adapters.
-- **TypeScript**: types declaration are included.
-- **ESM**: support native ESM (`import` and `export` keywords).
+- **Agnostic**: can be configured to work with any Datastore through Adapters.
+- **TypeScript**: type declarations are included.
+- **ESM**: support native ESM.
 - **CommonJS**: support old Node.js runtimes (`require`).
-- **Well tested**: more than 95% code coverage.
+- **Well tested**: code coverage above 95%.
 
 ## Installation
 
 ```
 npm install --save mutent
 ```
+
+## Documentation
+
+Start from the [Quickstart](./docs//quickstart.md) section.
 
 ## Example
 
@@ -68,12 +70,11 @@ class ArrayAdapter {
 }
 
 async function foo() {
-  // Our "persistence" layer
+  // Our "datastore"
   const database = []
 
   // Create mutent store
   const store = new Store({
-    name: 'MyStore',
     adapter: new ArrayAdapter(database)
   })
 

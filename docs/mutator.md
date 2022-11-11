@@ -1,10 +1,8 @@
 # Mutator
 
-Mutators are the heart of this module.
+A mutator is a function that takes an `AsyncIterable` and a [Context](./context.md) as arguments and returns an `AsyncIterable`. The `yield`ed values from **both** iterables must be [Entity](./entity.md) instances.
 
-A mutator is a simple function that takes an `AsyncIterable` and a [context](context.md) as arguments and will return a new `AsyncIterable`. The `yield`ed values from **both** iterables must be [entity](entity.md) instances to let Mutent works without issues.
-
-The next example will show an implementation of a simple passthrough mutator.
+Let's write a simple passthrough Mutator:
 
 ```javascript
 async function * passthrough (iterable, context) {
@@ -14,13 +12,14 @@ async function * passthrough (iterable, context) {
 }
 ```
 
-A mutator can be added to a [mutation](mutation.md) using the `pipe` method. The `pipe` method will return a **new** mutation instance (immutable).
+A Mutator can be added to a [Mutation](./mutation.md#mutationpipemutators) using the `pipe` method. The `pipe` method will return a **new** mutation instance (immutable).
 
 ```javascript
 const newMutation = oldMutation.pipe(passthrough)
+console.log(newMutation === oldMutation) // false (immutable)
 ```
 
-An [entity](entity.md) is manipulable through its methods. The next snippet will show a simple property set mutator.
+An [Entity](./entity.md) is manipulable through its methods. The next snippet will show a simple property set mutator.
 
 ```javascript
 // Declare mutator's parameters
@@ -44,9 +43,17 @@ const newMutation = oldMutation.pipe(
 )
 ```
 
+
+
 ## Included mutators
 
-### **assign(...objects)**
+
+
+
+
+
+
+### `assign(...objects)`
 
 Alias for `update(data => Object.assign({}, data, ...objects))`. See [update](#updatemapper) mutator.
 
@@ -64,51 +71,51 @@ store.create({ id: 'myId' })
   .then(data => console.log(data)) // { id: 'myId', value: 42 }
 ```
 
-### **commit()**
+### `commit()`
 
-Declares a write intention against the persistence layer.
-
-- Returns: `<Mutator>`
-
-### **ddelete()**
-
-Declares a delete intention for all processed entities.
+Commits all Entities.
 
 - Returns: `<Mutator>`
 
-### **filter(predicate)**
+### `ddelete()`
+
+Flags all Entities for deletion.
+
+- Returns: `<Mutator>`
+
+### `filter(predicate)`
 
 It selects a subset of entities that matches the defined predicate. The predicate is a function that will be fired with `predicate(entity.valueOf(), index)` signaure and must return a boolean.
 
 - `predicate` `<Function>`
+  - `data` `<*>` Entity's data representation.
+  - `index` `<number>`
+  - Returns: `<boolean>`
 - Returns: `<Mutator>`
 
-### **iif(condition, whenTrue[, whenFalse])**
-
-Applies a mutator conditionally. The condition can be either a boolean or a function that returns a boolean. When a function is specified, It will be fired with `condition(entity.valueOf(), index)` signature.
-
-- `condition` `<Boolean>` | `<Function>`
-- `whenTrue` `<Mutator>`
-- `whenFalse` `<Mutator>` Optional mutator to apply when the condition is not meeted.
-- Returns: `<Mutator>`
-
-### **pipe(...mutators)**
+### `pipe(...mutators)`
 
 Concatenates more mutators into a single one.
 
 - `...mutators` `<Mutator>`
 - Returns: `<Mutator>`
 
-### **tap(callback)**
+### `tap(callback)`
 
 Runs a callback for any processed entity. Callback is fired with `callback(entity.valueOf(), index)` signature, and It can return a `Promise`.
 
 - `callback` `<Function>`
+  - `data` `<*>` Entity's data representation.
+  - `index` `<number>`
+  - Returns: `<*>`
 - Returns: `<Mutator>`
 
-### **update(mapper)**
+### `update(mapper)`
 
 Maps the entity's data. The map function if fired with `mapper(entity.valueOf(), index)` signature and must return the update entity's data. Can return a `Promise`.
 
 - `mapper` `<Function>`
+  - `data` `<*>` Entity's data representation.
+  - `index` `<number>`
+  - Returns: `<*>`
 - Returns: `<Mutator>`

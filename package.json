@@ -1,7 +1,7 @@
 {
   "name": "mutent",
   "version": "5.0.0-10",
-  "description": "Elegant and agnostic solution to work with any persistence layer.",
+  "description": "An agnostic solution to work with any Datastore",
   "type": "module",
   "exports": {
     "import": "./mutent.mjs",
@@ -11,6 +11,7 @@
   "main": "./mutent.cjs",
   "types": "./mutent.d.ts",
   "files": [
+    "docs",
     "!**/*.spec.mjs",
     "lib",
     "mutent.mjs",
@@ -45,5 +46,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/greguz/mutent.git"
+  },
+  "homepage": "https://github.com/greguz/mutent#readme",
+  "bugs": {
+    "url": "https://github.com/greguz/mutent/issues"
   }
 }
