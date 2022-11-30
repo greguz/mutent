@@ -560,10 +560,17 @@ test('store:overflow', async t => {
 })
 
 test('store:ensure', async t => {
+  t.plan(3)
+
   const items = []
 
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: createAdapter(items),
+    hooks: {
+      onEntity (entity) {
+        t.is(entity.valueOf(), 42)
+      }
+    }
   })
 
   const value = await store

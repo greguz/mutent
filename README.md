@@ -1,6 +1,6 @@
 # Mutent
 
-![npm](https://img.shields.io/npm/v/mutent)
+[![npm](https://img.shields.io/npm/v/mutent)](https://www.npmjs.com/package/mutent)
 ![npm bundle size](https://img.shields.io/bundlephobia/minzip/mutent)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![Actions Status](https://github.com/greguz/mutent/workflows/ci/badge.svg)](https://github.com/greguz/mutent/actions)
