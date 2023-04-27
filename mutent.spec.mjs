@@ -581,3 +581,25 @@ test('store:ensure', async t => {
   t.is(value, 42)
   t.deepEqual(items, [42])
 })
+
+test('store:null-update', async t => {
+  const items = [
+    { id: 1, hello: 'world' }
+  ]
+
+  const store = new Store({
+    adapter: createAdapter(items),
+    hooks: {
+      beforeUpdate () {
+        t.fail()
+      }
+    }
+  })
+
+  const result = await store
+    .read(item => item.id === 1)
+    .update(() => null)
+    .unwrap()
+
+  t.deepEqual(result, items[0])
+})

@@ -175,6 +175,20 @@ export interface Context<G extends Generics> {
    */
   commitMode: CommitMode;
   /**
+   * Normalized hooks collection.
+   */
+  hooks: {
+    onFind: Array<QueryHook<G>>;
+    onFilter: Array<QueryHook<G>>;
+    onEntity: Array<EntityHook<G>>;
+    beforeCreate: Array<EntityHook<G>>;
+    beforeUpdate: Array<EntityHook<G>>;
+    beforeDelete: Array<EntityHook<G>>;
+    afterCreate: Array<EntityHook<G>>;
+    afterUpdate: Array<EntityHook<G>>;
+    afterDelete: Array<EntityHook<G>>;
+  };
+  /**
    * The intent that has generated this mutation (store method name).
    */
   intent: Intent;
@@ -185,7 +199,7 @@ export interface Context<G extends Generics> {
   /**
    * Adapter's options.
    */
-  options: Partial<G["options"]>;
+  options: UnwrapOptions<G>;
   /**
    * Store write mode.
    */
@@ -458,10 +472,10 @@ export interface Mutation<G extends Generics, U = unknown> {
   unwrap(options?: UnwrapOptions<G>): Promise<U>;
   /**
    * Updates entities.
-   * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported.
+   * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported. A nullish result will skip the update.
    */
   update(
-    mapper: (data: G["entity"], index: number) => Result<G["entity"]>
+    mapper: (data: G["entity"], index: number) => Result<G["entity"] | Nullish>
   ): Mutation<G, U>;
 }
 
@@ -614,10 +628,10 @@ export declare function tap<G extends Generics>(
 
 /**
  * Updates entities.
- * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported.
+ * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported. A nullish result will skip the update.
  */
 export declare function update<G extends Generics>(
-  mapper: (data: G["entity"], index: number) => Result<G["entity"]>
+  mapper: (data: G["entity"], index: number) => Result<G["entity"] | Nullish>
 ): Mutator<G>;
 
 /**
