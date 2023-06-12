@@ -197,6 +197,10 @@ export interface Context<G extends Generics> {
    */
   multiple: boolean;
   /**
+   * An opaque value for the current execution.
+   */
+  opaque?: unknown;
+  /**
    * Adapter's options.
    */
   options: UnwrapOptions<G>;
@@ -392,6 +396,10 @@ export interface PluginOptions<G extends Generics> {
    * Custom mutators.
    */
   mutators?: Array<Mutator<G>>;
+  /**
+   * An opaque value for the current execution.
+   */
+  opaque?: unknown;
   /**
    * Default write mode.
    * @default "AUTO"

@@ -369,6 +369,26 @@ test('store:stream', async t => {
   ])
 })
 
+test('store:opaque', async t => {
+  t.plan(1)
+
+  const store = new Store({
+    adapter: createAdapter()
+  })
+
+  await store
+    .create({ id: 1 })
+    .pipe(async function * (iterable, context) {
+      t.is(context.opaque, 'hello world')
+      yield* iterable
+    })
+    .unwrap({
+      mutent: {
+        opaque: 'hello world'
+      }
+    })
+})
+
 test('store:tap', async t => {
   t.plan(2)
 
