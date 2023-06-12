@@ -648,3 +648,8 @@ export declare function update<G extends Generics>(
 export declare function ensure<G extends Generics>(
   one: One<G["entity"]>
 ): Mutator<G>;
+
+/**
+ * Get internal Adapter's name, otherwise returns `"Unknown Adapter"`.
+ */
+export declare function getAdapterName(obj: any): string;

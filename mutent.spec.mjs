@@ -380,7 +380,7 @@ test('store:opaque', async t => {
     .create({ id: 1 })
     .pipe(async function * (iterable, context) {
       t.is(context.opaque, 'hello world')
-      yield* iterable
+      yield * iterable
     })
     .unwrap({
       mutent: {

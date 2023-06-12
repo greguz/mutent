@@ -1,3 +1,4 @@
+export { getAdapterName } from './lib/adapter.mjs'
 export { Entity } from './lib/entity.mjs'
 export { MutentError } from './lib/error.mjs'
 export * from './lib/mutators.mjs'
