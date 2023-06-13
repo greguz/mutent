@@ -47,11 +47,9 @@ store.register({
 
 Query hooks are triggered when a Datastore's query is used. Those Hooks are useful when some kind of query manipulation is required (like the apply of a security filter).
 
-> **WARNING**: Those Hooks are synchronous.
-
 ### `onFind(query, context)`
 
-Triggered during `FIND` and `READ` intents. This Hook is synchronous.
+Triggered during `FIND` and `READ` intents. This Hook can be `async`.
 
 - `query` `<*>` Datastore-specific query.
 - `context` [`<Context>`](./context.md) Mutation Context object.
@@ -60,7 +58,7 @@ Triggered during `FIND` and `READ` intents. This Hook is synchronous.
 ```javascript
 store.register({
   hooks: {
-    onFind (query, context) {
+    async onFind (query, context) {
       // Force a security filter parameter
       query.tenantId = 'myScopedTenantForThisStoreInstance'
     }
@@ -70,7 +68,7 @@ store.register({
 
 ### `onFilter(query, context)`
 
-Triggered during `FILTER` intents. This Hook is synchronous.
+Triggered during `FILTER` intents. This Hook can be `async`.
 
 - `query` `<*>` Datastore-specific query.
 - `context` [`<Context>`](./context.md) Mutation Context object.
@@ -79,7 +77,7 @@ Triggered during `FILTER` intents. This Hook is synchronous.
 ```javascript
 store.register({
   hooks: {
-    onFilter (query, context) {
+    async onFilter (query, context) {
       // Force a security filter parameter
       query.tenantId = 'myScopedTenantForThisStoreInstance'
     }

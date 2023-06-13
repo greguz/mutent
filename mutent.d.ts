@@ -215,7 +215,7 @@ export interface Context<G extends Generics> {
 }
 
 /**
- * Sync hook containing the adapter's query.
+ * Hook containing the adapter's query. Promises are supported.
  */
 export declare type QueryHook<G extends Generics> = (
   query: G["query"],
@@ -223,7 +223,7 @@ export declare type QueryHook<G extends Generics> = (
 ) => any;
 
 /**
- * Hook containing the currently processed entity instance.
+ * Hook containing the currently processed entity instance. Promises are supported.
  */
 export declare type EntityHook<G extends Generics> = (
   entity: Entity<G["entity"]>,
