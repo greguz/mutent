@@ -158,6 +158,18 @@ export interface Generics {
   options?: unknown;
 }
 
+export interface Hooks<G extends Generics> {
+  onFind: Array<QueryHook<G>>;
+  onFilter: Array<QueryHook<G>>;
+  onEntity: Array<EntityHook<G>>;
+  beforeCreate: Array<EntityHook<G>>;
+  beforeUpdate: Array<EntityHook<G>>;
+  beforeDelete: Array<EntityHook<G>>;
+  afterCreate: Array<EntityHook<G>>;
+  afterUpdate: Array<EntityHook<G>>;
+  afterDelete: Array<EntityHook<G>>;
+}
+
 /**
  * Mutation context.
  */
@@ -177,17 +189,7 @@ export interface Context<G extends Generics> {
   /**
    * Normalized hooks collection.
    */
-  hooks: {
-    onFind: Array<QueryHook<G>>;
-    onFilter: Array<QueryHook<G>>;
-    onEntity: Array<EntityHook<G>>;
-    beforeCreate: Array<EntityHook<G>>;
-    beforeUpdate: Array<EntityHook<G>>;
-    beforeDelete: Array<EntityHook<G>>;
-    afterCreate: Array<EntityHook<G>>;
-    afterUpdate: Array<EntityHook<G>>;
-    afterDelete: Array<EntityHook<G>>;
-  };
+  hooks: Hooks<G>;
   /**
    * The intent that has generated this mutation (store method name).
    */
@@ -536,29 +538,11 @@ export interface StoreOptions<G extends Generics> extends PluginOptions<G> {
 }
 
 export declare class Store<G extends Generics> {
-  /**
-   *
-   */
   public adapter: G["adapter"];
-  /**
-   *
-   */
   public commitMode: CommitMode;
-  /**
-   * TODO: types
-   */
-  public hooks: unknown;
-  /**
-   *
-   */
+  public hooks: Hooks<G>;
   public mutators: Mutator<G>;
-  /**
-   *
-   */
   public writeMode: WriteMode;
-  /**
-   *
-   */
   public writeSize: number;
   /**
    * @constructor

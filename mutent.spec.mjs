@@ -551,7 +551,7 @@ test('store:register', async t => {
     message: 'Invalid onEntity hook definition'
   })
   t.throws(() => store.register({ mutators: null }), {
-    message: 'Invalid mutators'
+    message: 'Expected array of mutators'
   })
 })
 
