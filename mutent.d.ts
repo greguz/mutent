@@ -519,6 +519,11 @@ export declare type MutationMultiple<G extends Generics> = Mutation<
 export declare type One<T> = Lazy<T | Promise<T>>;
 
 /**
+ * Single entity value definition. Can be lazy and/or async.
+ */
+export declare type OneMaybe<T> = Lazy<Nullish | T | Promise<T>>;
+
+/**
  * Many entities' values definition. Have to be and iterable. Can be lazy and async.
  */
 export declare type Many<T> = Iterable<T> | AsyncIterable<T>;
@@ -568,7 +573,7 @@ export declare class Store<G extends Generics> {
   /**
    * Declares one or many existing entities.
    */
-  public from(one: One<G["entity"]>): MutationSingle<G>;
+  public from(one: OneMaybe<G["entity"]>): MutationSingle<G>;
   public from(many: Many<G["entity"]>): MutationMultiple<G>;
   /**
    * Register a plugin.

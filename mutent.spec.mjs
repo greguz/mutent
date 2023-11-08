@@ -623,3 +623,26 @@ test('store:null-update', async t => {
 
   t.deepEqual(result, items[0])
 })
+
+test('from with null and undefined', async t => {
+  const items = []
+
+  const store = new Store({
+    adapter: createAdapter(items)
+  })
+
+  t.deepEqual(items, [])
+  await store.from(null).ensure({ id: 1 }).unwrap()
+  t.deepEqual(items, [{ id: 1 }])
+
+  await t.throwsAsync(
+    store.from(null).unwrap(),
+    { code: 'EMUT_ENTITY_REQUIRED' }
+  )
+
+  await store.from(() => null).ensure({ id: 2 }).unwrap()
+  t.deepEqual(items, [{ id: 1 }, { id: 2 }])
+
+  await store.from(() => undefined).ensure({ id: 3 }).unwrap()
+  t.deepEqual(items, [{ id: 1 }, { id: 2 }, { id: 3 }])
+})
