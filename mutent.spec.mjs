@@ -635,14 +635,29 @@ test('from with null and undefined', async t => {
   await store.from(null).ensure({ id: 1 }).unwrap()
   t.deepEqual(items, [{ id: 1 }])
 
-  await t.throwsAsync(
-    store.from(null).unwrap(),
-    { code: 'EMUT_ENTITY_REQUIRED' }
-  )
-
   await store.from(() => null).ensure({ id: 2 }).unwrap()
   t.deepEqual(items, [{ id: 1 }, { id: 2 }])
 
   await store.from(() => undefined).ensure({ id: 3 }).unwrap()
   t.deepEqual(items, [{ id: 1 }, { id: 2 }, { id: 3 }])
+})
+
+test('nullish values with from method', async t => {
+  const store = new Store({
+    adapter: createAdapter([
+      { id: 1 }
+    ])
+  })
+
+  const a = await store.from(null).unwrap()
+  t.is(a, null)
+
+  const b = await store.from(() => null).unwrap()
+  t.is(b, null)
+
+  const c = await store.from(() => Promise.resolve(null)).unwrap()
+  t.is(c, null)
+
+  const d = await store.from(Promise.resolve(null)).unwrap()
+  t.is(d, null)
 })

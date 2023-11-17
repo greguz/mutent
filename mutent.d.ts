@@ -242,8 +242,8 @@ export interface Adapter<G extends Generics> {
    * @param {Object} options Adapter-specific options.
    */
   find?(
-    query: G["query"],
-    options: Partial<G["options"]>
+    query: G["query"] | undefined,
+    options: UnwrapOptions<G>
   ): Result<G["entity"] | Nullish>;
   /**
    * Retrieves all entities from the database that match the query. Must return an iterable (or async iterable) object.
@@ -251,8 +251,8 @@ export interface Adapter<G extends Generics> {
    * @param {Object} options Adapter-specific options.
    */
   filter?(
-    query: G["query"],
-    options: Partial<G["options"]>
+    query: G["query"] | undefined,
+    options: UnwrapOptions<G>
   ): Iterable<G["entity"]> | AsyncIterable<G["entity"]>;
   /**
    * Creates a new entity inside the database. It can return the just-created entity data. Both sync and async (Promise) methods are supported.
@@ -261,7 +261,7 @@ export interface Adapter<G extends Generics> {
    */
   create?(
     data: G["entity"],
-    options: Partial<G["options"]>
+    options: UnwrapOptions<G>
   ): Result<G["entity"] | Nullish>;
   /**
    * Updates an existing entity inside the database. It can return the just-updated entity data. Both sync and async (Promise) methods are supported.
@@ -272,14 +272,14 @@ export interface Adapter<G extends Generics> {
   update?(
     oldData: G["entity"],
     newData: G["entity"],
-    options: Partial<G["options"]>
+    options: UnwrapOptions<G>
   ): Result<G["entity"] | Nullish>;
   /**
    * It removes an existing entity inside from its database. Both sync and async (Promise) methods are supported.
    * @param {*} data Original entity data retrieved from the database.
    * @param {Object} options Adapter-specific options.
    */
-  delete?(data: G["entity"], options: Partial<G["options"]>): any;
+  delete?(data: G["entity"], options: UnwrapOptions<G>): any;
   /**
    * It performs a collection of write actions against the database.
    * @param {Object[]} actions
@@ -287,7 +287,7 @@ export interface Adapter<G extends Generics> {
    */
   bulk?(
     actions: Array<BulkAction<G["entity"]>>,
-    options: Partial<G["options"]>
+    options: UnwrapOptions<G>
   ): Result<
     Record<number, G["entity"]> | Record<string, G["entity"]> | Nullish
   >;
@@ -521,7 +521,7 @@ export declare type One<T> = Lazy<T | Promise<T>>;
 /**
  * Single entity value definition. Can be lazy and/or async.
  */
-export declare type OneMaybe<T> = Lazy<Nullish | T | Promise<T>>;
+export declare type OneMaybe<T> = Lazy<Nullish | T | Promise<Nullish | T>>;
 
 /**
  * Many entities' values definition. Have to be and iterable. Can be lazy and async.
@@ -556,25 +556,27 @@ export declare class Store<G extends Generics> {
   /**
    * Declares one or many new entities.
    */
-  public create(one: One<G["entity"]>): MutationSingle<G>;
   public create(many: Many<G["entity"]>): MutationMultiple<G>;
+  public create(one: One<G["entity"]>): MutationSingle<G>;
+  public create(oneMaybe: OneMaybe<G["entity"]>): MutationNullable<G>;
   /**
    * Declares one entity that matches the query and could exist.
    */
-  public find(query: G["query"]): MutationNullable<G>;
+  public find(query?: G["query"]): MutationNullable<G>;
   /**
    * Declares one required entity that matches the query.
    */
-  public read(query: G["query"]): MutationSingle<G>;
+  public read(query?: G["query"]): MutationSingle<G>;
   /**
    * Declares many existing entities that match the query.
    */
-  public filter(query: G["query"]): MutationMultiple<G>;
+  public filter(query?: G["query"]): MutationMultiple<G>;
   /**
    * Declares one or many existing entities.
    */
-  public from(one: OneMaybe<G["entity"]>): MutationSingle<G>;
   public from(many: Many<G["entity"]>): MutationMultiple<G>;
+  public from(one: One<G["entity"]>): MutationSingle<G>;
+  public from(oneMaybe: OneMaybe<G["entity"]>): MutationNullable<G>;
   /**
    * Register a plugin.
    */
