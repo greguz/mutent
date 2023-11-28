@@ -28,7 +28,7 @@ npm install --save mutent
 
 ## Documentation
 
-Start from the [Quickstart](./docs//quickstart.md) section.
+Start from the [Quickstart](https://greguz.github.io/mutent/) section.
 
 ## Example
 

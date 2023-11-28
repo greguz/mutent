@@ -2,7 +2,9 @@
 !.c8rc
 !.editorconfig
 !.github
+!.nojekyll
 coverage
 mutent.cjs
 node_modules
 package-lock.json
+*.tgz
