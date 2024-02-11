@@ -1,29 +1,18 @@
 - Getting started
 
-  - [Quick start](quickstart.md)
-  - [Writing more pages](more-pages.md)
-  - [Custom navbar](custom-navbar.md)
-  - [Cover page](cover.md)
-
-- Customization
-
-  - [Configuration](configuration.md)
-  - [Themes](themes.md)
-  - [List of Plugins](plugins.md)
-  - [Write a Plugin](write-a-plugin.md)
-  - [Markdown configuration](markdown.md)
-  - [Language highlighting](language-highlight.md)
-  - [Emoji](emoji.md)
+  - [Quickstart](docs/quickstart.md)
 
 - Guide
 
-  - [Deploy](deploy.md)
-  - [Helpers](helpers.md)
-  - [Vue compatibility](vue.md)
-  - [CDN](cdn.md)
-  - [Offline Mode (PWA)](pwa.md)
-  - [Server-Side Rendering (SSR)](ssr.md)
-  - [Embed Files](embed-files.md)
+  - [Store](docs/store.md)
+  - [Adapter](docs/adapter.md)
+  - [Entity](docs/entity.md)
+  - [Mutation](docs/mutation.md)
+  - [Mutator](docs/mutator.md)
+  - [Context](docs/context.md)
+  - [Hooks](docs/hooks.md)
+  - [Errors](docs/errors.md)
+  - [Ecosystem](docs/ecosystem.md)
 
-- [Awesome docsify](awesome.md)
-- [Changelog](changelog.md)
+- [GitHub](https://github.com/greguz/mutent)
+- [NPM](https://www.npmjs.com/package/mutent)
