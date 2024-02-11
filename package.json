@@ -11,9 +11,8 @@
   "main": "./mutent.cjs",
   "types": "./mutent.d.ts",
   "files": [
-    "docs",
-    "!**/*.spec.mjs",
     "lib",
+    "!**/*.spec.mjs",
     "mutent.mjs",
     "mutent.cjs",
     "mutent.d.ts"
@@ -30,6 +29,7 @@
     "stream"
   ],
   "scripts": {
+    "docsify": "docsify serve .",
     "lint": "standard",
     "test": "c8 ava",
     "build": "rollup -c",
@@ -38,16 +38,17 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^5.3.0",
-    "c8": "^7.14.0",
-    "rollup": "^3.25.1",
+    "ava": "^6.1.1",
+    "c8": "^9.1.0",
+    "docsify-cli": "^4.4.4",
+    "rollup": "^4.10.0",
     "standard": "^17.1.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/greguz/mutent.git"
   },
-  "homepage": "https://github.com/greguz/mutent#readme",
+  "homepage": "https://greguz.github.io/mutent/",
   "bugs": {
     "url": "https://github.com/greguz/mutent/issues"
   }
