@@ -778,3 +778,24 @@ test('bulkEntities over bulk', async t => {
     'SECOND_UPDATE'
   ])
 })
+
+test('store handlers', async t => {
+  t.plan(3)
+
+  const store = new Store({
+    adapter: {},
+    handlers: [
+      async function * (iterable, ctx) {
+        t.like(ctx, { multiple: false })
+        try {
+          yield * iterable
+        } catch (err) {
+          t.like(err, { code: 'EMUT_PARTIAL_ADAPTER' })
+        }
+      }
+    ]
+  })
+
+  const result = await store.create('Oh no').unwrap()
+  t.is(result, null)
+})
