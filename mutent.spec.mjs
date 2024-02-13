@@ -661,3 +661,120 @@ test('nullish values with from method', async t => {
   const d = await store.from(Promise.resolve(null)).unwrap()
   t.is(d, null)
 })
+
+test('createEntity over create', async t => {
+  t.plan(3)
+
+  const store = new Store({
+    adapter: {
+      createEntity (entity, ctx) {
+        t.like(entity, {
+          source: null,
+          target: 'Cratos'
+        })
+        t.like(ctx, {
+          multiple: false
+        })
+      },
+      create () {
+        t.fail()
+      }
+    }
+  })
+
+  const result = await store.create('Cratos').unwrap()
+  t.is(result, 'Cratos')
+})
+
+test('updateEntity over update', async t => {
+  t.plan(3)
+
+  const store = new Store({
+    adapter: {
+      updateEntity (entity, ctx) {
+        t.like(entity, {
+          source: '',
+          target: 'Urbosa'
+        })
+        t.like(ctx, {
+          multiple: false
+        })
+      },
+      update () {
+        t.fail()
+      }
+    }
+  })
+
+  const result = await store.from('').update(() => 'Urbosa').unwrap()
+  t.is(result, 'Urbosa')
+})
+
+test('deleteEntity over delete', async t => {
+  t.plan(3)
+
+  const store = new Store({
+    adapter: {
+      deleteEntity (entity, ctx) {
+        t.like(entity, {
+          source: 'Vergil',
+          target: 'Dante'
+        })
+        t.like(ctx, {
+          multiple: false
+        })
+      },
+      delete () {
+        t.fail()
+      }
+    }
+  })
+
+  const result = await store.from('Vergil')
+    .update(() => 'Dante')
+    .delete()
+    .unwrap()
+
+  t.is(result, 'Dante')
+})
+
+test('bulkEntities over bulk', async t => {
+  t.plan(3)
+
+  const store = new Store({
+    adapter: {
+      bulkEntities (entities, ctx) {
+        t.like(entities, [
+          {
+            source: 'first_update',
+            target: 'FIRST_UPDATE'
+          },
+          {
+            source: 'second_update',
+            target: 'SECOND_UPDATE'
+          }
+        ])
+        t.like(ctx, {
+          multiple: true
+        })
+      },
+      bulk () {
+        t.fail()
+      }
+    }
+  })
+
+  const result = await store.from([
+    'first_update',
+    'SKIP',
+    'second_update'
+  ])
+    .update(str => str.toUpperCase())
+    .unwrap()
+
+  t.like(result, [
+    'FIRST_UPDATE',
+    'SKIP',
+    'SECOND_UPDATE'
+  ])
+})
