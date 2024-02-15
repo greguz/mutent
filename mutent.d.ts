@@ -221,7 +221,7 @@ export interface Context<G extends Generics> {
  */
 export declare type QueryHook<G extends Generics> = (
   query: G["query"],
-  context: Context<G>
+  ctx: Context<G>
 ) => any;
 
 /**
@@ -229,7 +229,7 @@ export declare type QueryHook<G extends Generics> = (
  */
 export declare type EntityHook<G extends Generics> = (
   entity: Entity<G["entity"]>,
-  context: Context<G>
+  ctx: Context<G>
 ) => any;
 
 /**
@@ -291,6 +291,22 @@ export interface Adapter<G extends Generics> {
   ): Result<
     Record<number, G["entity"]> | Record<string, G["entity"]> | Nullish
   >;
+  /**
+   * Lower-level version of `create` method, it has the precedence.
+   */
+  createEntity?(entity: Entity<G["entity"]>, ctx: Context<G>): any;
+  /**
+   * Lower-level version of `update` method, it has the precedence.
+   */
+  updateEntity?(entity: Entity<G["entity"]>, ctx: Context<G>): any;
+  /**
+   * Lower-level version of `delete` method, it has the precedence.
+   */
+  deleteEntity?(entity: Entity<G["entity"]>, ctx: Context<G>): any;
+  /**
+   * Lower-level version of `bulk` method, it has the precedence.
+   */
+  bulkEntities?(entities: Array<Entity<G["entity"]>>, ctx: Context<G>): any;
 }
 
 /**
@@ -395,9 +411,13 @@ export interface PluginOptions<G extends Generics> {
     afterDelete?: OneOrMore<EntityHook<G>>;
   };
   /**
-   * Custom mutators.
+   * Mutators applied before anything else.
    */
   mutators?: Array<Mutator<G>>;
+  /**
+   * Mutators applied after the full mutation chain is defined.
+   */
+  handlers?: Array<Mutator<G>>;
   /**
    * An opaque value for the current execution.
    */
@@ -428,7 +448,7 @@ export declare type UnwrapOptions<G extends Generics> = Partial<
  */
 export declare type Mutator<G extends Generics> = (
   iterable: AsyncIterable<Entity<G["entity"]>>,
-  context: Context<G>
+  ctx: Context<G>
 ) => AsyncIterable<Entity<G["entity"]>>;
 
 export interface Mutation<G extends Generics, U = unknown> {
@@ -545,8 +565,9 @@ export interface StoreOptions<G extends Generics> extends PluginOptions<G> {
 export declare class Store<G extends Generics> {
   public adapter: G["adapter"];
   public commitMode: CommitMode;
+  public handlers: Array<Mutator<G>>;
   public hooks: Hooks<G>;
-  public mutators: Mutator<G>;
+  public mutators: Array<Mutator<G>>;
   public writeMode: WriteMode;
   public writeSize: number;
   /**
