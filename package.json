@@ -38,10 +38,10 @@
   "author": "Giacomo Gregoletto",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^6.1.1",
-    "c8": "^9.1.0",
+    "ava": "^6.1.3",
+    "c8": "^10.1.2",
     "docsify-cli": "^4.4.4",
-    "rollup": "^4.10.0",
+    "rollup": "^4.20.0",
     "standard": "^17.1.0"
   },
   "repository": {

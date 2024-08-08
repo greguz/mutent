@@ -1,22 +1,27 @@
 /**
  * Lazy value definition with optional argument.
  */
-export declare type Lazy<T, A = undefined> = T | ((arg: A) => T);
+export type Lazy<T> = T | (() => T);
 
 /**
  * A nullish value (plus "void" because TS is a special baby).
  */
-export declare type Nullish = null | undefined | void;
+export type Nullish = null | undefined | void;
 
 /**
- * The value itself or Promise-wrapped.
+ * Sync or async iterable. Arrays are iterables.
  */
-export declare type Result<T> = T | Promise<T>;
+export type Many<T> = Iterable<T> | AsyncIterable<T>;
 
 /**
- * Single raw value or multiple values inside an array.
+ * The value itself or wrapped around a `Promise`.
  */
-export declare type OneOrMore<T> = T | Array<T>;
+export type One<T> = T | Promise<T>;
+
+/**
+ * Make a type nullish-able (void is also nullish).
+ */
+export type Maybe<T> = T | Nullish;
 
 /**
  * Custom error (usable by plugins).
@@ -127,7 +132,7 @@ export declare class Entity<T> {
  * - SAFE: Throw when an entity contains uncommited changes.
  * - MANUAL: All entities must be manually commited.
  */
-export declare type CommitMode = "AUTO" | "MANUAL" | "SAFE";
+export type CommitMode = "AUTO" | "MANUAL" | "SAFE";
 
 /**
  * Current mutation's intent.
@@ -137,7 +142,7 @@ export declare type CommitMode = "AUTO" | "MANUAL" | "SAFE";
  * - FILTER: This mutation was generated from the store#filter method.
  * - FROM: This mutation was generated from the store#from method.
  */
-export declare type Intent = "CREATE" | "FIND" | "READ" | "FILTER" | "FROM";
+export type Intent = "CREATE" | "FIND" | "READ" | "FILTER" | "FROM";
 
 /**
  * Adapter write mode.
@@ -146,7 +151,7 @@ export declare type Intent = "CREATE" | "FIND" | "READ" | "FILTER" | "FROM";
  * - BULK: Force bulk write (uses #bulk method). Use "writeSize" option to configure how entities should be handled.
  * - CONCURRENT: Send multiple writes concurrently (uses #create, #update, and #delete methods). Use "writeSize" option to configure how many writes.
  */
-export declare type WriteMode = "AUTO" | "BULK" | "CONCURRENT" | "SEQUENTIAL";
+export type WriteMode = "AUTO" | "BULK" | "CONCURRENT" | "SEQUENTIAL";
 
 /**
  * Interface that contains all generics declared by the user.
@@ -181,7 +186,7 @@ export interface Context<G extends Generics> {
   /**
    * The argument that has generated this mutation (store's method argument).
    */
-  argument: G["query"] | One<G["entity"]> | Many<G["entity"]>;
+  argument: G["query"] | Lazy<One<Maybe<G["entity"]>>> | Many<G["entity"]>;
   /**
    * Current commit mode.
    */
@@ -219,92 +224,108 @@ export interface Context<G extends Generics> {
 /**
  * Hook containing the adapter's query. Promises are supported.
  */
-export declare type QueryHook<G extends Generics> = (
-  query: G["query"],
+export type QueryHook<G extends Generics> = (
+  query: G["query"] | undefined,
   ctx: Context<G>
 ) => any;
 
 /**
  * Hook containing the currently processed entity instance. Promises are supported.
  */
-export declare type EntityHook<G extends Generics> = (
+export type EntityHook<G extends Generics> = (
   entity: Entity<G["entity"]>,
   ctx: Context<G>
 ) => any;
+
+/**
+ * Array of items or record where the keys are indexes.
+ */
+export type ArrayLike<T> = T[] | Record<string, T>;
 
 /**
  * Abstract datastore adapter.
  */
 export interface Adapter<G extends Generics> {
   /**
-   * Retrieves one entity from the database that matches the query. It can be synchronous or asynchronous (Promise).
-   * @param {*} query Adapter-specific filter query.
-   * @param {Object} options Adapter-specific options.
+   * Lower-level Adapter's representation.
+   */
+  readonly raw: G["adapter"];
+  /**
+   * Find the first Entity matching the requested query.
+   * Can return a `Promise`.
+   *
+   * This method is the simplified version of `findEntity` method.
    */
   find?(
     query: G["query"] | undefined,
     options: UnwrapOptions<G>
-  ): Result<G["entity"] | Nullish>;
+  ): One<Maybe<G["entity"]>>;
   /**
-   * Retrieves all entities from the database that match the query. Must return an iterable (or async iterable) object.
-   * @param {*} query Adapter-specific filter query.
-   * @param {Object} options Adapter-specific options.
+   * Find the Entities matching the requested query.
+   * Must return an interable or an async iterable.
+   *
+   * This method is the simplified version of `filterEntities` method.
    */
   filter?(
     query: G["query"] | undefined,
     options: UnwrapOptions<G>
-  ): Iterable<G["entity"]> | AsyncIterable<G["entity"]>;
+  ): Many<G["entity"]>;
   /**
-   * Creates a new entity inside the database. It can return the just-created entity data. Both sync and async (Promise) methods are supported.
-   * @param {*} data Entity data to insert.
-   * @param {Object} options Adapter-specific options.
+   * Persists a new Entity inside the datastore.
+   * Can optionally return a new version of the Entity if the datastore adds other info (like an identifier).
+   * Promises are also supported.
    */
   create?(
     data: G["entity"],
     options: UnwrapOptions<G>
-  ): Result<G["entity"] | Nullish>;
+  ): One<Maybe<G["entity"]>>;
   /**
-   * Updates an existing entity inside the database. It can return the just-updated entity data. Both sync and async (Promise) methods are supported.
-   * @param {*} oldData Original entity data retrieved from the database.
-   * @param {*} newData Updated entity data after all actions are applied.
-   * @param {Object} options Adapter-specific options.
+   *
    */
   update?(
     oldData: G["entity"],
     newData: G["entity"],
     options: UnwrapOptions<G>
-  ): Result<G["entity"] | Nullish>;
+  ): One<Maybe<G["entity"]>>;
   /**
-   * It removes an existing entity inside from its database. Both sync and async (Promise) methods are supported.
-   * @param {*} data Original entity data retrieved from the database.
-   * @param {Object} options Adapter-specific options.
+   *
    */
   delete?(data: G["entity"], options: UnwrapOptions<G>): any;
   /**
-   * It performs a collection of write actions against the database.
-   * @param {Object[]} actions
-   * @param {Object} options Adapter-specific options.
+   *
    */
   bulk?(
     actions: Array<BulkAction<G["entity"]>>,
     options: UnwrapOptions<G>
-  ): Result<
-    Record<number, G["entity"]> | Record<string, G["entity"]> | Nullish
-  >;
+  ): One<Maybe<ArrayLike<G["entity"]>>>;
   /**
-   * Lower-level version of `create` method, it has the precedence.
+   *
+   */
+  findEntity?(
+    query: G["query"] | undefined,
+    ctx: Context<G>
+  ): One<Maybe<G["entity"]>>;
+  /**
+   *
+   */
+  filterEntities?(
+    query: G["query"] | undefined,
+    ctx: Context<G>
+  ): Many<G["entity"]>;
+  /**
+   *
    */
   createEntity?(entity: Entity<G["entity"]>, ctx: Context<G>): any;
   /**
-   * Lower-level version of `update` method, it has the precedence.
+   *
    */
   updateEntity?(entity: Entity<G["entity"]>, ctx: Context<G>): any;
   /**
-   * Lower-level version of `delete` method, it has the precedence.
+   *
    */
   deleteEntity?(entity: Entity<G["entity"]>, ctx: Context<G>): any;
   /**
-   * Lower-level version of `bulk` method, it has the precedence.
+   *
    */
   bulkEntities?(entities: Array<Entity<G["entity"]>>, ctx: Context<G>): any;
 }
@@ -312,7 +333,7 @@ export interface Adapter<G extends Generics> {
 /**
  * Bulk action descriptor.
  */
-export declare type BulkAction<T> =
+export type BulkAction<T> =
   | BulkActionCreate<T>
   | BulkActionUpdate<T>
   | BulkActionDelete<T>;
@@ -363,7 +384,12 @@ export interface BulkActionDelete<T> {
   data: T;
 }
 
-export interface PluginOptions<G extends Generics> {
+/**
+ * Value or array of values.
+ */
+export type Values<T> = T | T[];
+
+export interface MutentOptions<G extends Generics> {
   /**
    * Default commit mode.
    * @default "AUTO"
@@ -376,39 +402,39 @@ export interface PluginOptions<G extends Generics> {
     /**
      * Triggered when a single entity is fetched from the datastore.
      */
-    onFind?: OneOrMore<QueryHook<G>>;
+    onFind?: Values<QueryHook<G>>;
     /**
      * Triggered when multiple entities are fetched from the datastore.
      */
-    onFilter?: OneOrMore<QueryHook<G>>;
+    onFilter?: Values<QueryHook<G>>;
     /**
      * Triggered when an entity is ready to be processed by the mutation.
      */
-    onEntity?: OneOrMore<EntityHook<G>>;
+    onEntity?: Values<EntityHook<G>>;
     /**
      * Triggered before any entity creation.
      */
-    beforeCreate?: OneOrMore<EntityHook<G>>;
+    beforeCreate?: Values<EntityHook<G>>;
     /**
      * Triggered before any entity update.
      */
-    beforeUpdate?: OneOrMore<EntityHook<G>>;
+    beforeUpdate?: Values<EntityHook<G>>;
     /**
      * Triggered before any entity deletion.
      */
-    beforeDelete?: OneOrMore<EntityHook<G>>;
+    beforeDelete?: Values<EntityHook<G>>;
     /**
      * Triggered after any entity creation.
      */
-    afterCreate?: OneOrMore<EntityHook<G>>;
+    afterCreate?: Values<EntityHook<G>>;
     /**
      * Triggered after any entity update.
      */
-    afterUpdate?: OneOrMore<EntityHook<G>>;
+    afterUpdate?: Values<EntityHook<G>>;
     /**
      * Triggered after any entity deletion.
      */
-    afterDelete?: OneOrMore<EntityHook<G>>;
+    afterDelete?: Values<EntityHook<G>>;
   };
   /**
    * Mutators applied before anything else.
@@ -437,21 +463,27 @@ export interface PluginOptions<G extends Generics> {
 /**
  * Mutation's unwrap options.
  */
-export declare type UnwrapOptions<G extends Generics> = Partial<
-  G["options"]
-> & {
-  mutent?: PluginOptions<G>;
+export type UnwrapOptions<G extends Generics> = Partial<G["options"]> & {
+  /**
+   * Override Store's options.
+   */
+  mutent?: MutentOptions<G>;
 };
 
 /**
  * A function that takes a entity (async) iterable as input, and returns a new entity (async) iterable.
  */
-export declare type Mutator<G extends Generics> = (
+export type Mutator<G extends Generics> = (
   iterable: AsyncIterable<Entity<G["entity"]>>,
   ctx: Context<G>
 ) => AsyncIterable<Entity<G["entity"]>>;
 
 export interface Mutation<G extends Generics, U = unknown> {
+  /**
+   * Change the behavior of `.pipe` method.
+   * If `true`, the Mutation will change at any mutator applied.
+   */
+  mutable: boolean;
   /**
    * Runs Object.assign() against all entities.
    * @param objects
@@ -468,7 +500,9 @@ export interface Mutation<G extends Generics, U = unknown> {
   /**
    * Deletes all entities.
    */
-  delete(): Mutation<G, U>;
+  delete(
+    predicate?: (data: G["entity"], index: number) => any
+  ): Mutation<G, U>;
   /**
    * Creates an entity with this data if there are no other matches.
    */
@@ -478,7 +512,7 @@ export interface Mutation<G extends Generics, U = unknown> {
    * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.
    */
   filter(
-    predicate: (data: G["entity"], index: number) => Result<boolean>
+    predicate: (data: G["entity"], index: number) => any
   ): Mutation<G, U>;
   /**
    * Applies configured mutators to the targeted entities and returns an entities (async) iterable.
@@ -486,10 +520,18 @@ export interface Mutation<G extends Generics, U = unknown> {
    */
   iterate(options?: UnwrapOptions<G>): AsyncIterable<G["entity"]>;
   /**
+   * Limit the total number of returned documents.
+   */
+  limit(n: number): Mutation<G, U>;
+  /**
    * Adds mutators to the current ones and returns a new Mutation instance.
    * @param mutators Mutators chain.
    */
   pipe(...mutators: Array<Mutator<G>>): Mutation<G, U>;
+  /**
+   * Skip (ignore) the first N documents.
+   */
+  skip(n: number): Mutation<G, U>;
   /**
    * Performs a side-effect against all entities.
    * @param callback A function that accepts the current entity and its index. Promises are supported.
@@ -505,14 +547,14 @@ export interface Mutation<G extends Generics, U = unknown> {
    * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported. A nullish result will skip the update.
    */
   update(
-    mapper: (data: G["entity"], index: number) => Result<G["entity"] | Nullish>
+    mapper: (data: G["entity"], index: number) => One<Maybe<G["entity"]>>
   ): Mutation<G, U>;
 }
 
 /**
  * This mutations's unwrap may result in an entity.
  */
-export declare type MutationNullable<G extends Generics> = Mutation<
+export type MutationNullable<G extends Generics> = Mutation<
   G,
   G["entity"] | null
 >;
@@ -520,56 +562,47 @@ export declare type MutationNullable<G extends Generics> = Mutation<
 /**
  * This mutation's unwrap will always result in an entity.
  */
-export declare type MutationSingle<G extends Generics> = Mutation<
-  G,
-  G["entity"]
->;
+export type MutationSingle<G extends Generics> = Mutation<G, G["entity"]>;
 
 /**
  * This mutation's unwrap will result in an array of entities.
  */
-export declare type MutationMultiple<G extends Generics> = Mutation<
+export type MutationMultiple<G extends Generics> = Mutation<
   G,
   Array<G["entity"]>
 >;
 
 /**
- * Single entity value definition. Can be lazy and/or async.
- */
-export declare type One<T> = Lazy<T | Promise<T>>;
-
-/**
- * Single entity value definition. Can be lazy and/or async.
- */
-export declare type OneMaybe<T> = Lazy<Nullish | T | Promise<Nullish | T>>;
-
-/**
- * Many entities' values definition. Have to be and iterable. Can be lazy and async.
- */
-export declare type Many<T> = Iterable<T> | AsyncIterable<T>;
-
-/**
  * Store's constructor options.
  */
-export interface StoreOptions<G extends Generics> extends PluginOptions<G> {
+export interface StoreOptions<G extends Generics> extends MutentOptions<G> {
   /**
    * Adapter definition.
    */
   adapter: Adapter<G>;
   /**
+   * Make all Mutations mutable.
+   */
+  mutable?: boolean;
+  /**
    * Plugins to apply to this store.
    */
-  plugins?: Array<PluginOptions<G>>;
+  plugins?: Array<MutentOptions<G>>;
 }
 
-export declare class Store<G extends Generics> {
-  public adapter: G["adapter"];
-  public commitMode: CommitMode;
-  public handlers: Array<Mutator<G>>;
-  public hooks: Hooks<G>;
-  public mutators: Array<Mutator<G>>;
-  public writeMode: WriteMode;
-  public writeSize: number;
+export declare class Store<G extends Generics> implements StoreOptions<G> {
+  adapter: Adapter<G>;
+  commitMode: CommitMode;
+  handlers: Array<Mutator<G>>;
+  hooks: Hooks<G>;
+  mutable: boolean;
+  mutators: Array<Mutator<G>>;
+  writeMode: WriteMode;
+  writeSize: number;
+  /**
+   * Getter pointing to Adapter's `raw` property.
+   */
+  get raw(): G["adapter"];
   /**
    * @constructor
    */
@@ -577,31 +610,31 @@ export declare class Store<G extends Generics> {
   /**
    * Declares one or many new entities.
    */
-  public create(many: Many<G["entity"]>): MutationMultiple<G>;
-  public create(one: One<G["entity"]>): MutationSingle<G>;
-  public create(oneMaybe: OneMaybe<G["entity"]>): MutationNullable<G>;
+  create(many: Many<G["entity"]>): MutationMultiple<G>;
+  create(one: Lazy<One<G["entity"]>>): MutationSingle<G>;
+  create(oneMaybe: Lazy<One<Maybe<G["entity"]>>>): MutationNullable<G>;
   /**
    * Declares one entity that matches the query and could exist.
    */
-  public find(query?: G["query"]): MutationNullable<G>;
+  find(query?: G["query"]): MutationNullable<G>;
   /**
    * Declares one required entity that matches the query.
    */
-  public read(query?: G["query"]): MutationSingle<G>;
+  read(query?: G["query"]): MutationSingle<G>;
   /**
    * Declares many existing entities that match the query.
    */
-  public filter(query?: G["query"]): MutationMultiple<G>;
+  filter(query?: G["query"]): MutationMultiple<G>;
   /**
    * Declares one or many existing entities.
    */
-  public from(many: Many<G["entity"]>): MutationMultiple<G>;
-  public from(one: One<G["entity"]>): MutationSingle<G>;
-  public from(oneMaybe: OneMaybe<G["entity"]>): MutationNullable<G>;
+  from(many: Many<G["entity"]>): MutationMultiple<G>;
+  from(one: Lazy<One<G["entity"]>>): MutationSingle<G>;
+  from(oneMaybe: Lazy<One<Maybe<G["entity"]>>>): MutationNullable<G>;
   /**
-   * Register a plugin.
+   * Merge current options with new options.
    */
-  public register(plugin: PluginOptions<G>): this;
+  register(plugin: MutentOptions<G>): this;
 }
 
 /**
@@ -621,13 +654,16 @@ export declare function commit(): Mutator<any>;
  * Deletes all entities.
  */
 export declare function ddelete(): Mutator<any>;
+export declare function ddelete<G extends Generics>(
+  predicate: (data: G["entity"], index: number) => any
+): Mutator<G>;
 
 /**
  * Ignores the entities that don't satisfy the predicate.
  * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.
  */
 export declare function filter<G extends Generics>(
-  predicate: (data: G["entity"], index: number) => Result<boolean>
+  predicate: (data: G["entity"], index: number) => any
 ): Mutator<G>;
 
 /**
@@ -651,7 +687,7 @@ export declare function tap<G extends Generics>(
  * @param mapper A function that accepts the current entity and its index. Must return a new object representing the updated entity. Promises are supported. A nullish result will skip the update.
  */
 export declare function update<G extends Generics>(
-  mapper: (data: G["entity"], index: number) => Result<G["entity"] | Nullish>
+  mapper: (data: G["entity"], index: number) => One<Maybe<G["entity"]>>
 ): Mutator<G>;
 
 /**
@@ -664,4 +700,14 @@ export declare function ensure<G extends Generics>(
 /**
  * Get internal Adapter's name, otherwise returns `"Unknown Adapter"`.
  */
-export declare function getAdapterName(obj: any): string;
+export declare function getAdapterName(obj: unknown): string;
+
+/**
+ * Returns a mutator that limits the total amount of documents returned by the Mutation.
+ */
+export declare function limit(n: number): Mutator<any>;
+
+/**
+ * Returns a mutator that skip the first `n` found documents.
+ */
+export declare function skip(n: number): Mutator<any>;

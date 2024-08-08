@@ -6,7 +6,7 @@ Let's create a simple [Store](./store.md) instance that uses an Array as Datasto
 
 ```javascript
 import { Store } from 'mutent'
-import { ArrayAdapter } from 'mutent-array'
+import ArrayAdapter from 'mutent-array'
 
 const store = new Store({
   adapter: new ArrayAdapter()
@@ -109,15 +109,3 @@ const deleted = await store
 console.log(deleted) // { id: 42, name: 'Towel', updatedAt: ISODate }
 console.log(store.adapter.items) // []
 ```
-
-## Sections
-
-1. [Store](./store.md)
-2. [Adapter](./adapter.md)
-3. [Entity](./entity.md)
-4. [Mutation](./mutation.md)
-5. [Mutator](./mutator.md)
-6. [Context](./context.md)
-7. [Hooks](./hooks.md)
-8. [Errors](./errors.md)
-9. [Ecosystem](./ecosystem.md)

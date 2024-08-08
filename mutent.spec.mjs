@@ -3,9 +3,10 @@ import { Readable } from 'stream'
 
 import { Entity, MutentError, Store } from './mutent.mjs'
 
-function createAdapter (items = []) {
+function fromArray (items = []) {
   return {
     [Symbol.for('adapter-name')]: 'Array Adapter',
+    raw: items,
     find (predicate) {
       return items.find(predicate)
     },
@@ -52,7 +53,7 @@ test('store:defaults', t => {
 test('store:create', async t => {
   const items = []
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   const huey = { id: 0, name: 'Huey Duck' }
@@ -113,7 +114,7 @@ test('store:find', async t => {
     { id: 2, name: 'Dormouse' }
   ]
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   t.is(await store.find(item => item.id === 0).unwrap(), items[0])
@@ -130,7 +131,7 @@ test('store:find', async t => {
 test('store:read', async t => {
   const items = [{ id: 0, name: 'Tom Orvoloson Riddle', nose: false }]
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   t.is(await store.read(item => item.nose !== true).unwrap(), items[0])
@@ -157,7 +158,7 @@ test('store:filter', async t => {
     { id: 6, name: 'Thaddeus Plotz ', gender: 'male', human: true }
   ]
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   const a = await store.filter(item => item.protagonist === true).unwrap()
@@ -177,7 +178,7 @@ test('hooks:find', async t => {
   t.plan(2)
 
   const store = new Store({
-    adapter: createAdapter(),
+    adapter: fromArray(),
     hooks: {
       onFind (query, context) {
         t.true(typeof query === 'function')
@@ -193,7 +194,7 @@ test('hooks:filter', async t => {
   t.plan(2)
 
   const store = new Store({
-    adapter: createAdapter(),
+    adapter: fromArray(),
     hooks: {
       onFilter (query, context) {
         t.true(typeof query === 'function')
@@ -211,7 +212,7 @@ test('hooks:data', async t => {
   let expectedIntent
 
   const store = new Store({
-    adapter: createAdapter(),
+    adapter: fromArray(),
     hooks: {
       onEntity (entity, context) {
         t.is(context.intent, expectedIntent)
@@ -243,7 +244,7 @@ test('hooks:create', async t => {
   t.plan(4)
 
   const store = new Store({
-    adapter: createAdapter(),
+    adapter: fromArray(),
     hooks: {
       beforeCreate (entity, context) {
         t.deepEqual(entity.target, { a: 'document' })
@@ -263,7 +264,7 @@ test('hooks:update', async t => {
   t.plan(6)
 
   const store = new Store({
-    adapter: createAdapter([{ a: 'document' }]),
+    adapter: fromArray([{ a: 'document' }]),
     hooks: {
       beforeUpdate (entity, context) {
         t.deepEqual(entity.source, { a: 'document' })
@@ -288,7 +289,7 @@ test('hooks:delete', async t => {
   t.plan(4)
 
   const store = new Store({
-    adapter: createAdapter([{ a: 'document' }]),
+    adapter: fromArray([{ a: 'document' }]),
     hooks: {
       beforeDelete (entity, context) {
         t.deepEqual(entity.source, { a: 'document' })
@@ -311,7 +312,7 @@ test('store:safe-commit', async t => {
   const items = []
 
   const store = new Store({
-    adapter: createAdapter(items),
+    adapter: fromArray(items),
     commitMode: 'SAFE'
   })
 
@@ -334,7 +335,7 @@ test('store:manual-commit', async t => {
   const items = []
 
   const store = new Store({
-    adapter: createAdapter(items),
+    adapter: fromArray(items),
     commitMode: 'MANUAL'
   })
 
@@ -373,7 +374,7 @@ test('store:opaque', async t => {
   t.plan(1)
 
   const store = new Store({
-    adapter: createAdapter()
+    adapter: fromArray()
   })
 
   await store
@@ -395,7 +396,7 @@ test('store:tap', async t => {
   const items = [{ my: 'document' }]
 
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   const results = await store
@@ -415,7 +416,7 @@ test('store:filter-mutator', async t => {
   const items = [{ name: 'Shrek' }, { name: 'Fiona' }, { name: 'Donkey' }]
 
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   const results = await store
@@ -476,7 +477,7 @@ test('store:consume', async t => {
   const items = []
 
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   const count = await store.create({ value: 42 }).consume()
@@ -557,7 +558,7 @@ test('store:register', async t => {
 
 test('store:overflow', async t => {
   const store = new Store({
-    adapter: createAdapter(['a']),
+    adapter: fromArray(['a']),
     name: 'test',
     mutators: [
       async function * (iterable) {
@@ -585,7 +586,7 @@ test('store:ensure', async t => {
   const items = []
 
   const store = new Store({
-    adapter: createAdapter(items),
+    adapter: fromArray(items),
     hooks: {
       onEntity (entity) {
         t.is(entity.valueOf(), 42)
@@ -608,7 +609,7 @@ test('store:null-update', async t => {
   ]
 
   const store = new Store({
-    adapter: createAdapter(items),
+    adapter: fromArray(items),
     hooks: {
       beforeUpdate () {
         t.fail()
@@ -628,7 +629,7 @@ test('from with null and undefined', async t => {
   const items = []
 
   const store = new Store({
-    adapter: createAdapter(items)
+    adapter: fromArray(items)
   })
 
   t.deepEqual(items, [])
@@ -644,7 +645,7 @@ test('from with null and undefined', async t => {
 
 test('nullish values with from method', async t => {
   const store = new Store({
-    adapter: createAdapter([
+    adapter: fromArray([
       { id: 1 }
     ])
   })
@@ -798,4 +799,22 @@ test('store handlers', async t => {
 
   const result = await store.create('Oh no').unwrap()
   t.is(result, null)
+})
+
+test('mutable store', async t => {
+  t.plan(3)
+
+  const store = new Store({
+    adapter: fromArray(),
+    mutable: true
+  })
+
+  const mutation = store.create({})
+
+  const m = mutation.assign({ hello: 'world' })
+  t.true(m === mutation)
+
+  const obj = await mutation.unwrap()
+  t.like(obj, { hello: 'world' })
+  t.like(store.raw, [{ hello: 'world' }])
 })
