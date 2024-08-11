@@ -694,7 +694,7 @@ export declare function update<G extends Generics>(
  * Creates an entity with this data if there are no other matches.
  */
 export declare function ensure<G extends Generics>(
-  one: One<G["entity"]>
+  one: Lazy<One<G["entity"]>>
 ): Mutator<G>;
 
 /**
