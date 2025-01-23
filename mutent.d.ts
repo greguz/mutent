@@ -48,6 +48,17 @@ export declare class MutentError extends Error {
   toJSON(): { error: string; message: string; info: any };
 }
 
+export interface EntityMeta {
+  /**
+   * Adapters could set this flag to `true` if there was a lost update/delete on this Entity.
+   */
+  orphan?: any;
+  /**
+   * Other extensions.
+   */
+  [key: string]: any;
+}
+
 /**
  * Represents an entity.
  */
@@ -99,7 +110,7 @@ export declare class Entity<T> {
   /**
    * Entity's metadata (raw data used by plugins).
    */
-  meta: Record<string, any>;
+  meta: EntityMeta;
   /**
    * @constructor
    */
@@ -506,7 +517,7 @@ export interface Mutation<G extends Generics, U = unknown> {
   /**
    * Creates an entity with this data if there are no other matches.
    */
-  ensure(one: One<G["entity"]>): Mutation<G, U>;
+  ensure(one: Lazy<One<G["entity"]>>): Mutation<G, U>;
   /**
    * Ignores the entities that don't satisfy the predicate.
    * @param predicate A function that accepts the current entity and its index. If it returns true, the current entity is kept.

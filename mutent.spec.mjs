@@ -818,3 +818,34 @@ test('mutable store', async t => {
   t.like(obj, { hello: 'world' })
   t.like(store.raw, [{ hello: 'world' }])
 })
+
+test('update argument during onFind hook', async t => {
+  t.plan(4)
+
+  const store = new Store({
+    adapter: fromArray([
+      { id: 'first', value: 13 },
+      { id: 'second', value: 14 },
+      { id: 'third', value: 15 }
+    ]),
+    hooks: {
+      onFind (argument, ctx) {
+        t.is(argument, undefined)
+        ctx.argument = v => v.id === 'first'
+      },
+      onFilter (argument, ctx) {
+        t.is(argument, undefined)
+        ctx.argument = v => v.id === 'second' || v.id === 'third'
+      }
+    }
+  })
+
+  const a = await store.find().unwrap()
+  t.like(a, { id: 'first', value: 13 })
+
+  const b = await store.filter().unwrap()
+  t.like(b, [
+    { id: 'second', value: 14 },
+    { id: 'third', value: 15 }
+  ])
+})
